@@ -5,8 +5,10 @@
   --foreground: #e8e8e8;
   --card: #111111;
   --card-hover: #181818;
-  --accent: #c41e3a;
-  --accent-soft: #8b1528;
+  --accent: #b91c5c;          /* deeper crimson-purple */
+  --accent-soft: #7c1d4a;
+  --purple: #7c3aed;         /* subtle purple */
+  --purple-soft: #5b21b6;
   --muted: #9a9a9a;
   --border: #222222;
 }
@@ -59,9 +61,10 @@ body {
   box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.6);
 }
 
-/* Subtle red glow */
-.glow-red {
-  box-shadow: 0 0 40px -10px rgba(196, 30, 58, 0.25);
+/* Subtle mixed glow (red + purple) */
+.glow-accent {
+  box-shadow: 0 0 40px -10px rgba(185, 28, 92, 0.22),
+              0 0 60px -20px rgba(124, 58, 237, 0.12);
 }
 
 /* Fade-in animation */
@@ -99,10 +102,12 @@ body {
 
 @keyframes pulseGlow {
   0%, 100% {
-    box-shadow: 0 0 30px -5px rgba(196, 30, 58, 0.3);
+    box-shadow: 0 0 30px -5px rgba(185, 28, 92, 0.28),
+                0 0 50px -10px rgba(124, 58, 237, 0.12);
   }
   50% {
-    box-shadow: 0 0 50px -5px rgba(196, 30, 58, 0.45);
+    box-shadow: 0 0 45px -5px rgba(185, 28, 92, 0.4),
+                0 0 70px -10px rgba(124, 58, 237, 0.18);
   }
 }
 
@@ -111,7 +116,7 @@ body {
              pulseGlow 4s ease-in-out infinite;
 }
 
-/* Soft noise overlay (very subtle) */
+/* Soft noise overlay */
 .noise::before {
   content: "";
   position: absolute;

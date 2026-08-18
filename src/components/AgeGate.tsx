@@ -35,20 +35,22 @@ export function AgeGate() {
         exiting ? "opacity-0" : "opacity-100"
       }`}
     >
-      {/* Deep atmospheric background */}
+      {/* Deep atmospheric background with purple + crimson */}
       <div className="absolute inset-0 bg-[#050505]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(196,30,58,0.08)_0%,_transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.09)_0%,_transparent_55%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(124,58,237,0.06)_0%,_transparent_50%)]" />
       <div className="absolute inset-0 noise" />
 
       {/* Card */}
       <div className="relative z-10 max-w-md w-full mx-4 age-gate-card">
-        <div className="rounded-2xl border border-[#2a1a1a] bg-[#0c0c0c]/95 backdrop-blur-xl p-8 sm:p-10 text-center shadow-2xl">
+        <div className="rounded-2xl border border-[#2a1a28] bg-[#0c0c0c]/95 backdrop-blur-xl p-8 sm:p-10 text-center shadow-2xl">
           {/* Icon */}
           <div className="mb-7 flex justify-center">
             <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-red-900/20 blur-xl scale-150" />
-              <div className="relative w-20 h-20 rounded-full border border-red-900/40 bg-gradient-to-b from-red-950/60 to-[#0c0c0c] flex items-center justify-center">
-                <span className="text-2xl font-semibold tracking-tight text-red-400/90">
+              <div className="absolute inset-0 rounded-full bg-purple-900/20 blur-xl scale-150" />
+              <div className="absolute inset-0 rounded-full bg-red-900/15 blur-lg scale-125" />
+              <div className="relative w-20 h-20 rounded-full border border-purple-900/30 bg-gradient-to-b from-purple-950/40 via-red-950/30 to-[#0c0c0c] flex items-center justify-center">
+                <span className="text-2xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-red-300 to-purple-300">
                   18+
                 </span>
               </div>
@@ -68,7 +70,7 @@ export function AgeGate() {
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleEnter}
-              className="flex-1 group relative px-6 py-3.5 rounded-xl bg-gradient-to-b from-red-700 to-red-900 text-white font-medium overflow-hidden transition-all hover:from-red-600 hover:to-red-800 active:scale-[0.98]"
+              className="flex-1 group relative px-6 py-3.5 rounded-xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white font-medium overflow-hidden transition-all hover:from-red-600 hover:via-red-700 hover:to-purple-800 active:scale-[0.98]"
             >
               <span className="relative z-10">I am 18 or older</span>
               <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors" />

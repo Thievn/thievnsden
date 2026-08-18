@@ -2,88 +2,102 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6">
-      <section className="py-20 md:py-28 text-center">
-        <p className="text-sm uppercase tracking-widest text-red-500/80 mb-4">
-          Welcome to the Den
-        </p>
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight text-neutral-100 mb-6">
-          Dark thoughts.
-          <br />
-          <span className="text-neutral-400">Cynical humor.</span>
-          <br />
-          Unfiltered takes.
-        </h1>
-        <p className="max-w-xl mx-auto text-neutral-400 text-lg leading-relaxed mb-10">
-          A corner of the internet for AI-generated anime art, gaming rants,
-          and the things people think but won&apos;t say out loud.
-        </p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <Link
-            href="/playground"
-            className="px-6 py-3 rounded-xl bg-red-800 hover:bg-red-700 text-white font-medium transition-colors"
-          >
-            Try Roast Me
-          </Link>
+    <div className="relative">
+      {/* Subtle radial glow behind hero */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[radial-gradient(ellipse_at_center,_rgba(196,30,58,0.07)_0%,_transparent_70%)] pointer-events-none" />
+
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
+        {/* Hero */}
+        <section className="py-24 md:py-32 text-center">
+          <p className="animate-fade-in-up text-xs uppercase tracking-[0.25em] text-red-500/90 mb-6 font-medium">
+            Welcome to the Den
+          </p>
+          <h1 className="animate-fade-in-up animate-delay-100 text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-neutral-50 mb-7 leading-[1.1]">
+            Dark thoughts.
+            <br />
+            <span className="text-neutral-500">Cynical humor.</span>
+            <br />
+            Unfiltered takes.
+          </h1>
+          <p className="animate-fade-in-up animate-delay-200 max-w-lg mx-auto text-neutral-400 text-lg leading-relaxed mb-12">
+            A corner of the internet for AI-generated anime art, gaming rants,
+            and the things people think but won&apos;t say out loud.
+          </p>
+          <div className="animate-fade-in-up animate-delay-300 flex flex-wrap justify-center gap-4">
+            <Link
+              href="/playground"
+              className="group relative px-7 py-3.5 rounded-xl bg-gradient-to-b from-red-700 to-red-900 text-white font-medium overflow-hidden transition-all hover:from-red-600 hover:to-red-800 active:scale-[0.98]"
+            >
+              <span className="relative z-10">Try Roast Me</span>
+            </Link>
+            <Link
+              href="/thoughts"
+              className="px-7 py-3.5 rounded-xl border border-neutral-800 text-neutral-300 font-medium hover:bg-neutral-900/60 hover:border-neutral-700 hover:text-neutral-100 transition-all active:scale-[0.98]"
+            >
+              Read Thoughts
+            </Link>
+          </div>
+        </section>
+
+        {/* Featured cards */}
+        <section className="pb-24 grid md:grid-cols-3 gap-5">
           <Link
             href="/thoughts"
-            className="px-6 py-3 rounded-xl border border-neutral-700 hover:bg-neutral-900 text-neutral-200 font-medium transition-colors"
+            className="card group p-7 rounded-2xl border border-neutral-800/80 bg-[#111]"
           >
-            Read Thoughts
+            <div className="text-red-500/90 text-xs font-medium tracking-wide uppercase mb-3">
+              Thoughts
+            </div>
+            <h2 className="text-xl font-medium text-neutral-100 mb-3 group-hover:text-red-400 transition-colors duration-200">
+              Short rants & observations
+            </h2>
+            <p className="text-neutral-500 text-sm leading-relaxed">
+              Dark humor, AI takes, and the occasional unfiltered opinion from the Den.
+            </p>
           </Link>
-        </div>
-      </section>
 
-      <section className="pb-20 grid md:grid-cols-3 gap-6">
-        <Link
-          href="/thoughts"
-          className="card group p-6 rounded-2xl border border-neutral-800 bg-[#141414] hover:border-neutral-700"
-        >
-          <div className="text-red-500/80 text-sm font-medium mb-2">Thoughts</div>
-          <h2 className="text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-400 transition-colors">
-            Short rants & observations
-          </h2>
-          <p className="text-neutral-500 text-sm leading-relaxed">
-            Dark humor, AI takes, and the occasional unfiltered opinion.
-          </p>
-        </Link>
+          <Link
+            href="/loot"
+            className="card group p-7 rounded-2xl border border-neutral-800/80 bg-[#111]"
+          >
+            <div className="text-red-500/90 text-xs font-medium tracking-wide uppercase mb-3">
+              Loot
+            </div>
+            <h2 className="text-xl font-medium text-neutral-100 mb-3 group-hover:text-red-400 transition-colors duration-200">
+              Things I actually use
+            </h2>
+            <p className="text-neutral-500 text-sm leading-relaxed">
+              Gaming gear, anime merch, tools, and honest recommendations — no fake lists.
+            </p>
+          </Link>
 
-        <Link
-          href="/loot"
-          className="card group p-6 rounded-2xl border border-neutral-800 bg-[#141414] hover:border-neutral-700"
-        >
-          <div className="text-red-500/80 text-sm font-medium mb-2">Loot</div>
-          <h2 className="text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-400 transition-colors">
-            Things I actually use
-          </h2>
-          <p className="text-neutral-500 text-sm leading-relaxed">
-            Gaming gear, anime merch, tools, and honest recommendations.
-          </p>
-        </Link>
+          <Link
+            href="/playground"
+            className="card group p-7 rounded-2xl border border-neutral-800/80 bg-[#111]"
+          >
+            <div className="text-red-500/90 text-xs font-medium tracking-wide uppercase mb-3">
+              Playground
+            </div>
+            <h2 className="text-xl font-medium text-neutral-100 mb-3 group-hover:text-red-400 transition-colors duration-200">
+              Fun little tools
+            </h2>
+            <p className="text-neutral-500 text-sm leading-relaxed">
+              Get roasted by the Den. More toys and experiments coming soon.
+            </p>
+          </Link>
+        </section>
 
-        <Link
-          href="/playground"
-          className="card group p-6 rounded-2xl border border-neutral-800 bg-[#141414] hover:border-neutral-700"
-        >
-          <div className="text-red-500/80 text-sm font-medium mb-2">Playground</div>
-          <h2 className="text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-400 transition-colors">
-            Fun little tools
-          </h2>
-          <p className="text-neutral-500 text-sm leading-relaxed">
-            Get roasted by the Den. More toys coming soon.
-          </p>
-        </Link>
-      </section>
-
-      <section className="pb-20">
-        <div className="rounded-2xl border border-neutral-800 bg-[#111] p-8 text-center">
-          <p className="text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-            This is a living space. Expect AI art drops, gaming takes, affiliate picks,
-            and the occasional experiment. Nothing here is polished corporate content —
-            just the Den.
-          </p>
-        </div>
-      </section>
+        {/* Bottom note */}
+        <section className="pb-24">
+          <div className="rounded-2xl border border-neutral-800/80 bg-[#0d0d0d] p-8 sm:p-10 text-center glow-red">
+            <p className="text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+              This is a living space. Expect AI art drops, gaming takes, affiliate picks,
+              and the occasional experiment. Nothing here is polished corporate content —
+              just the Den.
+            </p>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

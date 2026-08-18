@@ -33,7 +33,7 @@ export default function PlaygroundPage() {
       const random = mockRoasts[Math.floor(Math.random() * mockRoasts.length)];
       setRoast(random);
       setLoading(false);
-    }, 1200);
+    }, 1300);
   };
 
   const reset = () => {
@@ -43,25 +43,25 @@ export default function PlaygroundPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16">
-      <div className="mb-10 text-center">
-        <h1 className="text-3xl font-semibold text-neutral-100 mb-3">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-20">
+      <div className="mb-12 text-center">
+        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-50 mb-3">
           Playground
         </h1>
-        <p className="text-neutral-400">
+        <p className="text-neutral-500">
           Fun little tools. Starting with a classic.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-neutral-800 bg-[#141414] p-6 sm:p-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-full bg-red-950/60 border border-red-900/40 flex items-center justify-center text-red-400 text-sm font-medium">
+      <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-7 sm:p-9 glow-red">
+        <div className="flex items-center gap-4 mb-7">
+          <div className="w-11 h-11 rounded-full bg-red-950/50 border border-red-900/40 flex items-center justify-center text-red-400 text-sm font-semibold">
             R
           </div>
           <div>
             <h2 className="text-lg font-medium text-neutral-100">Roast Me</h2>
             <p className="text-sm text-neutral-500">
-              Upload a selfie. Receive a dark, cynical roast. No mercy.
+              Upload a selfie. Receive a dark, cynical roast.
             </p>
           </div>
         </div>
@@ -69,10 +69,10 @@ export default function PlaygroundPage() {
         {!image ? (
           <div
             onClick={() => fileRef.current?.click()}
-            className="border-2 border-dashed border-neutral-700 hover:border-neutral-600 rounded-xl p-10 text-center cursor-pointer transition-colors"
+            className="border border-dashed border-neutral-700 hover:border-neutral-500 rounded-xl p-12 text-center cursor-pointer transition-all duration-200 hover:bg-neutral-900/30"
           >
-            <p className="text-neutral-400 mb-1">Click to upload a photo</p>
-            <p className="text-xs text-neutral-600">JPG, PNG • stays in your browser</p>
+            <p className="text-neutral-400 mb-1.5">Click to upload a photo</p>
+            <p className="text-xs text-neutral-600">JPG or PNG • stays in your browser</p>
             <input
               ref={fileRef}
               type="file"
@@ -82,8 +82,8 @@ export default function PlaygroundPage() {
             />
           </div>
         ) : (
-          <div className="space-y-5">
-            <div className="relative aspect-square max-w-xs mx-auto rounded-xl overflow-hidden border border-neutral-800">
+          <div className="space-y-6">
+            <div className="relative aspect-square max-w-[280px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={image}
@@ -93,8 +93,8 @@ export default function PlaygroundPage() {
             </div>
 
             {roast ? (
-              <div className="p-5 rounded-xl bg-red-950/20 border border-red-900/30">
-                <p className="text-neutral-200 leading-relaxed italic">
+              <div className="p-6 rounded-xl bg-red-950/15 border border-red-900/25">
+                <p className="text-neutral-200 leading-relaxed italic text-[15px]">
                   “{roast}”
                 </p>
               </div>
@@ -102,7 +102,7 @@ export default function PlaygroundPage() {
               <button
                 onClick={generateRoast}
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-red-800 hover:bg-red-700 disabled:opacity-60 text-white font-medium transition-colors"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-b from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 disabled:opacity-50 text-white font-medium transition-all active:scale-[0.98]"
               >
                 {loading ? "Consulting the void..." : "Roast me"}
               </button>
@@ -117,13 +117,12 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        <p className="mt-6 text-xs text-neutral-600 text-center">
-          This is a mock roast for now. Real AI roasting can be wired later.
-          Photos never leave your device in this version.
+        <p className="mt-7 text-xs text-neutral-600 text-center">
+          Mock roast for now. Real AI can be wired later. Photos never leave your device.
         </p>
       </div>
 
-      <p className="mt-10 text-center text-sm text-neutral-600">
+      <p className="mt-12 text-center text-sm text-neutral-600">
         More tools will appear here over time.
       </p>
     </div>

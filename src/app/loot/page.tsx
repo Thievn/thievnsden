@@ -31,12 +31,13 @@ export default function LootPage() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
-      <div className="mb-12">
-        <h1 className="text-3xl font-semibold text-neutral-100 mb-3">Loot</h1>
-        <p className="text-neutral-400 max-w-xl">
-          Curated recommendations and the stuff I actually keep around.
-          No fake “top 10” lists.
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-20">
+      <div className="mb-14">
+        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-50 mb-3">
+          Loot
+        </h1>
+        <p className="text-neutral-500 max-w-xl">
+          Curated recommendations and the stuff I actually keep around. No fake “top 10” lists.
         </p>
       </div>
 
@@ -44,28 +45,27 @@ export default function LootPage() {
         {items.map((item, i) => (
           <div
             key={i}
-            className="card p-6 rounded-2xl border border-neutral-800 bg-[#141414]"
+            className="card p-7 rounded-2xl border border-neutral-800/80 bg-[#111]"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-red-500/80 uppercase tracking-wide">
+              <span className="text-xs font-medium text-red-500/90 uppercase tracking-wide">
                 {item.category}
               </span>
               <span className="text-xs text-neutral-600">{item.status}</span>
             </div>
-            <h2 className="text-lg font-medium text-neutral-100 mb-2">
+            <h2 className="text-lg font-medium text-neutral-100 mb-2.5">
               {item.title}
             </h2>
-            <p className="text-neutral-400 text-sm leading-relaxed">
+            <p className="text-neutral-500 text-sm leading-relaxed">
               {item.description}
             </p>
           </div>
         ))}
       </div>
 
-      <div className="mt-12 p-6 rounded-2xl border border-neutral-800 bg-[#111] text-center">
-        <p className="text-neutral-400 text-sm">
+      <div className="mt-14 p-8 rounded-2xl border border-neutral-800/80 bg-[#0d0d0d] text-center">
+        <p className="text-neutral-500 text-sm">
           Real product cards and affiliate links will land here soon.
-          For now this is the placeholder skeleton.
         </p>
       </div>
     </div>

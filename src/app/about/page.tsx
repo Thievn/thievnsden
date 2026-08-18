@@ -1,9 +1,11 @@
 export default function AboutPage() {
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-16">
-      <h1 className="text-3xl font-semibold text-neutral-100 mb-6">About the Den</h1>
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-20">
+      <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-50 mb-8">
+        About the Den
+      </h1>
 
-      <div className="space-y-6 text-neutral-300 leading-relaxed">
+      <div className="space-y-6 text-neutral-400 leading-relaxed text-[15px]">
         <p>
           Thievn&apos;s Den is a personal corner of the internet for dark thoughts,
           cynical humor, AI-generated anime art, gaming, and the occasional
@@ -24,8 +26,8 @@ export default function AboutPage() {
         </p>
       </div>
 
-      <div className="mt-12 p-6 rounded-2xl border border-neutral-800 bg-[#141414]">
-        <p className="text-sm text-neutral-400">
+      <div className="mt-14 p-7 rounded-2xl border border-neutral-800/80 bg-[#111]">
+        <p className="text-sm text-neutral-500">
           Find me on{" "}
           <a
             href="https://x.com/Thievn"

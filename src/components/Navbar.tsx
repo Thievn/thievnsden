@@ -22,8 +22,8 @@ export function Navbar() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-2 h-2 rounded-full bg-red-600 group-hover:bg-red-500 transition-colors shadow-[0_0_8px_rgba(196,30,58,0.6)]" />
-            <span className="text-[17px] font-semibold tracking-tight text-neutral-100 group-hover:text-red-400 transition-colors duration-200">
+            <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 group-hover:from-red-400 group-hover:to-purple-400 transition-all shadow-[0_0_10px_rgba(185,28,92,0.5)]" />
+            <span className="text-[17px] font-semibold tracking-tight text-neutral-100 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-red-300 group-hover:to-purple-300 transition-all duration-200">
               Thievn&apos;s Den
             </span>
           </Link>
@@ -35,7 +35,7 @@ export function Navbar() {
                 href={link.href}
                 className={`px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
                   pathname === link.href
-                    ? "text-red-400 bg-red-950/40"
+                    ? "text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 bg-red-950/30"
                     : "text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/60"
                 }`}
               >
@@ -74,7 +74,7 @@ export function Navbar() {
                 onClick={() => setOpen(false)}
                 className={`block px-3.5 py-2.5 rounded-lg text-sm font-medium ${
                   pathname === link.href
-                    ? "text-red-400 bg-red-950/40"
+                    ? "text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400"
                     : "text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900"
                 }`}
               >

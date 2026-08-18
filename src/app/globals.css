@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #e5e5e5;
-  --card: #141414;
-  --card-hover: #1a1a1a;
-  --accent: #b91c1c;
-  --accent-soft: #7f1d1d;
-  --muted: #a3a3a3;
-  --border: #262626;
+  --background: #070707;
+  --foreground: #e8e8e8;
+  --card: #111111;
+  --card-hover: #181818;
+  --accent: #c41e3a;
+  --accent-soft: #8b1528;
+  --muted: #9a9a9a;
+  --border: #222222;
 }
 
 @theme inline {
@@ -29,34 +29,94 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: #070707;
 }
 ::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
+  background: #2a2a2a;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #444;
+  background: #3a3a3a;
 }
 
-/* Smooth card transitions */
+/* Card base */
 .card {
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   background: var(--card-hover);
+  border-color: #333 !important;
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.6);
 }
 
-/* Subtle glow for accents */
-.accent-glow {
-  box-shadow: 0 0 20px rgba(185, 28, 28, 0.15);
+/* Subtle red glow */
+.glow-red {
+  box-shadow: 0 0 40px -10px rgba(196, 30, 58, 0.25);
+}
+
+/* Fade-in animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-delay-100 { animation-delay: 0.1s; opacity: 0; }
+.animate-delay-200 { animation-delay: 0.2s; opacity: 0; }
+.animate-delay-300 { animation-delay: 0.3s; opacity: 0; }
+.animate-delay-400 { animation-delay: 0.4s; opacity: 0; }
+
+/* Age gate specific */
+@keyframes ageGateIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 30px -5px rgba(196, 30, 58, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 50px -5px rgba(196, 30, 58, 0.45);
+  }
+}
+
+.age-gate-card {
+  animation: ageGateIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+             pulseGlow 4s ease-in-out infinite;
+}
+
+/* Soft noise overlay (very subtle) */
+.noise::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
 }

@@ -48,7 +48,7 @@ export default function LootPage() {
             className="card p-7 rounded-2xl border border-neutral-800/80 bg-[#111]"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-red-500/90 uppercase tracking-wide">
+              <span className="text-xs font-medium text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 uppercase tracking-wide">
                 {item.category}
               </span>
               <span className="text-xs text-neutral-600">{item.status}</span>

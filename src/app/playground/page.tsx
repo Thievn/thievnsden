@@ -53,9 +53,9 @@ export default function PlaygroundPage() {
         </p>
       </div>
 
-      <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-7 sm:p-9 glow-red">
+      <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-7 sm:p-9 glow-accent">
         <div className="flex items-center gap-4 mb-7">
-          <div className="w-11 h-11 rounded-full bg-red-950/50 border border-red-900/40 flex items-center justify-center text-red-400 text-sm font-semibold">
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-red-950/60 to-purple-950/50 border border-purple-900/30 flex items-center justify-center text-transparent bg-clip-text bg-gradient-to-b from-red-300 to-purple-300 text-sm font-semibold">
             R
           </div>
           <div>
@@ -93,7 +93,7 @@ export default function PlaygroundPage() {
             </div>
 
             {roast ? (
-              <div className="p-6 rounded-xl bg-red-950/15 border border-red-900/25">
+              <div className="p-6 rounded-xl bg-gradient-to-br from-red-950/20 to-purple-950/15 border border-purple-900/20">
                 <p className="text-neutral-200 leading-relaxed italic text-[15px]">
                   “{roast}”
                 </p>
@@ -102,7 +102,7 @@ export default function PlaygroundPage() {
               <button
                 onClick={generateRoast}
                 disabled={loading}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-b from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 disabled:opacity-50 text-white font-medium transition-all active:scale-[0.98]"
+                className="w-full py-3.5 rounded-xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 hover:from-red-600 hover:via-red-700 hover:to-purple-800 disabled:opacity-50 text-white font-medium transition-all active:scale-[0.98]"
               >
                 {loading ? "Consulting the void..." : "Roast me"}
               </button>

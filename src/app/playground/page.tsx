@@ -172,7 +172,6 @@ export default function PlaygroundPage() {
       </div>
 
       <div className="rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden">
-        {/* IDLE */}
         {stage === "idle" && !cameraActive && (
           <div className="p-6 sm:p-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -210,7 +209,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* CAMERA */}
         {cameraActive && (
           <div className="p-4 sm:p-6">
             <div className="relative aspect-square max-w-sm mx-auto rounded-xl overflow-hidden border border-neutral-800 bg-black">
@@ -239,7 +237,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* READY */}
         {stage === "ready" && image && (
           <div className="p-5 sm:p-7 space-y-6">
             <div className="relative aspect-square max-w-[220px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
@@ -269,9 +266,11 @@ export default function PlaygroundPage() {
                           : "border-neutral-800 hover:border-neutral-700"
                       }`}
                     >
-                      <div className={`text-xs font-medium ${
-                        active ? "text-red-300" : "text-neutral-300"
-                      }`}>
+                      <div
+                        className={`text-xs font-medium ${
+                          active ? "text-red-300" : "text-neutral-300"
+                        }`}
+                      >
                         {config.label}
                       </div>
                       <div className="text-[10px] text-neutral-600 mt-0.5 leading-tight">
@@ -286,7 +285,7 @@ export default function PlaygroundPage() {
             <button
               onClick={() => generateRoast(false)}
               disabled={loading}
-              className={`w-full py-3.5 rounded-xl bg-gradient-to-b ${INTENSITY_CONFIG[intensity].color} text-white font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60"}
+              className={`w-full py-3.5 rounded-xl bg-gradient-to-b ${INTENSITY_CONFIG[intensity].color} text-white font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60`}
             >
               Enter the Mirror
             </button>
@@ -300,7 +299,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* ROASTING */}
         {stage === "roasting" && (
           <div className="p-10 sm:p-14 text-center">
             <div className="w-12 h-12 mx-auto mb-5 rounded-full border border-purple-900/40 flex items-center justify-center">
@@ -311,7 +309,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* RESULT */}
         {stage === "result" && currentRoast && image && (
           <div className="p-5 sm:p-7 space-y-5">
             <div className="relative aspect-square max-w-[180px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
@@ -377,7 +374,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* PROFILE */}
         {stage === "profile" && (
           <div className="p-6 sm:p-8 space-y-5">
             <div className="text-center">

@@ -6,6 +6,7 @@ export default function StopExplainingPage() {
       title="The day you stop explaining yourself"
       date="Aug 2026"
       readTime="4 min"
+      slug="stop-explaining"
     >
       <p>
         Eventually you realize some people were never going to understand you, and the energy you spent trying was just another way of asking for permission.

@@ -6,6 +6,7 @@ export default function BorrowedGoalsPage() {
       title="Most of your goals were never really yours"
       date="Aug 2026"
       readTime="3 min"
+      slug="borrowed-goals"
     >
       <p>
         At some point you look around and realize half the things you’ve been chasing were just ideas you absorbed from people who seemed more sure of themselves than you were.

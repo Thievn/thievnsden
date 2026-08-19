@@ -6,6 +6,7 @@ export default function BecomingWhatYouHatedPage() {
       title="How easy it is to become what you used to hate"
       date="Aug 2026"
       readTime="3 min"
+      slug="becoming-what-you-hated"
     >
       <p>
         You don’t notice it happening in real time. You just wake up one day and recognize the tone in your own voice.

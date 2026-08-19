@@ -6,6 +6,7 @@ export default function NeverImpressivePage() {
       title="The quiet relief of accepting you’ll never be impressive"
       date="Aug 2026"
       readTime="3 min"
+      slug="never-impressive"
     >
       <p>
         There’s a specific kind of peace that shows up the day you stop trying to be the most interesting person in the room.

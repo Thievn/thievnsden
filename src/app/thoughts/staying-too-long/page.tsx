@@ -6,6 +6,7 @@ export default function StayingTooLongPage() {
       title="Why people stay in things that are already over"
       date="Aug 2026"
       readTime="4 min"
+      slug="staying-too-long"
     >
       <p>
         Sometimes the hardest part isn’t leaving. It’s admitting how long you’ve already known you should have.

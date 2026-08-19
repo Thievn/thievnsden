@@ -6,6 +6,7 @@ export default function LonelyInACrowdPage() {
       title="The loneliness that only hits when you’re surrounded"
       date="Aug 2026"
       readTime="3 min"
+      slug="lonely-in-a-crowd"
     >
       <p>
         It’s not the empty room that gets you. It’s the full one where no one is actually looking at you.

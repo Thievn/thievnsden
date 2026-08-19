@@ -2,15 +2,18 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { ThoughtReactions } from "./ThoughtReactions";
+import { ThoughtComments } from "./ThoughtComments";
 
 interface ThoughtArticleProps {
   title: string;
   date: string;
   readTime: string;
+  slug: string;
   children: React.ReactNode;
 }
 
-export function ThoughtArticle({ title, date, readTime, children }: ThoughtArticleProps) {
+export function ThoughtArticle({ title, date, readTime, slug, children }: ThoughtArticleProps) {
   const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
 
   const sizeClasses = {
@@ -29,68 +32,44 @@ export function ThoughtArticle({ title, date, readTime, children }: ThoughtArtic
           ← Back to Thoughts
         </Link>
 
-        {/* Text size control */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-neutral-500 mr-1">Text</span>
+        <div className="flex items-center gap-1">
+          <span className="text-[11px] text-neutral-500 mr-1.5">Text</span>
           {(["sm", "base", "lg"] as const).map((size) => (
             <button
               key={size}
               onClick={() => setFontSize(size)}
-              className={`w-7 h-7 rounded-md text-xs font-medium transition-all ${
+              className={`px-2 py-1 rounded text-[11px] font-medium transition-all ${
                 fontSize === size
-                  ? "bg-gradient-to-b from-red-800/40 to-purple-900/40 text-red-300 border border-red-900/50"
-                  : "text-neutral-500 hover:text-neutral-300 border border-transparent hover:border-neutral-800"
+                  ? "bg-gradient-to-b from-red-800/40 to-purple-900/40 text-red-300 border border-red-900/40"
+                  : "text-neutral-500 hover:text-neutral-300 border border-transparent"
               }`}
             >
-              {size === "sm" ? "A" : size === "base" ? "A" : "A"}
-              <span className="sr-only">{size}</span>
+              {size === "sm" ? "S" : size === "base" ? "M" : "L"}
             </button>
           ))}
-          <div className="flex gap-0.5 ml-0.5">
-            <button
-              onClick={() => setFontSize("sm")}
-              className={`px-1.5 py-0.5 rounded text-[10px] ${
-                fontSize === "sm" ? "text-red-300" : "text-neutral-600 hover:text-neutral-400"
-              }`}
-            >
-              S
-            </button>
-            <button
-              onClick={() => setFontSize("base")}
-              className={`px-1.5 py-0.5 rounded text-[11px] ${
-                fontSize === "base" ? "text-red-300" : "text-neutral-600 hover:text-neutral-400"
-              }`}
-            >
-              M
-            </button>
-            <button
-              onClick={() => setFontSize("lg")}
-              className={`px-1.5 py-0.5 rounded text-[12px] ${
-                fontSize === "lg" ? "text-red-300" : "text-neutral-600 hover:text-neutral-400"
-              }`}
-            >
-              L
-            </button>
-          </div>
         </div>
       </div>
 
-      <header className="mb-10">
+      <header className="mb-8">
         <div className="flex items-center gap-3 mb-4 text-[12px]">
           <span className="text-red-400/90">{date}</span>
           <span className="w-1 h-1 rounded-full bg-purple-700/70" />
           <span className="text-purple-400/90">{readTime} read</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-50 leading-snug">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-50 leading-snug mb-6">
           {title}
         </h1>
+
+        <ThoughtReactions slug={slug} />
       </header>
 
       <div className={`space-y-5 text-neutral-300 leading-relaxed ${sizeClasses[fontSize]}`}>
         {children}
       </div>
 
-      <div className="mt-12 pt-8 border-t border-neutral-900">
+      <ThoughtComments slug={slug} />
+
+      <div className="mt-10 pt-8 border-t border-neutral-900">
         <Link
           href="/thoughts"
           className="text-sm font-medium text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 hover:from-red-300 hover:to-purple-300 transition-all"

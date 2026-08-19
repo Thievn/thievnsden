@@ -5,12 +5,6 @@ import { useState, useRef, useEffect } from "react";
 type Intensity = "mild" | "nuclear" | "existential";
 type Stage = "idle" | "ready" | "roasting" | "result" | "profile";
 
-interface RoastSession {
-  intensity: Intensity;
-  roasts: string[];
-  followUps: string[];
-}
-
 const INTENSITY_CONFIG = {
   mild: {
     label: "Mild",
@@ -29,33 +23,10 @@ const INTENSITY_CONFIG = {
   },
 };
 
-const MOCK_ROASTS: Record<Intensity, string[]> = {
-  mild: [
-    "You have the energy of someone who still believes the group chat will eventually be fun.",
-    "There’s a quiet competence here… buried under several layers of ‘I’ll deal with it later.’",
-    "You look like the type who says ‘I’m fine’ and then reorganizes their entire desktop at 1am.",
-    "Main character potential, currently stuck in a very long establishing shot.",
-  ],
-  nuclear: [
-    "You look like you peaked in a group project and have been chasing that high ever since.",
-    "That expression says you’ve accepted your fate and it involves unread emails and mild regret.",
-    "There’s a specific kind of tired in your eyes that only comes from explaining yourself to people who were never going to get it.",
-    "You have the face of someone who keeps almost changing their life and then decides the timing isn’t right.",
-  ],
-  existential: [
-    "This is the face of someone who has already negotiated with the void and the void just nodded politely and kept walking.",
-    "You look like you’re waiting for a sign that never arrives, so you’ve started manufacturing your own and calling it intuition.",
-    "There’s a quiet understanding here that most of your plans are just elaborate ways of avoiding the real question.",
-    "You carry yourself like someone who knows the punchline but is still hoping the joke was about someone else.",
-  ],
-};
-
 const FOLLOW_UP_PROMPTS = [
   "Go deeper",
   "Make it personal",
   "What does this face say about my future?",
-  "Roast my life choices",
-  "Tell me what I’m avoiding",
 ];
 
 const PROFILE_SNIPPETS = [
@@ -69,16 +40,15 @@ export default function PlaygroundPage() {
   const [stage, setStage] = useState<Stage>("idle");
   const [image, setImage] = useState<string | null>(null);
   const [intensity, setIntensity] = useState<Intensity>("nuclear");
-  const [session, setSession] = useState<RoastSession | null>(null);
   const [currentRoast, setCurrentRoast] = useState<string | null>(null);
+  const [previousRoasts, setPreviousRoasts] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [roastCount, setRoastCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Cleanup camera on unmount
   useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -93,9 +63,9 @@ export default function PlaygroundPage() {
     const url = URL.createObjectURL(file);
     setImage(url);
     setStage("ready");
-    setSession(null);
     setCurrentRoast(null);
-    setRoastCount(0);
+    setPreviousRoasts([]);
+    setError(null);
   };
 
   const startCamera = async () => {
@@ -126,9 +96,9 @@ export default function PlaygroundPage() {
     setImage(dataUrl);
     stopCamera();
     setStage("ready");
-    setSession(null);
     setCurrentRoast(null);
-    setRoastCount(0);
+    setPreviousRoasts([]);
+    setError(null);
   };
 
   const stopCamera = () => {
@@ -139,54 +109,56 @@ export default function PlaygroundPage() {
     setCameraActive(false);
   };
 
-  const generateRoast = (isFollowUp = false) => {
+  const generateRoast = async (isFollowUp = false) => {
     if (!image) return;
     setLoading(true);
+    setError(null);
     setStage("roasting");
 
-    // Simulate thinking time
-    setTimeout(() => {
-      const pool = MOCK_ROASTS[intensity];
-      const roast = pool[Math.floor(Math.random() * pool.length)];
-
-      setCurrentRoast(roast);
-      setRoastCount((c) => c + 1);
-
-      setSession((prev) => {
-        if (!prev) {
-          return { intensity, roasts: [roast], followUps: [] };
-        }
-        return {
-          ...prev,
-          roasts: [...prev.roasts, roast],
-          followUps: isFollowUp
-            ? [...prev.followUps, "followed up"]
-            : prev.followUps,
-        };
+    try {
+      const res = await fetch("/api/roast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          intensity,
+          followUp: isFollowUp,
+          previousRoasts: isFollowUp ? previousRoasts : [],
+        }),
       });
 
-      setLoading(false);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate roast");
+      }
+
+      const roast = data.roast as string;
+      setCurrentRoast(roast);
+      setPreviousRoasts((prev) => [...prev, roast]);
       setStage("result");
-    }, 1400 + Math.random() * 800);
+    } catch (err) {
+      console.error(err);
+      setError("The void did not respond. Try again.");
+      setStage("ready");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const showProfile = () => {
-    setStage("profile");
-  };
+  const showProfile = () => setStage("profile");
 
   const reset = () => {
     setImage(null);
     setStage("idle");
-    setSession(null);
     setCurrentRoast(null);
-    setRoastCount(0);
+    setPreviousRoasts([]);
+    setError(null);
     stopCamera();
     if (fileRef.current) fileRef.current.value = "";
   };
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-      {/* Header */}
       <div className="mb-8 sm:mb-10 text-center">
         <p className="text-[11px] uppercase tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 mb-2 font-medium">
           The Void Mirror
@@ -200,7 +172,7 @@ export default function PlaygroundPage() {
       </div>
 
       <div className="rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden">
-        {/* ===== IDLE / UPLOAD ===== */}
+        {/* IDLE */}
         {stage === "idle" && !cameraActive && (
           <div className="p-6 sm:p-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -238,7 +210,7 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* ===== CAMERA ===== */}
+        {/* CAMERA */}
         {cameraActive && (
           <div className="p-4 sm:p-6">
             <div className="relative aspect-square max-w-sm mx-auto rounded-xl overflow-hidden border border-neutral-800 bg-black">
@@ -259,7 +231,7 @@ export default function PlaygroundPage() {
               </button>
               <button
                 onClick={stopCamera}
-                className="px-6 py-3 rounded-xl border border-neutral-700 text-neutral-400 text-sm active:scale-[0.98]"
+                className="px-6 py-3 rounded-xl border border-neutral-700 text-neutral-400 text-sm"
               >
                 Cancel
               </button>
@@ -267,13 +239,17 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* ===== READY (photo loaded) ===== */}
+        {/* READY */}
         {stage === "ready" && image && (
           <div className="p-5 sm:p-7 space-y-6">
             <div className="relative aspect-square max-w-[220px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={image} alt="Your offering" className="w-full h-full object-cover" />
             </div>
+
+            {error && (
+              <p className="text-center text-sm text-red-400">{error}</p>
+            )}
 
             <div>
               <p className="text-xs text-neutral-500 mb-3 text-center uppercase tracking-wide">
@@ -309,7 +285,8 @@ export default function PlaygroundPage() {
 
             <button
               onClick={() => generateRoast(false)}
-              className={`w-full py-3.5 rounded-xl bg-gradient-to-b ${INTENSITY_CONFIG[intensity].color} text-white font-medium text-sm transition-all active:scale-[0.98]"}
+              disabled={loading}
+              className={`w-full py-3.5 rounded-xl bg-gradient-to-b ${INTENSITY_CONFIG[intensity].color} text-white font-medium text-sm transition-all active:scale-[0.98] disabled:opacity-60"}
             >
               Enter the Mirror
             </button>
@@ -323,7 +300,7 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* ===== ROASTING ===== */}
+        {/* ROASTING */}
         {stage === "roasting" && (
           <div className="p-10 sm:p-14 text-center">
             <div className="w-12 h-12 mx-auto mb-5 rounded-full border border-purple-900/40 flex items-center justify-center">
@@ -334,7 +311,7 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* ===== RESULT ===== */}
+        {/* RESULT */}
         {stage === "result" && currentRoast && image && (
           <div className="p-5 sm:p-7 space-y-5">
             <div className="relative aspect-square max-w-[180px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
@@ -351,11 +328,10 @@ export default function PlaygroundPage() {
               </p>
             </div>
 
-            {/* Follow-ups */}
             <div className="space-y-2">
               <p className="text-xs text-neutral-600 text-center">Push further</p>
               <div className="flex flex-wrap gap-2 justify-center">
-                {FOLLOW_UP_PROMPTS.slice(0, 3).map((prompt) => (
+                {FOLLOW_UP_PROMPTS.map((prompt) => (
                   <button
                     key={prompt}
                     onClick={() => generateRoast(true)}
@@ -368,7 +344,7 @@ export default function PlaygroundPage() {
               </div>
             </div>
 
-            {roastCount >= 3 && (
+            {previousRoasts.length >= 3 && (
               <button
                 onClick={showProfile}
                 className="w-full py-3 rounded-xl border border-purple-900/40 text-purple-300 text-sm hover:bg-purple-950/20 transition-all"
@@ -380,7 +356,8 @@ export default function PlaygroundPage() {
             <div className="pt-2 flex flex-col sm:flex-row gap-2">
               <button
                 onClick={() => generateRoast(false)}
-                className="flex-1 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 text-sm hover:border-neutral-700"
+                disabled={loading}
+                className="flex-1 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 text-sm hover:border-neutral-700 disabled:opacity-50"
               >
                 Roast again
               </button>
@@ -400,7 +377,7 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* ===== PROFILE ===== */}
+        {/* PROFILE */}
         {stage === "profile" && (
           <div className="p-6 sm:p-8 space-y-5">
             <div className="text-center">
@@ -417,7 +394,7 @@ export default function PlaygroundPage() {
             </div>
 
             <p className="text-xs text-neutral-600 text-center">
-              Based on {roastCount} observations this session.
+              Based on {previousRoasts.length} observations this session.
             </p>
 
             <div className="flex gap-2">
@@ -437,10 +414,6 @@ export default function PlaygroundPage() {
           </div>
         )}
       </div>
-
-      <p className="mt-6 text-center text-[11px] text-neutral-700">
-        Currently running in mock mode. Real Grok connection coming once the API key is set.
-      </p>
     </div>
   );
 }

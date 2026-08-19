@@ -1,73 +1,71 @@
 import Link from "next/link";
 
 export default function LootPage() {
-  // Sample items for the Loot collection
-  // Replace image paths later with real files in /public/loot/
   const items = [
     {
-      id: "corsair-case",
-      name: "Corsair 4000D / Frame Series",
+      id: "corsair-4000d",
+      name: "Corsair 4000D Airflow",
       category: "PC Builds",
-      short: "Clean case that doesn’t scream “gamer” from across the room.",
+      short: "The case that stopped me from buying another one.",
       review:
-        "Solid airflow, good cable management space, and it doesn’t look like a Christmas tree. One of the few cases that still looks intentional after you actually build in it.",
-      image: null, // later: "/loot/corsair-case.png"
-      link: "#",
+        "Clean layout, actually useful cable management, and the front mesh does its job without looking like a fish tank. I’ve built in worse. If you’re putting a real system together, this is still one of the safer choices.",
+      image: null,
+      link: "https://www.amazon.com/s?k=Corsair+4000D+Airflow&tag=thievnsden-20",
       status: "In the Den",
     },
     {
-      id: "rog-gpu",
+      id: "rog-rtx",
       name: "ASUS ROG / NVIDIA RTX",
       category: "PC Builds",
-      short: "The card that actually does the heavy lifting.",
+      short: "The reason the rest of the build exists.",
       review:
-        "Whatever the current high-end ROG or Founders Edition card is. Power hungry, expensive, and still the reason the rest of the build exists. Worth it if you actually use it.",
+        "Power hungry, expensive, and still the part that makes everything else worth doing. Whether it’s a Strix or a Founders card, the high-end NVIDIA cards are what actually move the needle. Everything else is just supporting cast.",
       image: null,
-      link: "#",
+      link: "https://www.amazon.com/s?k=ASUS+ROG+Strix+RTX&tag=thievnsden-20",
       status: "In the Den",
     },
     {
-      id: "anime-figure-1",
+      id: "anime-figure-sitting",
       name: "Anime Figure – Sitting Pose",
       category: "Anime / Merch",
-      short: "Shelf presence without taking over the entire room.",
+      short: "Shelf presence without the usual plastic look.",
       review:
-        "Clean sculpt, decent paint, and it doesn’t look like it was rushed out the door. One of the few figures that still looks good after the initial hype dies.",
+        "Decent sculpt, paint that doesn’t look rushed, and it doesn’t dominate the entire shelf. One of the few figures that still looks intentional after the initial hype fades. Worth it if you actually display them.",
       image: null,
-      link: "#",
+      link: "https://www.amazon.com/s?k=anime+figure+sitting+statue&tag=thievnsden-20",
       status: "In the Den",
     },
     {
-      id: "gaming-headset",
+      id: "wireless-headset",
       name: "Wireless Gaming Headset",
       category: "Gaming",
-      short: "The one that stayed after the others got returned.",
+      short: "The one that survived the return cycle.",
       review:
-        "Comfortable enough for long sessions, mic doesn’t sound like a tin can, and the battery lasts longer than my patience. Not perfect, but it earned its spot.",
+        "Comfortable enough for long sessions, mic that doesn’t sound like a tin can, and battery life that outlasts my patience. Not perfect, but it’s the one that stayed after the others went back.",
       image: null,
-      link: "#",
+      link: "https://www.amazon.com/s?k=wireless+gaming+headset&tag=thievnsden-20",
       status: "In the Den",
     },
     {
-      id: "mech-keyboard",
-      name: "60% / Compact Mechanical Keyboard",
+      id: "compact-keyboard",
+      name: "60% Mechanical Keyboard",
       category: "Gaming",
-      short: "Smaller footprint, still satisfying to type on.",
+      short: "Smaller desk footprint, still satisfying.",
       review:
-        "RGB can be dialed back or turned off. The switches feel good and it doesn’t dominate the desk. One of the few keyboards that survived the rotation.",
+        "RGB can be turned down or off. The switches feel good and it doesn’t take over half the desk. One of the few keyboards that made it past the “I’ll try this one next” phase.",
       image: null,
-      link: "#",
+      link: "https://www.amazon.com/s?k=60+percent+mechanical+keyboard&tag=thievnsden-20",
       status: "In the Den",
     },
     {
-      id: "anime-figure-2",
+      id: "anime-figure-dual",
       name: "Anime Figure – Dual Character",
       category: "Anime / Merch",
-      short: "Two characters, one base, less shelf real estate wasted.",
+      short: "Two characters, one base, less wasted space.",
       review:
-        "Better than average paint apps and the poses work together. Still a luxury item, but at least it doesn’t feel completely hollow.",
+        "Better than average paint work and the poses actually work together. Still a luxury item, but at least it doesn’t feel completely hollow once it’s on the shelf.",
       image: null,
-      link: "#",
+      link: "https://www.amazon.com/s?k=anime+figure+statue+set&tag=thievnsden-20",
       status: "In the Den",
     },
   ];
@@ -103,9 +101,9 @@ export default function LootPage() {
         {/* ===== INTRO ===== */}
         <div className="mb-12 max-w-2xl">
           <p className="text-neutral-400 leading-relaxed">
-            This is a private collection, not a storefront. PC parts that survived multiple builds,
-            figures that still look good after the hype dies, and gear that didn’t get returned.
-            Click an item for the real take.
+            Private collection, not a storefront. PC parts that survived multiple builds,
+            figures that still look decent after the hype dies, and gear that didn’t get returned.
+            Short takes only. Links go where they need to go.
           </p>
         </div>
 
@@ -130,7 +128,7 @@ export default function LootPage() {
                     <div className="w-12 h-12 mx-auto mb-3 rounded-full border border-neutral-800 flex items-center justify-center">
                       <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-60" />
                     </div>
-                    <p className="text-xs text-neutral-600">Image coming</p>
+                    <p className="text-xs text-neutral-600">Photo coming</p>
                   </div>
                 )}
               </div>
@@ -152,14 +150,16 @@ export default function LootPage() {
                 </p>
 
                 <div className="pt-3 border-t border-neutral-800/60">
-                  <p className="text-xs text-neutral-600 mb-3 line-clamp-3">
+                  <p className="text-xs text-neutral-500 mb-4 leading-relaxed">
                     {item.review}
                   </p>
                   <a
                     href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-red-300 transition-colors"
                   >
-                    View item
+                    Check it out
                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
@@ -170,11 +170,10 @@ export default function LootPage() {
           ))}
         </div>
 
-        {/* ===== NOTE ===== */}
+        {/* ===== FOOTER NOTE ===== */}
         <div className="rounded-2xl border border-neutral-800/80 bg-[#0d0d0d] p-8 text-center">
           <p className="text-neutral-500 text-sm max-w-lg mx-auto leading-relaxed">
-            Real product photos and Canva review cards will replace the placeholders.
-            Drop images into <code className="text-neutral-400">/public/loot/</code> when ready.
+            These are things that stayed. Photos and tighter product links get updated as the collection does.
           </p>
         </div>
       </div>

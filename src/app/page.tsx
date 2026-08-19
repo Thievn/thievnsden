@@ -3,12 +3,10 @@ import Link from "next/link";
 export default function HomePage() {
   return (
     <div className="relative">
-      {/* Soft radial glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[900px] h-[320px] sm:h-[420px] bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.07)_0%,_transparent_65%)] pointer-events-none" />
       <div className="absolute top-10 left-1/2 -translate-x-1/2 w-full max-w-[600px] h-[240px] sm:h-[300px] bg-[radial-gradient(ellipse_at_center,_rgba(124,58,237,0.05)_0%,_transparent_70%)] pointer-events-none" />
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
-        {/* Hero */}
         <section className="py-16 sm:py-24 md:py-32 text-center">
           <p className="animate-fade-in-up text-[11px] sm:text-xs uppercase tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 mb-4 sm:mb-6 font-medium">
             Welcome to the Den
@@ -29,7 +27,7 @@ export default function HomePage() {
               href="/playground"
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white font-medium text-center transition-all hover:from-red-600 hover:via-red-700 hover:to-purple-800 active:scale-[0.98]"
             >
-              Try Roast Me
+              Face The Den
             </Link>
             <Link
               href="/thoughts"
@@ -40,7 +38,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Featured cards */}
         <section className="pb-16 sm:pb-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           <Link
             href="/thoughts"
@@ -80,15 +77,14 @@ export default function HomePage() {
               Playground
             </div>
             <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-300 transition-colors duration-200">
-              Fun little tools
+              Face The Den
             </h2>
             <p className="text-neutral-500 text-sm leading-relaxed">
-              Get roasted by the Den. More toys and experiments coming soon.
+              Offer a photo. Get roasted. More experiments coming soon.
             </p>
           </Link>
         </section>
 
-        {/* Bottom note */}
         <section className="pb-16 sm:pb-24">
           <div className="rounded-2xl border border-neutral-800/80 bg-[#0d0d0d] p-6 sm:p-8 text-center glow-accent">
             <p className="text-neutral-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">

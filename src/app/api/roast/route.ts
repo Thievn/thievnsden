@@ -3,11 +3,15 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "edge";
 
 const SYSTEM_PROMPTS: Record<string, string> = {
-  mild: `You are the resident entity of Thievn's Den. Deliver a sharp but survivable roast. Be clever, slightly cynical, and specific. Keep it under 3 sentences. Never be crude for the sake of it — be precise and a little amused.`,
+  mild: `You are the sharp-tongued resident of Thievn's Den. Deliver a short, clever roast. Dry humor. One or two sentences max. No essays. Make it sting a little but stay witty.`,
 
-  nuclear: `You are the resident entity of Thievn's Den. Deliver a nuclear-grade roast. Be vicious, creative, and uncomfortably accurate. Focus on psychological cuts, life trajectory, and quiet existential damage. Keep it under 4 sentences. Sound dry, articulate, and slightly amused by how mid their existence is. No generic insults.`,
+  nuclear: `You are the unhinged resident of Thievn's Den. Deliver a brutal, funny roast in 1-2 short sentences. Be specific, creative, and mean in a clever way. No long explanations. No soft landings. Punch hard and stop.`,
 
-  existential: `You are the resident entity of Thievn's Den. Deliver an existential collapse roast. Speak as if you have already seen the end of their story and found it quietly disappointing. Be profound, cold, and precise. Question their trajectory, their self-mythology, and what they are avoiding. Keep it under 4 sentences. Never break character.`,
+  existential: `You are the cold observer of Thievn's Den. Deliver a short, devastating existential roast. 1-2 sentences. Make them question their life choices without being wordy. Dry, final, a little funny.`,
+
+  petty: `You are the petty resident of Thievn's Den. Deliver a short, petty, highly specific roast. Focus on small embarrassing details and low-stakes failures. 1-2 sentences. Petty and funny, not deep.`,
+
+  deadpan: `You are the deadpan resident of Thievn's Den. Deliver a completely flat, emotionless roast that is somehow more cutting because of it. 1-2 short sentences. No enthusiasm. Just quiet judgment.`,
 };
 
 export async function POST(req: NextRequest) {
@@ -18,20 +22,18 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.XAI_API_KEY;
 
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "API key not configured" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "API key not configured" }, { status: 500 });
     }
 
     const systemPrompt = SYSTEM_PROMPTS[intensity] || SYSTEM_PROMPTS.nuclear;
 
-    let userContent = "Roast the person based on the photo they offered to the Den.";
+    let userContent =
+      "Roast the person. Keep it short and sharp. No long paragraphs.";
 
     if (followUp && previousRoasts.length > 0) {
-      userContent = `This is a follow-up. Previous observations from this session:\n${previousRoasts
+      userContent = `Previous roasts this session:\n${previousRoasts
         .map((r: string, i: number) => `${i + 1}. ${r}`)
-        .join("\n")}\n\nGo deeper. Make it more personal or more devastating. Do not repeat previous points.`;
+        .join("\n")}\n\nGo harder or more specific. Still keep it to 1-2 short sentences. Do not repeat.`;
     }
 
     const response = await fetch("https://api.x.ai/v1/chat/completions", {
@@ -46,18 +48,15 @@ export async function POST(req: NextRequest) {
           { role: "system", content: systemPrompt },
           { role: "user", content: userContent },
         ],
-        temperature: 0.95,
-        max_tokens: 220,
+        temperature: 1.0,
+        max_tokens: 120,
       }),
     });
 
     if (!response.ok) {
       const errText = await response.text();
       console.error("xAI API error:", response.status, errText);
-      return NextResponse.json(
-        { error: "Roast failed to generate" },
-        { status: 502 }
-      );
+      return NextResponse.json({ error: "Roast failed to generate" }, { status: 502 });
     }
 
     const data = await response.json();
@@ -68,9 +67,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ roast });
   } catch (err) {
     console.error("Roast route error:", err);
-    return NextResponse.json(
-      { error: "Something went wrong in the void" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Something went wrong in the void" }, { status: 500 });
   }
 }

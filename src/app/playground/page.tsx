@@ -49,6 +49,14 @@ export default function PlaygroundPage() {
   const [cameraActive, setCameraActive] = useState(false);
   const streamRef = useRef<MediaStream | null>(null);
 
+  // Attach stream once the video element is actually in the DOM
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraActive]);
+
   useEffect(() => {
     return () => {
       if (streamRef.current) {
@@ -71,27 +79,31 @@ export default function PlaygroundPage() {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
+        video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 720 } },
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      setCameraActive(true);
+      setCameraActive(true); // video mounts, then useEffect attaches the stream
     } catch {
       alert("Camera access denied or unavailable.");
     }
   };
 
   const captureSelfie = () => {
-    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return;
+
     const canvas = document.createElement("canvas");
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    ctx.drawImage(videoRef.current, 0, 0);
+
+    // Mirror the capture to match the preview
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0);
+
     const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
     setImage(dataUrl);
     stopCamera();
@@ -105,6 +117,9 @@ export default function PlaygroundPage() {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     setCameraActive(false);
   };
@@ -194,7 +209,6 @@ export default function PlaygroundPage() {
               </button>
             </div>
 
-            {/* No capture attribute = opens file/gallery picker on mobile */}
             <input
               ref={fileRef}
               type="file"
@@ -217,7 +231,7 @@ export default function PlaygroundPage() {
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-full object-cover scale-x-[-1]"
+                className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
               />
             </div>
             <div className="flex gap-3 mt-4 justify-center">

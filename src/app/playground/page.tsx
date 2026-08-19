@@ -31,12 +31,59 @@ const FILTHY_MODES: { id: FilthyMode; label: string }[] = [
 ];
 
 function getRarity(score: number) {
-  if (score >= 9.6) return { name: "Legendary", border: "border-amber-400/80 shadow-[0_0_28px_-4px_rgba(251,191,36,0.45)]", text: "text-amber-300" };
-  if (score >= 9.0) return { name: "Epic", border: "border-red-500/70 shadow-[0_0_24px_-4px_rgba(239,68,68,0.4)]", text: "text-red-300" };
-  if (score >= 8.0) return { name: "Rare", border: "border-rose-600/60 shadow-[0_0_18px_-6px_rgba(225,29,72,0.35)]", text: "text-rose-300" };
-  if (score >= 6.0) return { name: "Uncommon", border: "border-purple-600/50 shadow-[0_0_14px_-6px_rgba(147,51,234,0.3)]", text: "text-purple-300" };
-  if (score >= 4.0) return { name: "Common", border: "border-neutral-600/60", text: "text-neutral-400" };
-  return { name: "Trash", border: "border-neutral-700/50", text: "text-neutral-500" };
+  if (score >= 9.6)
+    return {
+      name: "Legendary",
+      border: "border-amber-400/90",
+      glow: "shadow-[0_0_32px_-4px_rgba(251,191,36,0.5)]",
+      text: "text-amber-300",
+      bar: "from-amber-500 to-amber-300",
+      bg: "from-amber-950/40 via-[#0c0c0c] to-[#0c0c0c]",
+    };
+  if (score >= 9.0)
+    return {
+      name: "Epic",
+      border: "border-red-500/80",
+      glow: "shadow-[0_0_28px_-4px_rgba(239,68,68,0.45)]",
+      text: "text-red-300",
+      bar: "from-red-500 to-rose-400",
+      bg: "from-red-950/40 via-[#0c0c0c] to-[#0c0c0c]",
+    };
+  if (score >= 8.0)
+    return {
+      name: "Rare",
+      border: "border-rose-500/70",
+      glow: "shadow-[0_0_22px_-6px_rgba(225,29,72,0.4)]",
+      text: "text-rose-300",
+      bar: "from-rose-600 to-pink-400",
+      bg: "from-rose-950/35 via-[#0c0c0c] to-[#0c0c0c]",
+    };
+  if (score >= 6.0)
+    return {
+      name: "Uncommon",
+      border: "border-purple-500/60",
+      glow: "shadow-[0_0_18px_-6px_rgba(147,51,234,0.35)]",
+      text: "text-purple-300",
+      bar: "from-purple-600 to-violet-400",
+      bg: "from-purple-950/30 via-[#0c0c0c] to-[#0c0c0c]",
+    };
+  if (score >= 4.0)
+    return {
+      name: "Common",
+      border: "border-neutral-500/50",
+      glow: "",
+      text: "text-neutral-400",
+      bar: "from-neutral-500 to-neutral-400",
+      bg: "from-neutral-900/40 via-[#0c0c0c] to-[#0c0c0c]",
+    };
+  return {
+    name: "Trash",
+    border: "border-neutral-700/40",
+    glow: "",
+    text: "text-neutral-500",
+    bar: "from-neutral-700 to-neutral-600",
+    bg: "from-neutral-900/20 via-[#0c0c0c] to-[#0c0c0c]",
+  };
 }
 
 export default function PlaygroundPage() {
@@ -231,14 +278,13 @@ export default function PlaygroundPage() {
         {/* SETUP */}
         {stage === "setup" && image && (
           <div className="p-5 sm:p-7 space-y-6">
-            <div className="relative aspect-square max-w-[180px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
+            <div className="relative aspect-square max-w-[200px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={image} alt="Subject" className="w-full h-full object-cover" />
             </div>
 
             {error && <p className="text-center text-sm text-red-400">{error}</p>}
 
-            {/* Style */}
             <div>
               <p className="text-xs text-neutral-500 mb-2.5 text-center uppercase tracking-wide">Judgment style</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -267,9 +313,8 @@ export default function PlaygroundPage() {
               </div>
             </div>
 
-            {/* Filthy sub-mode */}
             {style === "filthy" && (
-              <div className="animate-fade-in-up">
+              <div>
                 <p className="text-xs text-neutral-500 mb-2.5 text-center uppercase tracking-wide">Filthy direction</p>
                 <div className="grid grid-cols-3 gap-2">
                   {FILTHY_MODES.map((m) => (
@@ -289,7 +334,6 @@ export default function PlaygroundPage() {
               </div>
             )}
 
-            {/* Focus */}
             <div>
               <p className="text-xs text-neutral-500 mb-2.5 text-center uppercase tracking-wide">Focus</p>
               <div className="flex flex-wrap gap-2 justify-center">
@@ -336,32 +380,64 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* RESULT */}
+        {/* RESULT — TCG / Collectible Card */}
         {stage === "result" && verdict && score !== null && rarity && image && (
-          <div className="p-5 sm:p-7 space-y-5">
-            <div className={`relative aspect-square max-w-[150px] mx-auto rounded-xl overflow-hidden border-2 ${rarity.border} transition-all duration-500`}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image} alt="Subject" className="w-full h-full object-cover" />
-            </div>
-
-            <div className="text-center">
-              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${rarity.border} mb-3`}>
-                <span className={`text-lg font-semibold tabular-nums ${rarity.text}`}>{score.toFixed(1)}</span>
-                <span className="text-[10px] uppercase tracking-wider text-neutral-500">{rarity.name}</span>
+          <div className="p-4 sm:p-6 space-y-5">
+            {/* The Card */}
+            <div
+              className={`relative mx-auto w-full max-w-[320px] sm:max-w-[340px] rounded-2xl border-2 ${rarity.border} ${rarity.glow} bg-gradient-to-b ${rarity.bg} overflow-hidden transition-all duration-500`}
+            >
+              {/* Top bar with rarity + score */}
+              <div className="flex items-center justify-between px-3 pt-3 pb-2">
+                <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${rarity.text}`}>
+                  {rarity.name}
+                </span>
+                <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/40 border ${rarity.border}`}>
+                  <span className={`text-sm font-bold tabular-nums ${rarity.text}`}>{score.toFixed(1)}</span>
+                  <span className="text-[9px] text-neutral-500">/10</span>
+                </div>
               </div>
+
+              {/* Image frame — larger and properly fitted */}
+              <div className="px-3">
+                <div className={`relative aspect-[3/4] w-full rounded-xl overflow-hidden border ${rarity.border} bg-black`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image}
+                    alt="Subject"
+                    className="absolute inset-0 w-full h-full object-cover object-center"
+                  />
+                  {/* Subtle inner vignette */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Style / Focus tags */}
+              <div className="px-3 pt-2.5 flex flex-wrap gap-1.5">
+                <span className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-black/50 text-neutral-400 border border-neutral-800">
+                  {STYLES.find((s) => s.id === style)?.label}
+                </span>
+                {style === "filthy" && (
+                  <span className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-red-950/60 text-red-300/90 border border-red-900/40">
+                    {FILTHY_MODES.find((m) => m.id === filthyMode)?.label}
+                  </span>
+                )}
+                <span className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-black/50 text-neutral-400 border border-neutral-800">
+                  {FOCUSES.find((f) => f.id === focus)?.label}
+                </span>
+              </div>
+
+              {/* Verdict text */}
+              <div className="px-3 pt-2.5 pb-4">
+                <p className="text-[13px] sm:text-sm text-neutral-200 leading-relaxed">{verdict}</p>
+              </div>
+
+              {/* Bottom accent bar */}
+              <div className={`h-1 w-full bg-gradient-to-r ${rarity.bar} opacity-80`} />
             </div>
 
-            <div className={`p-5 rounded-xl bg-gradient-to-br from-red-950/20 to-purple-950/15 border ${rarity.border}`}>
-              <p className="text-[10px] uppercase tracking-wider text-purple-400/70 mb-2">
-                {STYLES.find((s) => s.id === style)?.label}
-                {style === "filthy" ? ` · ${FILTHY_MODES.find((m) => m.id === filthyMode)?.label}` : ""}
-                {" · "}
-                {FOCUSES.find((f) => f.id === focus)?.label}
-              </p>
-              <p className="text-neutral-100 leading-relaxed text-[15px]">{verdict}</p>
-            </div>
-
-            <div className="flex flex-wrap gap-2 justify-center">
+            {/* Actions under the card */}
+            <div className="flex flex-wrap gap-2 justify-center pt-1">
               <button
                 onClick={() => judge(true)}
                 disabled={loading}
@@ -378,7 +454,7 @@ export default function PlaygroundPage() {
               </button>
             </div>
 
-            <div className="pt-1 flex gap-2">
+            <div className="flex gap-2">
               <button
                 onClick={() => {
                   setStage("setup");

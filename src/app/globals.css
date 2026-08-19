@@ -5,9 +5,9 @@
   --foreground: #e8e8e8;
   --card: #111111;
   --card-hover: #181818;
-  --accent: #b91c5c;          /* deeper crimson-purple */
+  --accent: #b91c5c;
   --accent-soft: #7c1d4a;
-  --purple: #7c3aed;         /* subtle purple */
+  --purple: #7c3aed;
   --purple-soft: #5b21b6;
   --muted: #9a9a9a;
   --border: #222222;
@@ -24,6 +24,7 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -32,6 +33,7 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Custom scrollbar */
@@ -61,7 +63,14 @@ body {
   box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.6);
 }
 
-/* Subtle mixed glow (red + purple) */
+@media (hover: none) {
+  .card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* Subtle mixed glow */
 .glow-accent {
   box-shadow: 0 0 40px -10px rgba(185, 28, 92, 0.22),
               0 0 60px -20px rgba(124, 58, 237, 0.12);
@@ -124,4 +133,11 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 1;
+}
+
+/* Better touch targets on mobile */
+@media (max-width: 640px) {
+  button, a {
+    min-height: 44px;
+  }
 }

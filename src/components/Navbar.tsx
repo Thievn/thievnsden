@@ -18,12 +18,12 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-neutral-900/80 bg-[#070707]/75 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-neutral-900/80 bg-[#070707]/80 backdrop-blur-xl">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2.5 group">
+        <div className="flex items-center justify-between h-14 sm:h-16">
+          <Link href="/" className="flex items-center gap-2 group" onClick={() => setOpen(false)}>
             <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 group-hover:from-red-400 group-hover:to-purple-400 transition-all shadow-[0_0_10px_rgba(185,28,92,0.5)]" />
-            <span className="text-[17px] font-semibold tracking-tight text-neutral-100 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-red-300 group-hover:to-purple-300 transition-all duration-200">
+            <span className="text-base sm:text-[17px] font-semibold tracking-tight text-neutral-100 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-red-300 group-hover:to-purple-300 transition-all duration-200">
               Thievn&apos;s Den
             </span>
           </Link>
@@ -33,9 +33,9 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
+                className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
                   pathname === link.href
-                    ? "text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 bg-red-950/30"
+                    ? "text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400"
                     : "text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/60"
                 }`}
               >
@@ -44,7 +44,7 @@ export function Navbar() {
             ))}
             <Link
               href="/join"
-              className="ml-3 px-3.5 py-1.5 rounded-lg text-[13px] font-medium border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 hover:bg-neutral-900/40 transition-all duration-200"
+              className="ml-2 px-3 py-1.5 rounded-lg text-[13px] font-medium border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 hover:bg-neutral-900/40 transition-all duration-200"
             >
               Join
             </Link>
@@ -52,7 +52,7 @@ export function Navbar() {
 
           <button
             onClick={() => setOpen(!open)}
-            className="md:hidden p-2 rounded-lg text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900 transition-colors"
+            className="md:hidden p-2 -mr-2 rounded-lg text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900 transition-colors"
             aria-label="Toggle menu"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,15 +66,15 @@ export function Navbar() {
         </div>
 
         {open && (
-          <nav className="md:hidden pb-4 space-y-0.5 animate-fade-in-up">
+          <nav className="md:hidden pb-4 space-y-1 border-t border-neutral-900/60 pt-3">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setOpen(false)}
-                className={`block px-3.5 py-2.5 rounded-lg text-sm font-medium ${
+                className={`block px-3 py-2.5 rounded-lg text-sm font-medium ${
                   pathname === link.href
-                    ? "text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400"
+                    ? "text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 bg-red-950/20"
                     : "text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900"
                 }`}
               >
@@ -84,7 +84,7 @@ export function Navbar() {
             <Link
               href="/join"
               onClick={() => setOpen(false)}
-              className="block px-3.5 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-neutral-100"
+              className="block px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-neutral-100"
             >
               Join the Den
             </Link>

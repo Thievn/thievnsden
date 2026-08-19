@@ -1,41 +1,74 @@
 import Link from "next/link";
 
 export default function LootPage() {
-  // Placeholder items — replace image paths later with real Canva exports
-  // Recommended folder: /public/loot/
+  // Sample items for the Loot collection
+  // Replace image paths later with real files in /public/loot/
   const items = [
     {
-      id: "item-1",
-      name: "Example Item One",
-      category: "Tools",
-      short: "Something that actually earned a permanent spot in the Den.",
+      id: "corsair-case",
+      name: "Corsair 4000D / Frame Series",
+      category: "PC Builds",
+      short: "Clean case that doesn’t scream “gamer” from across the room.",
       review:
-        "Honest take goes here. Keep it short, a little cynical, and useful. Link below goes to the real product.",
-      image: null, // later: "/loot/item-1.png"
+        "Solid airflow, good cable management space, and it doesn’t look like a Christmas tree. One of the few cases that still looks intentional after you actually build in it.",
+      image: null, // later: "/loot/corsair-case.png"
       link: "#",
-      status: "Coming soon",
+      status: "In the Den",
     },
     {
-      id: "item-2",
-      name: "Example Item Two",
-      category: "Gaming",
-      short: "Another thing that survived the cut.",
+      id: "rog-gpu",
+      name: "ASUS ROG / NVIDIA RTX",
+      category: "PC Builds",
+      short: "The card that actually does the heavy lifting.",
       review:
-        "Placeholder review. When the real Canva card is ready, drop the image in /public/loot/ and update the path.",
+        "Whatever the current high-end ROG or Founders Edition card is. Power hungry, expensive, and still the reason the rest of the build exists. Worth it if you actually use it.",
       image: null,
       link: "#",
-      status: "Coming soon",
+      status: "In the Den",
     },
     {
-      id: "item-3",
-      name: "Example Item Three",
+      id: "anime-figure-1",
+      name: "Anime Figure – Sitting Pose",
       category: "Anime / Merch",
-      short: "Looks good on a shelf. Doesn’t feel like pure consumerism… mostly.",
+      short: "Shelf presence without taking over the entire room.",
       review:
-        "Short review text. The card below is structured so a Canva review graphic can sit on top later if you want.",
+        "Clean sculpt, decent paint, and it doesn’t look like it was rushed out the door. One of the few figures that still looks good after the initial hype dies.",
       image: null,
       link: "#",
-      status: "Coming soon",
+      status: "In the Den",
+    },
+    {
+      id: "gaming-headset",
+      name: "Wireless Gaming Headset",
+      category: "Gaming",
+      short: "The one that stayed after the others got returned.",
+      review:
+        "Comfortable enough for long sessions, mic doesn’t sound like a tin can, and the battery lasts longer than my patience. Not perfect, but it earned its spot.",
+      image: null,
+      link: "#",
+      status: "In the Den",
+    },
+    {
+      id: "mech-keyboard",
+      name: "60% / Compact Mechanical Keyboard",
+      category: "Gaming",
+      short: "Smaller footprint, still satisfying to type on.",
+      review:
+        "RGB can be dialed back or turned off. The switches feel good and it doesn’t dominate the desk. One of the few keyboards that survived the rotation.",
+      image: null,
+      link: "#",
+      status: "In the Den",
+    },
+    {
+      id: "anime-figure-2",
+      name: "Anime Figure – Dual Character",
+      category: "Anime / Merch",
+      short: "Two characters, one base, less shelf real estate wasted.",
+      review:
+        "Better than average paint apps and the poses work together. Still a luxury item, but at least it doesn’t feel completely hollow.",
+      image: null,
+      link: "#",
+      status: "In the Den",
     },
   ];
 
@@ -47,10 +80,8 @@ export default function LootPage() {
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-16 md:py-20">
         {/* ===== BANNER AREA ===== */}
-        {/* Drop a Canva banner here later as /public/loot/banner.png */}
         <div className="mb-14 rounded-2xl overflow-hidden border border-neutral-800/80 bg-[#0d0d0d]">
           <div className="relative aspect-[3/1] sm:aspect-[3.5/1] flex items-center justify-center">
-            {/* Placeholder banner content */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#0c0c0c] via-[#111] to-[#0a0a0a]" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_40%,_rgba(185,28,92,0.12)_0%,_transparent_50%)]" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_60%,_rgba(124,58,237,0.08)_0%,_transparent_50%)]" />
@@ -66,19 +97,15 @@ export default function LootPage() {
                 Things that actually earned a place. No fake top-10 lists.
               </p>
             </div>
-
-            {/* Tiny indicator that this is a banner slot */}
-            <div className="absolute bottom-3 right-4 text-[10px] text-neutral-700 tracking-wide">
-              Banner slot · replace with Canva export
-            </div>
           </div>
         </div>
 
         {/* ===== INTRO ===== */}
         <div className="mb-12 max-w-2xl">
           <p className="text-neutral-400 leading-relaxed">
-            This is a private collection, not a storefront. Everything here is something I&apos;ve used,
-            tested, or kept around for a reason. Click an item for the real take and a link if you want it.
+            This is a private collection, not a storefront. PC parts that survived multiple builds,
+            figures that still look good after the hype dies, and gear that didn’t get returned.
+            Click an item for the real take.
           </p>
         </div>
 
@@ -89,7 +116,7 @@ export default function LootPage() {
               key={item.id}
               className="card group rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden flex flex-col"
             >
-              {/* Image area — drop Canva card or product photo here later */}
+              {/* Image area */}
               <div className="relative aspect-[4/3] bg-[#0a0a0a] border-b border-neutral-800/60 flex items-center justify-center">
                 {item.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -103,7 +130,7 @@ export default function LootPage() {
                     <div className="w-12 h-12 mx-auto mb-3 rounded-full border border-neutral-800 flex items-center justify-center">
                       <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-60" />
                     </div>
-                    <p className="text-xs text-neutral-600">Image / Canva card</p>
+                    <p className="text-xs text-neutral-600">Image coming</p>
                   </div>
                 )}
               </div>
@@ -124,9 +151,8 @@ export default function LootPage() {
                   {item.short}
                 </p>
 
-                {/* This can later expand into a full review view or modal */}
                 <div className="pt-3 border-t border-neutral-800/60">
-                  <p className="text-xs text-neutral-600 mb-3 line-clamp-2">
+                  <p className="text-xs text-neutral-600 mb-3 line-clamp-3">
                     {item.review}
                   </p>
                   <a
@@ -147,8 +173,8 @@ export default function LootPage() {
         {/* ===== NOTE ===== */}
         <div className="rounded-2xl border border-neutral-800/80 bg-[#0d0d0d] p-8 text-center">
           <p className="text-neutral-500 text-sm max-w-lg mx-auto leading-relaxed">
-            Real product cards and Canva review graphics will land here.
-            Structure is ready — just drop the images into <code className="text-neutral-400">/public/loot/</code> and update the paths.
+            Real product photos and Canva review cards will replace the placeholders.
+            Drop images into <code className="text-neutral-400">/public/loot/</code> when ready.
           </p>
         </div>
       </div>

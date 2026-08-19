@@ -64,7 +64,7 @@ export default function ThoughtsPage() {
           <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-50 mb-3">
             Thoughts
           </h1>
-          <p className="text-neutral-500 text-sm sm:text-base max-w-lg leading-relaxed">
+          <p className="text-neutral-400 text-sm sm:text-base max-w-lg leading-relaxed">
             Things people usually keep to themselves. Written without the usual polish.
           </p>
         </div>
@@ -76,17 +76,17 @@ export default function ThoughtsPage() {
               href={`/thoughts/${thought.slug}`}
               className="group block p-5 sm:p-6 rounded-2xl border border-neutral-800/80 bg-[#111] hover:bg-[#141414] hover:border-neutral-700 transition-all duration-200"
             >
-              <div className="flex items-center gap-3 mb-2.5 text-[11px] text-neutral-600">
-                <span>{thought.date}</span>
-                <span className="w-1 h-1 rounded-full bg-neutral-700" />
-                <span>{thought.readTime} read</span>
+              <div className="flex items-center gap-3 mb-2.5 text-[12px]">
+                <span className="text-red-400/80">{thought.date}</span>
+                <span className="w-1 h-1 rounded-full bg-purple-800/60" />
+                <span className="text-purple-400/80">{thought.readTime} read</span>
               </div>
 
               <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-300 transition-colors duration-200 leading-snug">
                 {thought.title}
               </h2>
 
-              <p className="text-neutral-500 text-sm leading-relaxed line-clamp-2">
+              <p className="text-neutral-400 text-sm leading-relaxed line-clamp-2">
                 {thought.excerpt}
               </p>
             </Link>
@@ -94,7 +94,7 @@ export default function ThoughtsPage() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-neutral-900 text-center">
-          <p className="text-neutral-600 text-sm">
+          <p className="text-neutral-500 text-sm">
             More coming. The Den doesn’t run out of things to say.
           </p>
         </div>

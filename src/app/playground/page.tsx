@@ -159,6 +159,7 @@ export default function PlaygroundPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+      {/* Header */}
       <div className="mb-8 sm:mb-10 text-center">
         <p className="text-[11px] uppercase tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 mb-2 font-medium">
           The Void Mirror
@@ -172,6 +173,7 @@ export default function PlaygroundPage() {
       </div>
 
       <div className="rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden">
+        {/* Idle state - upload or camera */}
         {stage === "idle" && !cameraActive && (
           <div className="p-6 sm:p-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -209,6 +211,7 @@ export default function PlaygroundPage() {
           </div>
         )}
 
+        {/* Camera view */}
         {cameraActive && (
           <div className="p-4 sm:p-6">
             <div className="relative aspect-square max-w-sm mx-auto rounded-xl overflow-hidden border border-neutral-800 bg-black">
@@ -237,6 +240,7 @@ export default function PlaygroundPage() {
           </div>
         )}
 
+        {/* Ready - intensity selection */}
         {stage === "ready" && image && (
           <div className="p-5 sm:p-7 space-y-6">
             <div className="relative aspect-square max-w-[220px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
@@ -244,9 +248,7 @@ export default function PlaygroundPage() {
               <img src={image} alt="Your offering" className="w-full h-full object-cover" />
             </div>
 
-            {error && (
-              <p className="text-center text-sm text-red-400">{error}</p>
-            )}
+            {error && <p className="text-center text-sm text-red-400">{error}</p>}
 
             <div>
               <p className="text-xs text-neutral-500 mb-3 text-center uppercase tracking-wide">
@@ -266,16 +268,10 @@ export default function PlaygroundPage() {
                           : "border-neutral-800 hover:border-neutral-700"
                       }`}
                     >
-                      <div
-                        className={`text-xs font-medium ${
-                          active ? "text-red-300" : "text-neutral-300"
-                        }`}
-                      >
+                      <div className={`text-xs font-medium ${active ? "text-red-300" : "text-neutral-300"}`}>
                         {config.label}
                       </div>
-                      <div className="text-[10px] text-neutral-600 mt-0.5 leading-tight">
-                        {config.desc}
-                      </div>
+                      <div className="text-[10px] text-neutral-600 mt-0.5 leading-tight">{config.desc}</div>
                     </button>
                   );
                 })}
@@ -290,15 +286,13 @@ export default function PlaygroundPage() {
               Enter the Mirror
             </button>
 
-            <button
-              onClick={reset}
-              className="w-full py-2 text-xs text-neutral-600 hover:text-neutral-400"
-            >
+            <button onClick={reset} className="w-full py-2 text-xs text-neutral-600 hover:text-neutral-400">
               Choose different photo
             </button>
           </div>
         )}
 
+        {/* Roasting / loading */}
         {stage === "roasting" && (
           <div className="p-10 sm:p-14 text-center">
             <div className="w-12 h-12 mx-auto mb-5 rounded-full border border-purple-900/40 flex items-center justify-center">
@@ -309,6 +303,7 @@ export default function PlaygroundPage() {
           </div>
         )}
 
+        {/* Result */}
         {stage === "result" && currentRoast && image && (
           <div className="p-5 sm:p-7 space-y-5">
             <div className="relative aspect-square max-w-[180px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
@@ -374,12 +369,11 @@ export default function PlaygroundPage() {
           </div>
         )}
 
+        {/* Profile */}
         {stage === "profile" && (
           <div className="p-6 sm:p-8 space-y-5">
             <div className="text-center">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-purple-400/80 mb-2">
-                From the Den
-              </p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-purple-400/80 mb-2">From the Den</p>
               <h2 className="text-lg font-medium text-neutral-100">Psychological Profile</h2>
             </div>
 

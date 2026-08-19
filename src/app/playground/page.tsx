@@ -159,7 +159,6 @@ export default function PlaygroundPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-      {/* Header */}
       <div className="mb-8 sm:mb-10 text-center">
         <p className="text-[11px] uppercase tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 mb-2 font-medium">
           The Void Mirror
@@ -173,7 +172,6 @@ export default function PlaygroundPage() {
       </div>
 
       <div className="rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden">
-        {/* Idle state - upload or camera */}
         {stage === "idle" && !cameraActive && (
           <div className="p-6 sm:p-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -183,7 +181,7 @@ export default function PlaygroundPage() {
               >
                 <span className="text-2xl opacity-60">↑</span>
                 <span className="text-sm text-neutral-300 font-medium">Upload photo</span>
-                <span className="text-xs text-neutral-600">JPG or PNG</span>
+                <span className="text-xs text-neutral-600">Choose from gallery</span>
               </button>
 
               <button
@@ -196,11 +194,11 @@ export default function PlaygroundPage() {
               </button>
             </div>
 
+            {/* No capture attribute = opens file/gallery picker on mobile */}
             <input
               ref={fileRef}
               type="file"
               accept="image/*"
-              capture="user"
               onChange={handleFile}
               className="hidden"
             />
@@ -211,7 +209,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* Camera view */}
         {cameraActive && (
           <div className="p-4 sm:p-6">
             <div className="relative aspect-square max-w-sm mx-auto rounded-xl overflow-hidden border border-neutral-800 bg-black">
@@ -240,7 +237,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* Ready - intensity selection */}
         {stage === "ready" && image && (
           <div className="p-5 sm:p-7 space-y-6">
             <div className="relative aspect-square max-w-[220px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
@@ -292,7 +288,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* Roasting / loading */}
         {stage === "roasting" && (
           <div className="p-10 sm:p-14 text-center">
             <div className="w-12 h-12 mx-auto mb-5 rounded-full border border-purple-900/40 flex items-center justify-center">
@@ -303,7 +298,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* Result */}
         {stage === "result" && currentRoast && image && (
           <div className="p-5 sm:p-7 space-y-5">
             <div className="relative aspect-square max-w-[180px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
@@ -369,7 +363,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* Profile */}
         {stage === "profile" && (
           <div className="p-6 sm:p-8 space-y-5">
             <div className="text-center">

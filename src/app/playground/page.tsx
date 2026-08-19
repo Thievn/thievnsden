@@ -43,24 +43,24 @@ export default function PlaygroundPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-20">
-      <div className="mb-12 text-center">
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-50 mb-3">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+      <div className="mb-8 sm:mb-12 text-center">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-neutral-50 mb-2">
           Playground
         </h1>
-        <p className="text-neutral-500">
+        <p className="text-neutral-500 text-sm sm:text-base">
           Fun little tools. Starting with a classic.
         </p>
       </div>
 
-      <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-7 sm:p-9 glow-accent">
-        <div className="flex items-center gap-4 mb-7">
-          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-red-950/60 to-purple-950/50 border border-purple-900/30 flex items-center justify-center text-transparent bg-clip-text bg-gradient-to-b from-red-300 to-purple-300 text-sm font-semibold">
+      <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 sm:p-8 glow-accent">
+        <div className="flex items-center gap-3 sm:gap-4 mb-6">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-red-950/60 to-purple-950/50 border border-purple-900/30 flex items-center justify-center text-sm font-semibold text-red-300">
             R
           </div>
           <div>
-            <h2 className="text-lg font-medium text-neutral-100">Roast Me</h2>
-            <p className="text-sm text-neutral-500">
+            <h2 className="text-base sm:text-lg font-medium text-neutral-100">Roast Me</h2>
+            <p className="text-xs sm:text-sm text-neutral-500">
               Upload a selfie. Receive a dark, cynical roast.
             </p>
           </div>
@@ -69,9 +69,9 @@ export default function PlaygroundPage() {
         {!image ? (
           <div
             onClick={() => fileRef.current?.click()}
-            className="border border-dashed border-neutral-700 hover:border-neutral-500 rounded-xl p-12 text-center cursor-pointer transition-all duration-200 hover:bg-neutral-900/30"
+            className="border border-dashed border-neutral-700 hover:border-neutral-500 rounded-xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-200 hover:bg-neutral-900/30 active:scale-[0.99]"
           >
-            <p className="text-neutral-400 mb-1.5">Click to upload a photo</p>
+            <p className="text-neutral-400 mb-1 text-sm sm:text-base">Tap to upload a photo</p>
             <p className="text-xs text-neutral-600">JPG or PNG • stays in your browser</p>
             <input
               ref={fileRef}
@@ -82,8 +82,8 @@ export default function PlaygroundPage() {
             />
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="relative aspect-square max-w-[280px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
+          <div className="space-y-5">
+            <div className="relative aspect-square max-w-[240px] sm:max-w-[280px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={image}
@@ -93,8 +93,8 @@ export default function PlaygroundPage() {
             </div>
 
             {roast ? (
-              <div className="p-6 rounded-xl bg-gradient-to-br from-red-950/20 to-purple-950/15 border border-purple-900/20">
-                <p className="text-neutral-200 leading-relaxed italic text-[15px]">
+              <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-br from-red-950/20 to-purple-950/15 border border-purple-900/20">
+                <p className="text-neutral-200 leading-relaxed italic text-sm sm:text-[15px]">
                   “{roast}”
                 </p>
               </div>
@@ -117,14 +117,10 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        <p className="mt-7 text-xs text-neutral-600 text-center">
-          Mock roast for now. Real AI can be wired later. Photos never leave your device.
+        <p className="mt-6 text-xs text-neutral-600 text-center">
+          Mock roast for now. Photos never leave your device.
         </p>
       </div>
-
-      <p className="mt-12 text-center text-sm text-neutral-600">
-        More tools will appear here over time.
-      </p>
     </div>
   );
 }

@@ -86,6 +86,50 @@ function getRarity(score: number) {
   };
 }
 
+// Convert blob URL or any image source to a compressed data URL
+async function toDataUrl(src: string): Promise<string> {
+  if (src.startsWith("data:")) return src;
+
+  const response = await fetch(src);
+  const blob = await response.blob();
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      // Further compress if needed via canvas
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxSize = 1024;
+        let { width, height } = img;
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = Math.round((height * maxSize) / width);
+            width = maxSize;
+          } else {
+            width = Math.round((width * maxSize) / height);
+            height = maxSize;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(result);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.8));
+      };
+      img.onerror = () => resolve(result);
+      img.src = result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 export default function PlaygroundPage() {
   const [stage, setStage] = useState<Stage>("idle");
   const [image, setImage] = useState<string | null>(null);
@@ -176,6 +220,9 @@ export default function PlaygroundPage() {
     setStage("judging");
 
     try {
+      // Convert to data URL so the API can actually see the photo
+      const dataUrl = await toDataUrl(image);
+
       const res = await fetch("/api/roast", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -185,6 +232,7 @@ export default function PlaygroundPage() {
           filthyMode: style === "filthy" ? filthyMode : undefined,
           followUp: isFollowUp,
           previous: isFollowUp ? previous : [],
+          image: dataUrl,
         }),
       });
 
@@ -232,7 +280,6 @@ export default function PlaygroundPage() {
       </div>
 
       <div className="rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden shadow-[0_0_40px_-12px_rgba(185,28,92,0.15)]">
-        {/* IDLE */}
         {stage === "idle" && !cameraActive && (
           <div className="p-6 sm:p-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -258,7 +305,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* CAMERA */}
         {cameraActive && (
           <div className="p-4 sm:p-6">
             <div className="relative aspect-square max-w-sm mx-auto rounded-xl overflow-hidden border border-neutral-800 bg-black">
@@ -275,7 +321,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* SETUP */}
         {stage === "setup" && image && (
           <div className="p-5 sm:p-7 space-y-6">
             <div className="relative aspect-square max-w-[200px] mx-auto rounded-xl overflow-hidden border border-neutral-800">
@@ -367,7 +412,6 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* JUDGING */}
         {stage === "judging" && (
           <div className="p-12 sm:p-16 text-center">
             <div className="relative w-14 h-14 mx-auto mb-6">
@@ -380,14 +424,11 @@ export default function PlaygroundPage() {
           </div>
         )}
 
-        {/* RESULT — TCG / Collectible Card */}
         {stage === "result" && verdict && score !== null && rarity && image && (
           <div className="p-4 sm:p-6 space-y-5">
-            {/* The Card */}
             <div
               className={`relative mx-auto w-full max-w-[320px] sm:max-w-[340px] rounded-2xl border-2 ${rarity.border} ${rarity.glow} bg-gradient-to-b ${rarity.bg} overflow-hidden transition-all duration-500`}
             >
-              {/* Top bar with rarity + score */}
               <div className="flex items-center justify-between px-3 pt-3 pb-2">
                 <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${rarity.text}`}>
                   {rarity.name}
@@ -398,21 +439,14 @@ export default function PlaygroundPage() {
                 </div>
               </div>
 
-              {/* Image frame — larger and properly fitted */}
               <div className="px-3">
                 <div className={`relative aspect-[3/4] w-full rounded-xl overflow-hidden border ${rarity.border} bg-black`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={image}
-                    alt="Subject"
-                    className="absolute inset-0 w-full h-full object-cover object-center"
-                  />
-                  {/* Subtle inner vignette */}
+                  <img src={image} alt="Subject" className="absolute inset-0 w-full h-full object-cover object-center" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none" />
                 </div>
               </div>
 
-              {/* Style / Focus tags */}
               <div className="px-3 pt-2.5 flex flex-wrap gap-1.5">
                 <span className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-black/50 text-neutral-400 border border-neutral-800">
                   {STYLES.find((s) => s.id === style)?.label}
@@ -427,16 +461,13 @@ export default function PlaygroundPage() {
                 </span>
               </div>
 
-              {/* Verdict text */}
               <div className="px-3 pt-2.5 pb-4">
                 <p className="text-[13px] sm:text-sm text-neutral-200 leading-relaxed">{verdict}</p>
               </div>
 
-              {/* Bottom accent bar */}
               <div className={`h-1 w-full bg-gradient-to-r ${rarity.bar} opacity-80`} />
             </div>
 
-            {/* Actions under the card */}
             <div className="flex flex-wrap gap-2 justify-center pt-1">
               <button
                 onClick={() => judge(true)}

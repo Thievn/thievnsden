@@ -4,16 +4,15 @@ import { writeAudit } from "@/lib/audit";
 import { getRarity } from "@/lib/gallery";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
-// Real-looking handles — names, flirty, ordinary internet usernames
 const FIRST = [
   "mia", "ava", "zoe", "chloe", "luna", "ivy", "nina", "ruby", "jade", "sienna",
   "kira", "elise", "nora", "wren", "tessa", "blair", "skye", "reese", "quinn", "harlow",
   "alex", "jordan", "casey", "riley", "morgan", "drew", "jamie", "cameron", "avery", "parker",
   "sam", "chris", "taylor", "jules", "remy", "finn", "cole", "dylan", "nate", "evan",
   "sophia", "emma", "olivia", "isabella", "amelia", "harper", "evelyn", "abigail", "ella", "scarlett",
-  "layla", "penelope", "aria", "chloe", "victoria", "madison", "grace", "chloe", "zoey", "lily",
+  "layla", "penelope", "aria", "victoria", "madison", "grace", "zoey", "lily",
 ];
 
 const LAST_BITS = [
@@ -22,9 +21,9 @@ const LAST_BITS = [
 ];
 
 const FLIRTY = [
-  "softlips", "afterhours", "notyourtype", "badidea", "almostlegal", "onemoredrink",
+  "softlips", "afterhours", "notyourtype", "badidea", "onemoredrink",
   "donttext", "lowkeyhot", "quiettrouble", "slowburn", "nightshift", "barelydressed",
-  "yourmove", "leftonread", "nofilterx", "justlooking", "maybe later", "boredtonight",
+  "yourmove", "leftonread", "nofilterx", "justlooking", "boredtonight",
 ];
 
 const STYLES = ["honest", "unhinged", "filthy", "petty", "deadpan"] as const;
@@ -32,26 +31,49 @@ const FOCUSES = ["overall", "face", "body", "tits", "ass", "vibe"] as const;
 const FILTHY = ["degrade", "worship", "mixed"] as const;
 
 const SETTINGS = [
-  "bedroom mirror selfie, soft lamp light",
-  "casual bathroom mirror selfie",
-  "beach daylight selfie",
-  "car selfie at night",
-  "bedroom lying down phone selfie",
-  "going-out outfit mirror shot",
-  "gym bag casual selfie",
-  "balcony evening selfie",
+  "bedroom mirror selfie, soft warm lamp light",
+  "casual bathroom mirror selfie, overhead light",
+  "beach daylight selfie, natural sun",
+  "car selfie at night, dashboard glow",
+  "bedroom lying down phone selfie, dim light",
+  "going-out outfit full-length mirror shot",
+  "casual indoor selfie near a window",
+  "balcony evening selfie, city lights soft",
 ];
 
 const OUTFITS = [
-  "casual t-shirt",
+  "casual fitted t-shirt",
   "simple tank top",
   "bikini",
   "lingerie set",
-  "hoodie",
+  "oversized hoodie",
   "crop top",
-  "button-up shirt half open",
+  "button-up shirt partially open",
   "sundress",
 ];
+
+const STYLE_PROMPTS: Record<string, string> = {
+  honest: `You are a blunt, observant judge in Thievn's Den. You can see the photo. Give an honest, human rating based on what you actually see. Be direct. Short and sharp — 1 to 2 sentences max.`,
+  unhinged: `You are the unhinged resident of Thievn's Den. You can see the photo. Full permission to swear, be dark, crude, and mean based on what is actually in the image. 1 to 2 short sentences. Make it hit.`,
+  filthy: `You are the filthy, explicit judge of Thievn's Den. You can see the photo. Rate the body and sexual energy with zero restraint based on what you see. You can be degrading, objectifying, or worshipful. Use real sexual language. Sound human. 1 to 2 short sentences max.`,
+  petty: `You are petty and specific. You can see the photo. Focus on small details visible in the image. Allow swearing. 1 to 2 short sentences.`,
+  deadpan: `You are completely flat and cold. You can see the photo. Deliver judgment based on what is visible with zero emotion. 1 to 2 sentences.`,
+};
+
+const FILTHY_SUB: Record<string, string> = {
+  degrade: `Lean hard into degradation and objectification based on the actual body and appearance in the photo.`,
+  worship: `Be explicitly positive and objectifying about what you see. Still filthy and direct.`,
+  mixed: `Mix degradation and desire based on what is actually in the photo.`,
+};
+
+const FOCUS_HINTS: Record<string, string> = {
+  overall: "Judge the whole package — face, body, and energy together.",
+  face: "Focus mainly on the face, expression, and how it lands.",
+  body: "Focus on overall body shape, proportions, and presence.",
+  tits: "Focus specifically on their chest. Be direct about what you see.",
+  ass: "Focus specifically on their ass and lower body. Be direct about what you see.",
+  vibe: "Focus on the energy and vibe they give off more than pure looks.",
+};
 
 function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -59,52 +81,113 @@ function pick<T>(arr: readonly T[]): T {
 
 function randomUsername() {
   const mode = Math.random();
-
-  // First + numbers (mia17, dylan04)
   if (mode < 0.35) {
     const n = Math.floor(Math.random() * 90) + 1;
     const pad = n < 10 ? `0${n}` : String(n);
     return `${pick(FIRST)}${Math.random() < 0.5 ? pad : n}`;
   }
-
-  // First + last bit (rubylyn, natewest)
-  if (mode < 0.55) {
-    return `${pick(FIRST)}${pick(LAST_BITS)}`;
-  }
-
-  // First_last or first.last style without the dot (avarae, jordanlee)
-  if (mode < 0.7) {
-    return `${pick(FIRST)}${pick(LAST_BITS)}${Math.floor(Math.random() * 9) + 1}`;
-  }
-
-  // Flirty handle, cleaned
+  if (mode < 0.55) return `${pick(FIRST)}${pick(LAST_BITS)}`;
+  if (mode < 0.7) return `${pick(FIRST)}${pick(LAST_BITS)}${Math.floor(Math.random() * 9) + 1}`;
   if (mode < 0.88) {
     const base = pick(FLIRTY).replace(/\s+/g, "");
-    if (Math.random() < 0.4) {
-      return `${base}${Math.floor(Math.random() * 40) + 1}`;
-    }
-    return base;
+    return Math.random() < 0.4 ? `${base}${Math.floor(Math.random() * 40) + 1}` : base;
   }
-
-  // x + name + year-ish
-  const year = 90 + Math.floor(Math.random() * 15);
-  return `${pick(FIRST)}${year}`;
+  return `${pick(FIRST)}${90 + Math.floor(Math.random() * 15)}`;
 }
 
-async function generateJudgmentText(opts: {
-  style: string;
-  focus: string;
-  filthyMode?: string;
+function buildImagePrompt(opts: {
+  ageBand: string;
   setting: string;
   outfit: string;
-  ageBand: string;
+  presentation: string;
 }) {
+  return [
+    "Photorealistic amateur phone selfie photo,",
+    `adult ${opts.presentation} looking ${opts.ageBand},`,
+    `wearing ${opts.outfit},`,
+    opts.setting + ",",
+    "shot on a real smartphone, natural skin texture, realistic pores,",
+    "slightly imperfect framing like a real selfie, natural lighting,",
+    "no makeup perfection, no studio lighting, no fashion catalog look,",
+    "no text, no watermark, no logo, not AI-looking, authentic candid selfie",
+  ].join(" ");
+}
+
+async function generateSelfieImage(prompt: string): Promise<{
+  b64: string;
+  dataUrl: string;
+}> {
   const apiKey = process.env.XAI_API_KEY;
   if (!apiKey) throw new Error("XAI_API_KEY missing");
 
-  const system = `You are the judge of Thievn's Den. Write a short 1-2 sentence human judgment as if you just saw a realistic phone selfie: ${opts.ageBand}, ${opts.outfit}, ${opts.setting}. Style: ${opts.style}. Focus: ${opts.focus}.${
-    opts.style === "filthy" ? ` Filthy mode: ${opts.filthyMode}.` : ""
-  } Never say this is AI or fictional. End with SCORE: X.X on its own line (1.0-10.0).`;
+  const res = await fetch("https://api.x.ai/v1/images/generations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "grok-imagine-image-2.0",
+      prompt,
+      n: 1,
+      // 1k keeps cost down; 3:4 matches TCG / selfie framing
+      resolution: "1k",
+      aspect_ratio: "3:4",
+      response_format: "b64_json",
+    }),
+  });
+
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Image gen failed: ${res.status} ${t.slice(0, 240)}`);
+  }
+
+  const data = await res.json();
+  const b64 = data.data?.[0]?.b64_json;
+  if (!b64) throw new Error("No image data returned");
+
+  return {
+    b64,
+    dataUrl: `data:image/jpeg;base64,${b64}`,
+  };
+}
+
+async function uploadImage(
+  userId: string,
+  b64: string
+): Promise<string> {
+  const supabase = createServiceClient();
+  const bytes = Buffer.from(b64, "base64");
+  const path = `${userId}/${Date.now()}.jpg`;
+
+  const { error } = await supabase.storage
+    .from("judgment-images")
+    .upload(path, bytes, {
+      contentType: "image/jpeg",
+      upsert: false,
+    });
+
+  if (error) throw new Error(`Upload failed: ${error.message}`);
+
+  const { data } = supabase.storage.from("judgment-images").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+async function visionJudge(opts: {
+  style: string;
+  focus: string;
+  filthyMode?: string | null;
+  imageDataUrl: string;
+}) {
+  const apiKey = process.env.XAI_API_KEY!;
+  let system = STYLE_PROMPTS[opts.style] || STYLE_PROMPTS.unhinged;
+  if (opts.style === "filthy" && opts.filthyMode && FILTHY_SUB[opts.filthyMode]) {
+    system += " " + FILTHY_SUB[opts.filthyMode];
+  }
+  system +=
+    " Always end your response with a score on a new line in this exact format: SCORE: X.X (1.0 to 10.0). Match the score to how positive or negative the judgment is. Never say there is no photo.";
+
+  const textPrompt = `Focus: ${FOCUS_HINTS[opts.focus] || FOCUS_HINTS.overall}\n\nJudge the person in this photo. Keep it short and human.`;
 
   const res = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
@@ -118,22 +201,27 @@ async function generateJudgmentText(opts: {
         { role: "system", content: system },
         {
           role: "user",
-          content: "Judge this selfie. Short. Human. End with SCORE: X.X",
+          content: [
+            {
+              type: "image_url",
+              image_url: { url: opts.imageDataUrl },
+            },
+            { type: "text", text: textPrompt },
+          ],
         },
       ],
       temperature: 1.05,
-      max_tokens: 160,
+      max_tokens: 180,
     }),
   });
 
   if (!res.ok) {
     const t = await res.text();
-    throw new Error(`Judgment failed: ${res.status} ${t.slice(0, 200)}`);
+    throw new Error(`Vision roast failed: ${res.status} ${t.slice(0, 200)}`);
   }
 
   const data = await res.json();
   const raw = data.choices?.[0]?.message?.content?.trim() || "The Den stays quiet.\nSCORE: 5.0";
-
   let score = 5.0;
   let verdict = raw;
   const scoreMatch = raw.match(/SCORE:\s*(\d+(?:\.\d+)?)/i);
@@ -141,14 +229,12 @@ async function generateJudgmentText(opts: {
     score = Math.min(10, Math.max(1, parseFloat(scoreMatch[1])));
     verdict = raw.replace(/SCORE:\s*\d+(?:\.\d+)?/i, "").trim();
   }
-
   return { verdict, score };
 }
 
-async function createOneDemo(makePublic: boolean) {
+async function createOneDemo(makePublic: boolean, withImage: boolean) {
   const supabase = createServiceClient();
   let username = randomUsername();
-  // light uniqueness retry
   for (let attempt = 0; attempt < 5; attempt++) {
     const { data: existing } = await supabase
       .from("profiles")
@@ -166,7 +252,16 @@ async function createOneDemo(makePublic: boolean) {
   const filthyMode = style === "filthy" ? pick(FILTHY) : null;
   const setting = pick(SETTINGS);
   const outfit = pick(OUTFITS);
-  const ageBand = pick(["early 20s", "mid 20s", "late 20s", "early 30s", "mid 30s", "early 40s"]);
+  const ageBand = pick([
+    "early 20s",
+    "mid 20s",
+    "late 20s",
+    "early 30s",
+    "mid 30s",
+    "early 40s",
+  ]);
+  // Mostly women for Face The Den gallery energy; some mix
+  const presentation = Math.random() < 0.85 ? "woman" : "man";
 
   const { data: created, error: createErr } = await supabase.auth.admin.createUser({
     email,
@@ -187,14 +282,37 @@ async function createOneDemo(makePublic: boolean) {
     updated_at: new Date().toISOString(),
   });
 
-  const { verdict, score } = await generateJudgmentText({
-    style,
-    focus,
-    filthyMode: filthyMode || undefined,
-    setting,
-    outfit,
-    ageBand,
-  });
+  let imageUrl: string | null = null;
+  let verdict: string;
+  let score: number;
+
+  if (withImage) {
+    const prompt = buildImagePrompt({ ageBand, setting, outfit, presentation });
+    const { b64, dataUrl } = await generateSelfieImage(prompt);
+    imageUrl = await uploadImage(userId, b64);
+    const judged = await visionJudge({
+      style,
+      focus,
+      filthyMode,
+      imageDataUrl: dataUrl,
+    });
+    verdict = judged.verdict;
+    score = judged.score;
+  } else {
+    // Fallback text-only (should rarely be used)
+    const judged = await visionJudge({
+      style,
+      focus,
+      filthyMode,
+      imageDataUrl:
+        "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+    }).catch(async () => {
+      // if vision fails on blank, minimal text path
+      return { verdict: "The Den looked once and moved on.", score: 5.0 };
+    });
+    verdict = judged.verdict;
+    score = judged.score;
+  }
 
   const rarity = getRarity(score).name;
 
@@ -208,7 +326,7 @@ async function createOneDemo(makePublic: boolean) {
       score,
       rarity,
       verdict,
-      image_url: null,
+      image_url: imageUrl,
       is_public: makePublic,
       is_demo: true,
       likes: Math.floor(Math.random() * 4),
@@ -217,38 +335,40 @@ async function createOneDemo(makePublic: boolean) {
     .select()
     .single();
 
-  if (jErr) {
-    throw new Error(jErr.message);
-  }
+  if (jErr) throw new Error(jErr.message);
 
   return {
     username,
     userId,
     judgment,
-    meta: { style, focus, setting, outfit, ageBand },
+    imageUrl,
+    meta: { style, focus, setting, outfit, ageBand, presentation },
   };
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const count = Math.min(Math.max(Number(body.count) || 1, 1), 5);
+    // Images are slower/costlier — default 1, max 3
+    const count = Math.min(Math.max(Number(body.count) || 1, 1), 3);
     const makePublic = body.makePublic !== false;
+    const withImage = body.withImage !== false;
 
     const results = [];
     const errors: string[] = [];
 
     for (let i = 0; i < count; i++) {
       try {
-        results.push(await createOneDemo(makePublic));
+        results.push(await createOneDemo(makePublic, withImage));
       } catch (err: any) {
+        console.error("seed error", err);
         errors.push(err.message || "failed");
       }
     }
 
     await writeAudit({
       action: "seed_demos",
-      details: `created ${results.length}, errors ${errors.length}, public=${makePublic}`,
+      details: `created ${results.length}, errors ${errors.length}, public=${makePublic}, images=${withImage}`,
     });
 
     return NextResponse.json({
@@ -269,7 +389,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from("judgments")
       .select(
-        "id, user_id, style, focus, score, rarity, verdict, is_public, is_demo, likes, dislikes, created_at"
+        "id, user_id, style, focus, score, rarity, verdict, image_url, is_public, is_demo, likes, dislikes, created_at"
       )
       .eq("is_demo", true)
       .order("created_at", { ascending: false })
@@ -308,12 +428,28 @@ export async function DELETE() {
 
     const { data: demos } = await supabase
       .from("judgments")
-      .select("id, user_id")
+      .select("id, user_id, image_url")
       .eq("is_demo", true);
 
     const userIds = [
       ...new Set((demos || []).map((d) => d.user_id).filter(Boolean)),
     ] as string[];
+
+    // Best-effort remove storage files
+    for (const d of demos || []) {
+      if (d.image_url && d.user_id) {
+        try {
+          const marker = `/judgment-images/`;
+          const idx = d.image_url.indexOf(marker);
+          if (idx !== -1) {
+            const path = d.image_url.slice(idx + marker.length);
+            await supabase.storage.from("judgment-images").remove([path]);
+          }
+        } catch {
+          // continue
+        }
+      }
+    }
 
     await supabase.from("judgments").delete().eq("is_demo", true);
 

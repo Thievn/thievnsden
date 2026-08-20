@@ -10,6 +10,7 @@ type Demo = {
   score: number;
   rarity: string;
   verdict: string;
+  image_url?: string | null;
   is_public: boolean;
   likes: number;
   dislikes: number;
@@ -22,6 +23,7 @@ export function SeedsTab() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [makePublic, setMakePublic] = useState(true);
+  const [withImage, setWithImage] = useState(true);
 
   const load = async () => {
     setLoading(true);
@@ -48,13 +50,13 @@ export function SeedsTab() {
       const res = await fetch("/api/admin/seeds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count, makePublic }),
+        body: JSON.stringify({ count, makePublic, withImage }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Seed failed");
       setMsg(
         `Created ${data.created} demo${data.created === 1 ? "" : "s"}` +
-          (data.errors?.length ? ` · ${data.errors.length} error(s)` : "")
+          (data.errors?.length ? ` · ${data.errors.length} error(s): ${data.errors[0]}` : "")
       );
       await load();
     } catch (err: any) {
@@ -65,7 +67,7 @@ export function SeedsTab() {
   };
 
   const purge = async () => {
-    if (!confirm("Delete ALL demo users and demo judgments? This cannot be undone.")) return;
+    if (!confirm("Delete ALL demo users, images, and judgments?")) return;
     setBusy(true);
     setMsg(null);
     try {
@@ -87,11 +89,20 @@ export function SeedsTab() {
         <div>
           <p className="text-sm text-neutral-200 font-medium mb-1">Seeds lab</p>
           <p className="text-xs text-neutral-500 leading-relaxed">
-            Creates demo accounts + Face The Den style judgments. Tagged is_demo so you can purge
-            them later. Image generation hooks in later — cards work in Gallery with void
-            placeholders for now.
+            Generates a selfie (Imagine 1K · 3:4), uploads to Storage, then vision-roasts the real
+            image so the judgment matches. Uses your XAI key — ~$0.02+/image plus roast tokens.
           </p>
         </div>
+
+        <label className="flex items-center justify-between gap-3">
+          <span className="text-sm text-neutral-300">Generate image + vision roast</span>
+          <input
+            type="checkbox"
+            checked={withImage}
+            onChange={(e) => setWithImage(e.target.checked)}
+            className="w-4 h-4 accent-purple-600"
+          />
+        </label>
 
         <label className="flex items-center justify-between gap-3">
           <span className="text-sm text-neutral-300">Auto-post to Gallery</span>
@@ -109,14 +120,14 @@ export function SeedsTab() {
             disabled={busy}
             className="px-4 py-2.5 rounded-xl text-sm border border-purple-800/50 text-purple-300 hover:bg-purple-950/30 disabled:opacity-40"
           >
-            {busy ? "Working…" : "Random demo"}
+            {busy ? "Generating…" : "Random demo"}
           </button>
           <button
-            onClick={() => seed(5)}
+            onClick={() => seed(3)}
             disabled={busy}
             className="px-4 py-2.5 rounded-xl text-sm border border-neutral-800 text-neutral-300 hover:border-neutral-600 disabled:opacity-40"
           >
-            Random ×5
+            Random ×3
           </button>
           <button
             onClick={purge}
@@ -128,7 +139,7 @@ export function SeedsTab() {
         </div>
 
         {msg && (
-          <p className="text-xs text-neutral-400 border border-neutral-800 rounded-lg px-3 py-2">
+          <p className="text-xs text-neutral-400 border border-neutral-800 rounded-lg px-3 py-2 break-words">
             {msg}
           </p>
         )}
@@ -149,28 +160,34 @@ export function SeedsTab() {
             {demos.map((d) => (
               <div
                 key={d.id}
-                className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4"
+                className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4 flex gap-3"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                  <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-neutral-500">
-                    <span className="text-neutral-300">{d.username}</span>
-                    <span>·</span>
-                    <span>{d.rarity}</span>
-                    <span>·</span>
-                    <span>{Number(d.score).toFixed(1)}/10</span>
-                    <span>·</span>
-                    <span>{d.style}</span>
-                    {d.is_public ? (
-                      <span className="text-purple-400/80">gallery</span>
-                    ) : (
-                      <span>private</span>
-                    )}
-                  </div>
-                  <span className="text-[11px] text-neutral-600">
-                    ↑ {d.likes || 0} · ↓ {d.dislikes || 0}
-                  </span>
+                <div className="w-14 h-[74px] rounded-lg overflow-hidden border border-neutral-800 bg-black shrink-0">
+                  {d.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={d.image_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-50" />
+                    </div>
+                  )}
                 </div>
-                <p className="text-sm text-neutral-300 leading-relaxed line-clamp-2">{d.verdict}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                    <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-neutral-500">
+                      <span className="text-neutral-300">{d.username}</span>
+                      <span>·</span>
+                      <span>{d.rarity}</span>
+                      <span>·</span>
+                      <span>{Number(d.score).toFixed(1)}/10</span>
+                      {d.is_public && <span className="text-purple-400/80">gallery</span>}
+                    </div>
+                    <span className="text-[11px] text-neutral-600">
+                      ↑ {d.likes || 0} · ↓ {d.dislikes || 0}
+                    </span>
+                  </div>
+                  <p className="text-sm text-neutral-300 leading-relaxed line-clamp-2">{d.verdict}</p>
+                </div>
               </div>
             ))}
           </div>

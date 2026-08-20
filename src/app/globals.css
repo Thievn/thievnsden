@@ -205,6 +205,67 @@ body {
   animation: invitePulse 3.5s ease-in-out infinite;
 }
 
+/* Den boot / open animation */
+@keyframes denBootCoreIn {
+  0% { opacity: 0; transform: scale(0.7); }
+  60% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes denBootOrbPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(185, 28, 92, 0.55); }
+  50% { transform: scale(1.08); box-shadow: 0 0 60px rgba(124, 58, 237, 0.5); }
+}
+
+@keyframes denBootRing {
+  0% { transform: scale(0.8); opacity: 0; }
+  40% { opacity: 0.8; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+@keyframes denBootTextIn {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes denBootOrbA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(6%, -4%) scale(1.1); }
+}
+
+@keyframes denBootOrbB {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-5%, 5%) scale(1.12); }
+}
+
+.den-boot-core {
+  animation: denBootCoreIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.den-boot-orb-core {
+  animation: denBootOrbPulse 1.6s ease-in-out infinite;
+}
+
+.den-boot-ring {
+  animation: denBootRing 1.8s ease-out infinite;
+}
+
+.den-boot-ring-slow {
+  animation: denBootRing 2.4s ease-out 0.3s infinite;
+}
+
+.den-boot-text {
+  animation: denBootTextIn 0.7s ease-out 0.35s both;
+}
+
+.den-boot-orb-a {
+  animation: denBootOrbA 3s ease-in-out infinite;
+}
+
+.den-boot-orb-b {
+  animation: denBootOrbB 3.5s ease-in-out infinite;
+}
+
 @media (max-width: 640px) {
   button, a {
     min-height: 44px;

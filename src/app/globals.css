@@ -36,7 +36,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -51,7 +50,6 @@ body {
   background: #3a3a3a;
 }
 
-/* Card base */
 .card {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -70,13 +68,11 @@ body {
   }
 }
 
-/* Subtle mixed glow */
 .glow-accent {
   box-shadow: 0 0 40px -10px rgba(185, 28, 92, 0.22),
               0 0 60px -20px rgba(124, 58, 237, 0.12);
 }
 
-/* Fade-in animation */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -97,7 +93,6 @@ body {
 .animate-delay-300 { animation-delay: 0.3s; opacity: 0; }
 .animate-delay-400 { animation-delay: 0.4s; opacity: 0; }
 
-/* Age gate specific */
 @keyframes ageGateIn {
   from {
     opacity: 0;
@@ -125,7 +120,6 @@ body {
              pulseGlow 4s ease-in-out infinite;
 }
 
-/* Soft noise overlay */
 .noise::before {
   content: "";
   position: absolute;
@@ -135,7 +129,82 @@ body {
   z-index: 1;
 }
 
-/* Better touch targets on mobile */
+/* Void background orbs */
+@keyframes voidDriftA {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.45; }
+  50% { transform: translate(4%, -6%) scale(1.08); opacity: 0.7; }
+}
+
+@keyframes voidDriftB {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.35; }
+  50% { transform: translate(-5%, 4%) scale(1.12); opacity: 0.55; }
+}
+
+@keyframes voidDriftC {
+  0%, 100% { transform: translate(-2%, 2%) scale(0.95); opacity: 0.25; }
+  50% { transform: translate(3%, -3%) scale(1.05); opacity: 0.4; }
+}
+
+.void-orb-a {
+  animation: voidDriftA 14s ease-in-out infinite;
+}
+.void-orb-b {
+  animation: voidDriftB 18s ease-in-out infinite;
+}
+.void-orb-c {
+  animation: voidDriftC 22s ease-in-out infinite;
+}
+
+/* Face The Den panel */
+@keyframes denPanelGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(185, 28, 92, 0.12),
+      0 0 40px -12px rgba(185, 28, 92, 0.25),
+      0 0 80px -20px rgba(124, 58, 237, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(168, 85, 247, 0.2),
+      0 0 55px -10px rgba(185, 28, 92, 0.35),
+      0 0 100px -16px rgba(124, 58, 237, 0.22);
+  }
+}
+
+.den-panel {
+  animation: denPanelGlow 5s ease-in-out infinite;
+}
+
+.den-panel-judging {
+  animation: denPanelGlow 1.6s ease-in-out infinite;
+}
+
+@keyframes borderShift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.den-border-glow {
+  background: linear-gradient(
+    90deg,
+    rgba(185, 28, 92, 0.5),
+    rgba(168, 85, 247, 0.55),
+    rgba(239, 68, 68, 0.45),
+    rgba(185, 28, 92, 0.5)
+  );
+  background-size: 200% 100%;
+  animation: borderShift 6s linear infinite;
+}
+
+@keyframes invitePulse {
+  0%, 100% { border-color: rgba(64, 64, 64, 0.9); }
+  50% { border-color: rgba(185, 28, 92, 0.35); }
+}
+
+.invite-pulse {
+  animation: invitePulse 3.5s ease-in-out infinite;
+}
+
 @media (max-width: 640px) {
   button, a {
     min-height: 44px;

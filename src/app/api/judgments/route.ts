@@ -4,7 +4,16 @@ import { createServiceClient } from "@/lib/supabase/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { style, focus, filthyMode, score, rarity, verdict, isPublic = false } = body;
+    const {
+      style,
+      focus,
+      filthyMode,
+      score,
+      rarity,
+      verdict,
+      isPublic = false,
+      userId = null,
+    } = body;
 
     if (!style || !focus || score == null || !rarity || !verdict) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -22,7 +31,7 @@ export async function POST(req: NextRequest) {
         rarity,
         verdict,
         is_public: isPublic,
-        user_id: null, // anonymous for now
+        user_id: userId || null,
       })
       .select()
       .single();

@@ -239,6 +239,45 @@ async function visionJudge(opts: {
   return parseScoreVerdict(raw);
 }
 
+/** Ensure profiles row exists — judgments_user_id_fkey often points at profiles(id). */
+async function ensureProfile(
+  supabase: ReturnType<typeof createServiceClient>,
+  userId: string,
+  username: string
+) {
+  // Match signup payload exactly
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert(
+      {
+        id: userId,
+        username,
+        display_name: username,
+      },
+      { onConflict: "id" }
+    )
+    .select("id, username")
+    .single();
+
+  if (error) {
+    throw new Error(`PROFILE_FAILED: ${error.message}`);
+  }
+
+  if (!data?.id) {
+    throw new Error("PROFILE_FAILED: profile row missing after upsert");
+  }
+
+  // Verify auth user still present (FK may point at auth.users)
+  const { data: authUser, error: authErr } = await supabase.auth.admin.getUserById(userId);
+  if (authErr || !authUser?.user) {
+    throw new Error(
+      `AUTH_FAILED: user ${userId} not found after create (${authErr?.message || "missing"})`
+    );
+  }
+
+  return data;
+}
+
 async function createOneDemo(makePublic: boolean) {
   const supabase = createServiceClient();
   let username = randomUsername();
@@ -282,13 +321,9 @@ async function createOneDemo(makePublic: boolean) {
 
   const userId = created.user.id;
 
-  // Full pipeline only — no half results
   try {
-    await supabase.from("profiles").upsert({
-      id: userId,
-      username,
-      updated_at: new Date().toISOString(),
-    });
+    // Profile FIRST so FK is satisfied before the slow image work finishes
+    await ensureProfile(supabase, userId, username);
 
     const prompt = buildImagePrompt({ ageBand, setting, outfit, presentation });
     const { b64, dataUrl } = await generateSelfieImage(prompt);
@@ -302,6 +337,9 @@ async function createOneDemo(makePublic: boolean) {
     });
 
     const rarity = getRarity(score).name;
+
+    // Re-verify profile right before insert (guards long-running race)
+    await ensureProfile(supabase, userId, username);
 
     const { data: judgment, error: jErr } = await supabase
       .from("judgments")
@@ -333,7 +371,11 @@ async function createOneDemo(makePublic: boolean) {
       meta: { style, focus, setting, outfit, ageBand, presentation },
     };
   } catch (err: any) {
-    // Clean up orphaned demo auth user so we don't litter
+    try {
+      await supabase.from("profiles").delete().eq("id", userId);
+    } catch {
+      // ignore
+    }
     try {
       await supabase.auth.admin.deleteUser(userId);
     } catch {
@@ -474,6 +516,11 @@ export async function DELETE() {
     await supabase.from("judgments").delete().eq("is_demo", true);
 
     for (const uid of userIds) {
+      try {
+        await supabase.from("profiles").delete().eq("id", uid);
+      } catch {
+        // continue
+      }
       try {
         await supabase.auth.admin.deleteUser(uid);
       } catch {

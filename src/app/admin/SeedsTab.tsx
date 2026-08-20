@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 type Demo = {
   id: string;
@@ -45,7 +46,11 @@ export function SeedsTab() {
 
   const seed = async (count: number) => {
     setBusy(true);
-    setMsg(null);
+    setMsg(
+      withImage
+        ? "Generating image + vision roast — this can take 30–90 seconds…"
+        : "Creating demo…"
+    );
     try {
       const res = await fetch("/api/admin/seeds", {
         method: "POST",
@@ -54,13 +59,25 @@ export function SeedsTab() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Seed failed");
-      setMsg(
-        `Created ${data.created} demo${data.created === 1 ? "" : "s"}` +
-          (data.errors?.length ? ` · ${data.errors.length} error(s): ${data.errors[0]}` : "")
-      );
+
+      const notes = (data.results || [])
+        .flatMap((r: any) => r.notes || [])
+        .filter(Boolean);
+
+      let line = `Created ${data.created} demo${data.created === 1 ? "" : "s"}`;
+      if (data.errors?.length) {
+        line += ` · ${data.errors.length} error(s): ${data.errors.join(" | ")}`;
+      }
+      if (notes.length) {
+        line += ` · notes: ${notes.slice(0, 2).join(" | ")}`;
+      }
+      if (data.created > 0 && makePublic) {
+        line += " — check Gallery / Ranks";
+      }
+      setMsg(line);
       await load();
     } catch (err: any) {
-      setMsg(err.message || "Seed failed");
+      setMsg(err.message || "Seed failed (timeout or network). Check Vercel function logs.");
     } finally {
       setBusy(false);
     }
@@ -89,8 +106,8 @@ export function SeedsTab() {
         <div>
           <p className="text-sm text-neutral-200 font-medium mb-1">Seeds lab</p>
           <p className="text-xs text-neutral-500 leading-relaxed">
-            Generates a selfie (Imagine 1K · 3:4), uploads to Storage, then vision-roasts the real
-            image so the judgment matches. Uses your XAI key — ~$0.02+/image plus roast tokens.
+            Image path: Imagine 1K → Storage → vision roast. If image/storage fails, it still creates a
+            text judgment so Gallery can fill. Watch the status line for the real error.
           </p>
         </div>
 
@@ -120,7 +137,7 @@ export function SeedsTab() {
             disabled={busy}
             className="px-4 py-2.5 rounded-xl text-sm border border-purple-800/50 text-purple-300 hover:bg-purple-950/30 disabled:opacity-40"
           >
-            {busy ? "Generating…" : "Random demo"}
+            {busy ? "Working…" : "Random demo"}
           </button>
           <button
             onClick={() => seed(3)}
@@ -136,10 +153,16 @@ export function SeedsTab() {
           >
             Purge all demos
           </button>
+          <Link
+            href="/gallery"
+            className="px-4 py-2.5 rounded-xl text-sm border border-neutral-800 text-neutral-400 hover:text-neutral-200"
+          >
+            Open Gallery
+          </Link>
         </div>
 
         {msg && (
-          <p className="text-xs text-neutral-400 border border-neutral-800 rounded-lg px-3 py-2 break-words">
+          <p className="text-xs text-neutral-300 border border-neutral-800 rounded-lg px-3 py-2 break-words whitespace-pre-wrap">
             {msg}
           </p>
         )}

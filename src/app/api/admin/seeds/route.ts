@@ -113,61 +113,86 @@ function buildImagePrompt(opts: {
   ].join(" ");
 }
 
-async function generateSelfieImage(prompt: string): Promise<{
-  b64: string;
-  dataUrl: string;
-}> {
-  const apiKey = process.env.XAI_API_KEY;
-  if (!apiKey) throw new Error("XAI_API_KEY missing");
-
-  const res = await fetch("https://api.x.ai/v1/images/generations", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "grok-imagine-image-2.0",
-      prompt,
-      n: 1,
-      // 1k keeps cost down; 3:4 matches TCG / selfie framing
-      resolution: "1k",
-      aspect_ratio: "3:4",
-      response_format: "b64_json",
-    }),
-  });
-
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Image gen failed: ${res.status} ${t.slice(0, 240)}`);
+function parseScoreVerdict(raw: string) {
+  let score = 5.0;
+  let verdict = raw;
+  const scoreMatch = raw.match(/SCORE:\s*(\d+(?:\.\d+)?)/i);
+  if (scoreMatch) {
+    score = Math.min(10, Math.max(1, parseFloat(scoreMatch[1])));
+    verdict = raw.replace(/SCORE:\s*\d+(?:\.\d+)?/i, "").trim();
   }
-
-  const data = await res.json();
-  const b64 = data.data?.[0]?.b64_json;
-  if (!b64) throw new Error("No image data returned");
-
-  return {
-    b64,
-    dataUrl: `data:image/jpeg;base64,${b64}`,
-  };
+  return { verdict, score };
 }
 
-async function uploadImage(
-  userId: string,
-  b64: string
-): Promise<string> {
+async function generateSelfieImage(prompt: string): Promise<{
+  b64: string | null;
+  dataUrl: string | null;
+  tempUrl: string | null;
+}> {
+  const apiKey = process.env.XAI_API_KEY;
+  if (!apiKey) throw new Error("XAI_API_KEY missing on Vercel");
+
+  const models = ["grok-imagine-image-2.0", "grok-imagine-image"];
+  let lastErr = "";
+
+  for (const model of models) {
+    // Prefer b64 so we can upload permanently; fall back to url
+    for (const response_format of ["b64_json", "url"] as const) {
+      const res = await fetch("https://api.x.ai/v1/images/generations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          prompt,
+          n: 1,
+          resolution: "1k",
+          aspect_ratio: "3:4",
+          response_format,
+        }),
+      });
+
+      if (!res.ok) {
+        lastErr = `${model}/${response_format}: ${res.status} ${(await res.text()).slice(0, 180)}`;
+        continue;
+      }
+
+      const data = await res.json();
+      const item = data.data?.[0];
+      if (item?.b64_json) {
+        return {
+          b64: item.b64_json,
+          dataUrl: `data:image/jpeg;base64,${item.b64_json}`,
+          tempUrl: null,
+        };
+      }
+      if (item?.url) {
+        return { b64: null, dataUrl: item.url, tempUrl: item.url };
+      }
+      lastErr = `${model}: empty image payload`;
+    }
+  }
+
+  throw new Error(`Image gen failed — ${lastErr}`);
+}
+
+async function uploadImage(userId: string, b64: string): Promise<string> {
   const supabase = createServiceClient();
   const bytes = Buffer.from(b64, "base64");
   const path = `${userId}/${Date.now()}.jpg`;
 
-  const { error } = await supabase.storage
-    .from("judgment-images")
-    .upload(path, bytes, {
-      contentType: "image/jpeg",
-      upsert: false,
-    });
+  const { error } = await supabase.storage.from("judgment-images").upload(path, bytes, {
+    contentType: "image/jpeg",
+    upsert: false,
+  });
 
-  if (error) throw new Error(`Upload failed: ${error.message}`);
+  if (error) {
+    throw new Error(
+      `Storage upload failed (${error.message}). Check bucket "judgment-images" exists and is public.`
+    );
+  }
 
   const { data } = supabase.storage.from("judgment-images").getPublicUrl(path);
   return data.publicUrl;
@@ -202,10 +227,7 @@ async function visionJudge(opts: {
         {
           role: "user",
           content: [
-            {
-              type: "image_url",
-              image_url: { url: opts.imageDataUrl },
-            },
+            { type: "image_url", image_url: { url: opts.imageDataUrl } },
             { type: "text", text: textPrompt },
           ],
         },
@@ -222,14 +244,52 @@ async function visionJudge(opts: {
 
   const data = await res.json();
   const raw = data.choices?.[0]?.message?.content?.trim() || "The Den stays quiet.\nSCORE: 5.0";
-  let score = 5.0;
-  let verdict = raw;
-  const scoreMatch = raw.match(/SCORE:\s*(\d+(?:\.\d+)?)/i);
-  if (scoreMatch) {
-    score = Math.min(10, Math.max(1, parseFloat(scoreMatch[1])));
-    verdict = raw.replace(/SCORE:\s*\d+(?:\.\d+)?/i, "").trim();
+  return parseScoreVerdict(raw);
+}
+
+async function textJudge(opts: {
+  style: string;
+  focus: string;
+  filthyMode?: string | null;
+  ageBand: string;
+  setting: string;
+  outfit: string;
+}) {
+  const apiKey = process.env.XAI_API_KEY!;
+  let system = STYLE_PROMPTS[opts.style] || STYLE_PROMPTS.unhinged;
+  if (opts.style === "filthy" && opts.filthyMode && FILTHY_SUB[opts.filthyMode]) {
+    system += " " + FILTHY_SUB[opts.filthyMode];
   }
-  return { verdict, score };
+  system += ` You are judging a realistic phone selfie of someone ${opts.ageBand} in ${opts.outfit}, ${opts.setting}. Write as if you saw the photo. Never say AI or fictional. End with SCORE: X.X`;
+
+  const res = await fetch("https://api.x.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "grok-4.3",
+      messages: [
+        { role: "system", content: system },
+        {
+          role: "user",
+          content: `Focus: ${FOCUS_HINTS[opts.focus] || FOCUS_HINTS.overall}\nJudge this selfie. Short. Human. SCORE: X.X`,
+        },
+      ],
+      temperature: 1.05,
+      max_tokens: 160,
+    }),
+  });
+
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Text roast failed: ${res.status} ${t.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const raw = data.choices?.[0]?.message?.content?.trim() || "The Den stays quiet.\nSCORE: 5.0";
+  return parseScoreVerdict(raw);
 }
 
 async function createOneDemo(makePublic: boolean, withImage: boolean) {
@@ -260,7 +320,6 @@ async function createOneDemo(makePublic: boolean, withImage: boolean) {
     "mid 30s",
     "early 40s",
   ]);
-  // Mostly women for Face The Den gallery energy; some mix
   const presentation = Math.random() < 0.85 ? "woman" : "man";
 
   const { data: created, error: createErr } = await supabase.auth.admin.createUser({
@@ -271,44 +330,78 @@ async function createOneDemo(makePublic: boolean, withImage: boolean) {
   });
 
   if (createErr || !created.user) {
-    throw new Error(createErr?.message || "Could not create demo user");
+    throw new Error(createErr?.message || "Could not create demo user (auth admin)");
   }
 
   const userId = created.user.id;
 
-  await supabase.from("profiles").upsert({
+  const { error: profileErr } = await supabase.from("profiles").upsert({
     id: userId,
     username,
     updated_at: new Date().toISOString(),
   });
+  if (profileErr) {
+    console.error("profile upsert", profileErr);
+  }
 
   let imageUrl: string | null = null;
   let verdict: string;
   let score: number;
+  let notes: string[] = [];
 
   if (withImage) {
-    const prompt = buildImagePrompt({ ageBand, setting, outfit, presentation });
-    const { b64, dataUrl } = await generateSelfieImage(prompt);
-    imageUrl = await uploadImage(userId, b64);
-    const judged = await visionJudge({
-      style,
-      focus,
-      filthyMode,
-      imageDataUrl: dataUrl,
-    });
-    verdict = judged.verdict;
-    score = judged.score;
+    try {
+      const prompt = buildImagePrompt({ ageBand, setting, outfit, presentation });
+      const img = await generateSelfieImage(prompt);
+
+      if (img.b64) {
+        try {
+          imageUrl = await uploadImage(userId, img.b64);
+        } catch (upErr: any) {
+          notes.push(upErr.message || "upload failed");
+          // keep temp url if we have one path via dataUrl being http
+          if (img.tempUrl) imageUrl = img.tempUrl;
+        }
+      } else if (img.tempUrl) {
+        imageUrl = img.tempUrl;
+        notes.push("using temporary xAI image URL (not in Storage)");
+      }
+
+      const visionSrc = img.dataUrl || img.tempUrl;
+      if (visionSrc) {
+        const judged = await visionJudge({
+          style,
+          focus,
+          filthyMode,
+          imageDataUrl: visionSrc,
+        });
+        verdict = judged.verdict;
+        score = judged.score;
+      } else {
+        throw new Error("No image source for vision");
+      }
+    } catch (imgErr: any) {
+      notes.push(imgErr.message || "image pipeline failed");
+      // Still create a public card so Gallery isn't empty
+      const judged = await textJudge({
+        style,
+        focus,
+        filthyMode,
+        ageBand,
+        setting,
+        outfit,
+      });
+      verdict = judged.verdict;
+      score = judged.score;
+    }
   } else {
-    // Fallback text-only (should rarely be used)
-    const judged = await visionJudge({
+    const judged = await textJudge({
       style,
       focus,
       filthyMode,
-      imageDataUrl:
-        "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-    }).catch(async () => {
-      // if vision fails on blank, minimal text path
-      return { verdict: "The Den looked once and moved on.", score: 5.0 };
+      ageBand,
+      setting,
+      outfit,
     });
     verdict = judged.verdict;
     score = judged.score;
@@ -335,21 +428,36 @@ async function createOneDemo(makePublic: boolean, withImage: boolean) {
     .select()
     .single();
 
-  if (jErr) throw new Error(jErr.message);
+  if (jErr) {
+    throw new Error(`Judgment insert failed: ${jErr.message}`);
+  }
 
   return {
     username,
     userId,
     judgment,
     imageUrl,
+    notes,
     meta: { style, focus, setting, outfit, ageBand, presentation },
   };
 }
 
 export async function POST(req: NextRequest) {
   try {
+    if (!process.env.XAI_API_KEY) {
+      return NextResponse.json(
+        { error: "XAI_API_KEY is not set on Vercel" },
+        { status: 500 }
+      );
+    }
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      return NextResponse.json(
+        { error: "Supabase service env vars missing" },
+        { status: 500 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
-    // Images are slower/costlier — default 1, max 3
     const count = Math.min(Math.max(Number(body.count) || 1, 1), 3);
     const makePublic = body.makePublic !== false;
     const withImage = body.withImage !== false;
@@ -372,7 +480,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-      success: true,
+      success: results.length > 0,
       created: results.length,
       results,
       errors,
@@ -435,7 +543,6 @@ export async function DELETE() {
       ...new Set((demos || []).map((d) => d.user_id).filter(Boolean)),
     ] as string[];
 
-    // Best-effort remove storage files
     for (const d of demos || []) {
       if (d.image_url && d.user_id) {
         try {

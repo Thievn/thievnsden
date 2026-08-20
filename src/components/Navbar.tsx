@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 const links = [
   { href: "/", label: "Home" },
@@ -15,7 +17,48 @@ const links = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        const name =
+          session.user.user_metadata?.username ||
+          session.user.email?.split("@")[0] ||
+          null;
+        setUsername(name);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        const name =
+          session.user.user_metadata?.username ||
+          session.user.email?.split("@")[0] ||
+          null;
+        setUsername(name);
+      } else {
+        setUsername(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setUsername(null);
+    setOpen(false);
+    router.push("/");
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-900/80 bg-[#070707]/80 backdrop-blur-xl">
@@ -42,12 +85,27 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href="/join"
-              className="ml-2 px-3 py-1.5 rounded-lg text-[13px] font-medium border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 hover:bg-neutral-900/40 transition-all duration-200"
-            >
-              Join
-            </Link>
+
+            {user ? (
+              <div className="ml-2 flex items-center gap-2">
+                <span className="text-[13px] text-neutral-400 max-w-[100px] truncate">
+                  {username}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className="px-3 py-1.5 rounded-lg text-[13px] font-medium border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 transition-all"
+                >
+                  Log out
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/join"
+                className="ml-2 px-3 py-1.5 rounded-lg text-[13px] font-medium border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 hover:bg-neutral-900/40 transition-all duration-200"
+              >
+                Join
+              </Link>
+            )}
           </nav>
 
           <button
@@ -81,13 +139,28 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href="/join"
-              onClick={() => setOpen(false)}
-              className="block px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-neutral-100"
-            >
-              Join the Den
-            </Link>
+
+            {user ? (
+              <>
+                <div className="px-3 py-2 text-sm text-neutral-500">
+                  Signed in as {username}
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900"
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/join"
+                onClick={() => setOpen(false)}
+                className="block px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-neutral-100"
+              >
+                Join the Den
+              </Link>
+            )}
           </nav>
         )}
       </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { isAdmin } from "@/lib/admin";
+import { BarList, ActivityBars, RarityRing, ScoreBars } from "@/components/admin/Charts";
 import type { User } from "@supabase/supabase-js";
 
 type Tab = "overview" | "users" | "judgments";
@@ -29,6 +30,15 @@ type AdminJudgment = {
   created_at: string;
 };
 
+const RARITY_COLORS: Record<string, string> = {
+  Legendary: "#fbbf24",
+  Epic: "#ef4444",
+  Rare: "#f43f5e",
+  Uncommon: "#a855f7",
+  Common: "#a3a3a3",
+  Trash: "#525252",
+};
+
 export default function AdminPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -39,9 +49,15 @@ export default function AdminPage() {
     users: 0,
     judgments: 0,
     avgScore: 0,
+    judgmentsToday: 0,
+    usersToday: 0,
+    judgmentsWeek: 0,
+    usersWeek: 0,
     styleCounts: {} as Record<string, number>,
     focusCounts: {} as Record<string, number>,
     rarityCounts: {} as Record<string, number>,
+    scoreBuckets: {} as Record<string, number>,
+    activity: [] as { label: string; judgments: number; users: number }[],
   });
 
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -177,11 +193,16 @@ export default function AdminPage() {
 
   const filteredUsers = users.filter((u) => {
     const q = search.toLowerCase();
-    return (
-      u.username.toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q)
-    );
+    return u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
   });
+
+  const rarityRingData = ["Legendary", "Epic", "Rare", "Uncommon", "Common", "Trash"].map(
+    (label) => ({
+      label,
+      value: stats.rarityCounts[label] || 0,
+      color: RARITY_COLORS[label] || "#525252",
+    })
+  );
 
   if (loading) {
     return (
@@ -195,7 +216,6 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-      {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <span className="text-2xl">☠</span>
@@ -206,7 +226,6 @@ export default function AdminPage() {
         <p className="text-neutral-500 text-sm">Full control of the Den.</p>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-1 mb-6 p-1 rounded-xl bg-[#111] border border-neutral-800/80 w-fit">
         {(
           [
@@ -229,78 +248,77 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* OVERVIEW */}
+      {/* OVERVIEW / ANALYTICS */}
       {tab === "overview" && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="space-y-5">
+          {/* KPI row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: "Users", value: stats.users },
-              { label: "Judgments", value: stats.judgments },
-              { label: "Avg score", value: stats.avgScore || "—" },
+              { label: "Users", value: stats.users, sub: `+${stats.usersToday} today` },
+              { label: "Judgments", value: stats.judgments, sub: `+${stats.judgmentsToday} today` },
+              { label: "Avg score", value: stats.avgScore || "—", sub: "all time" },
+              { label: "This week", value: stats.judgmentsWeek, sub: `${stats.usersWeek} new users` },
             ].map((s) => (
               <div
                 key={s.label}
-                className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5"
+                className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4 sm:p-5"
               >
-                <p className="text-xs uppercase tracking-wide text-neutral-500 mb-1">{s.label}</p>
-                <p className="text-2xl font-semibold text-neutral-100">{s.value}</p>
+                <p className="text-[10px] sm:text-xs uppercase tracking-wide text-neutral-500 mb-1">
+                  {s.label}
+                </p>
+                <p className="text-xl sm:text-2xl font-semibold text-neutral-100 tabular-nums">
+                  {s.value}
+                </p>
+                <p className="text-[10px] text-neutral-600 mt-1">{s.sub}</p>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
-              <p className="text-xs uppercase tracking-wide text-neutral-500 mb-3">Styles</p>
-              {Object.keys(stats.styleCounts).length === 0 ? (
-                <p className="text-sm text-neutral-600">No data yet</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {Object.entries(stats.styleCounts)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([k, v]) => (
-                      <div key={k} className="flex justify-between text-sm">
-                        <span className="text-neutral-400 capitalize">{k}</span>
-                        <span className="text-neutral-200">{v}</span>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
+          {/* Activity chart */}
+          <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
+            <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">
+              Activity · last 14 days
+            </p>
+            {stats.activity.length > 0 ? (
+              <ActivityBars data={stats.activity} />
+            ) : (
+              <p className="text-sm text-neutral-600">No activity yet</p>
+            )}
+          </div>
 
+          {/* Style + Focus bars */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
-              <p className="text-xs uppercase tracking-wide text-neutral-500 mb-3">Focus</p>
-              {Object.keys(stats.focusCounts).length === 0 ? (
-                <p className="text-sm text-neutral-600">No data yet</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {Object.entries(stats.focusCounts)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([k, v]) => (
-                      <div key={k} className="flex justify-between text-sm">
-                        <span className="text-neutral-400 capitalize">{k}</span>
-                        <span className="text-neutral-200">{v}</span>
-                      </div>
-                    ))}
-                </div>
-              )}
+              <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">Styles</p>
+              <BarList
+                data={Object.entries(stats.styleCounts)
+                  .map(([label, value]) => ({ label, value }))
+                  .sort((a, b) => b.value - a.value)}
+                color="from-red-600 to-red-400"
+              />
             </div>
-
             <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
-              <p className="text-xs uppercase tracking-wide text-neutral-500 mb-3">Rarity</p>
-              {Object.keys(stats.rarityCounts).length === 0 ? (
-                <p className="text-sm text-neutral-600">No data yet</p>
-              ) : (
-                <div className="space-y-1.5">
-                  {Object.entries(stats.rarityCounts)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([k, v]) => (
-                      <div key={k} className="flex justify-between text-sm">
-                        <span className="text-neutral-400">{k}</span>
-                        <span className="text-neutral-200">{v}</span>
-                      </div>
-                    ))}
-                </div>
-              )}
+              <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">Focus</p>
+              <BarList
+                data={Object.entries(stats.focusCounts)
+                  .map(([label, value]) => ({ label, value }))
+                  .sort((a, b) => b.value - a.value)}
+                color="from-purple-600 to-purple-400"
+              />
+            </div>
+          </div>
+
+          {/* Rarity ring + score distribution */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
+              <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">Rarity</p>
+              <RarityRing data={rarityRingData} />
+            </div>
+            <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
+              <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">
+                Score distribution
+              </p>
+              <ScoreBars data={stats.scoreBuckets} />
             </div>
           </div>
         </div>

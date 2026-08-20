@@ -13,6 +13,7 @@ const links = [
   { href: "/loot", label: "Loot" },
   { href: "/playground", label: "Playground" },
   { href: "/gallery", label: "Gallery" },
+  { href: "/leaderboard", label: "Ranks" },
   { href: "/gaming", label: "Gaming" },
   { href: "/about", label: "About" },
 ];
@@ -64,13 +65,13 @@ export function Navbar() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-0.5">
+          <nav className="hidden lg:flex items-center gap-0.5">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
-                  pathname === link.href
+                className={`px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
+                  pathname === link.href || pathname.startsWith(link.href + "/")
                     ? "text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400"
                     : "text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/60"
                 }`}
@@ -111,7 +112,7 @@ export function Navbar() {
 
           <button
             onClick={() => setOpen(!open)}
-            className="md:hidden p-2 -mr-2 rounded-lg text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900 transition-colors"
+            className="lg:hidden p-2 -mr-2 rounded-lg text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900 transition-colors"
             aria-label="Toggle menu"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,7 +126,7 @@ export function Navbar() {
         </div>
 
         {open && (
-          <nav className="md:hidden pb-4 space-y-1 border-t border-neutral-900/60 pt-3">
+          <nav className="lg:hidden pb-4 space-y-1 border-t border-neutral-900/60 pt-3">
             {links.map((link) => (
               <Link
                 key={link.href}
@@ -146,25 +147,13 @@ export function Navbar() {
                 <div className="px-3 py-2 text-sm text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 font-medium">
                   {username}
                 </div>
-                <Link
-                  href="/account"
-                  onClick={() => setOpen(false)}
-                  className="block px-3 py-2.5 rounded-lg text-sm text-neutral-400 hover:text-neutral-100"
-                >
+                <Link href="/account" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-neutral-400 hover:text-neutral-100">
                   Account settings
                 </Link>
-                <Link
-                  href="/account/judgments"
-                  onClick={() => setOpen(false)}
-                  className="block px-3 py-2.5 rounded-lg text-sm text-neutral-400 hover:text-neutral-100"
-                >
+                <Link href="/account/judgments" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-neutral-400 hover:text-neutral-100">
                   My judgments
                 </Link>
-                <Link
-                  href="/admin"
-                  onClick={() => setOpen(false)}
-                  className="block px-3 py-2.5 rounded-lg text-sm text-red-400/90 hover:text-red-300"
-                >
+                <Link href="/admin" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm text-red-400/90 hover:text-red-300">
                   Admin panel
                 </Link>
                 <button
@@ -179,18 +168,10 @@ export function Navbar() {
               </>
             ) : (
               <div className="pt-1 space-y-1">
-                <Link
-                  href="/login"
-                  onClick={() => setOpen(false)}
-                  className="block px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900"
-                >
+                <Link href="/login" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900">
                   Log in
                 </Link>
-                <Link
-                  href="/join"
-                  onClick={() => setOpen(false)}
-                  className="block px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-300 hover:text-neutral-100 hover:bg-neutral-900"
-                >
+                <Link href="/join" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-300 hover:text-neutral-100 hover:bg-neutral-900">
                   Join the Den
                 </Link>
               </div>

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { AccountMenu } from "@/components/AccountMenu";
 import type { User } from "@supabase/supabase-js";
 
 const links = [
@@ -17,7 +18,6 @@ const links = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
@@ -52,14 +52,6 @@ export function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setUsername(null);
-    setOpen(false);
-    router.push("/");
-  };
-
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-900/80 bg-[#070707]/80 backdrop-blur-xl">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -86,17 +78,9 @@ export function Navbar() {
               </Link>
             ))}
 
-            {user ? (
-              <div className="ml-2 flex items-center gap-2">
-                <span className="text-[13px] text-neutral-400 max-w-[100px] truncate">
-                  {username}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-1.5 rounded-lg text-[13px] font-medium border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 transition-all"
-                >
-                  Log out
-                </button>
+            {user && username ? (
+              <div className="ml-2">
+                <AccountMenu user={user} username={username} />
               </div>
             ) : (
               <Link
@@ -140,14 +124,38 @@ export function Navbar() {
               </Link>
             ))}
 
-            {user ? (
+            {user && username ? (
               <>
-                <div className="px-3 py-2 text-sm text-neutral-500">
-                  Signed in as {username}
+                <div className="px-3 py-2 text-sm text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 font-medium">
+                  {username}
                 </div>
+                <Link
+                  href="/account"
+                  onClick={() => setOpen(false)}
+                  className="block px-3 py-2.5 rounded-lg text-sm text-neutral-400 hover:text-neutral-100"
+                >
+                  Account settings
+                </Link>
+                <Link
+                  href="/account/judgments"
+                  onClick={() => setOpen(false)}
+                  className="block px-3 py-2.5 rounded-lg text-sm text-neutral-400 hover:text-neutral-100"
+                >
+                  My judgments
+                </Link>
+                <Link
+                  href="/admin"
+                  onClick={() => setOpen(false)}
+                  className="block px-3 py-2.5 rounded-lg text-sm text-red-400/90 hover:text-red-300"
+                >
+                  Admin panel
+                </Link>
                 <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    setOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2.5 rounded-lg text-sm text-neutral-500 hover:text-neutral-200"
                 >
                   Log out
                 </button>

@@ -10,7 +10,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    if (username.trim().length < 3) {
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim();
+
+    if (trimmedUsername.length < 3) {
       return NextResponse.json({ error: "Username must be at least 3 characters." }, { status: 400 });
     }
 
@@ -18,10 +21,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
     }
 
-    const trimmedUsername = username.trim();
-    const trimmedEmail = email.trim();
+    const service = createServiceClient();
 
-    // Use anon client for signup
+    // Case-insensitive uniqueness check
+    const { data: existing } = await service
+      .from("profiles")
+      .select("id")
+      .ilike("username", trimmedUsername)
+      .maybeSingle();
+
+    if (existing) {
+      return NextResponse.json({ error: "That username is already taken." }, { status: 409 });
+    }
+
     const anon = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -45,8 +57,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Signup failed" }, { status: 500 });
     }
 
-    // Use service role to insert profile (bypasses RLS)
-    const service = createServiceClient();
     const { error: profileError } = await service.from("profiles").upsert({
       id: data.user.id,
       username: trimmedUsername,
@@ -55,7 +65,6 @@ export async function POST(req: NextRequest) {
 
     if (profileError) {
       console.error("Profile insert error:", profileError);
-      // Still return success — user was created, profile can be fixed later
     }
 
     return NextResponse.json({

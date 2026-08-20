@@ -21,6 +21,7 @@ export default function GalleryPage() {
   const [exitDir, setExitDir] = useState<"left" | "right" | null>(null);
   const [busy, setBusy] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -41,6 +42,10 @@ export default function GalleryPage() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    setExpanded(false);
+  }, [index]);
 
   const current = cards[index] || null;
   const nextCard = cards[index + 1] || null;
@@ -117,7 +122,7 @@ export default function GalleryPage() {
           <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-10 text-center">
             <p className="text-neutral-400 text-sm mb-2">Gallery is empty.</p>
             <p className="text-neutral-600 text-xs mb-5">
-              Save a Face The Den result and hit Post to Gallery.
+              Save a Face The Den result and hit Post to Gallery — or seed demos in Admin.
             </p>
             <Link
               href="/playground"
@@ -143,12 +148,10 @@ export default function GalleryPage() {
 
         {!loading && current && rarity && (
           <div className="relative h-[520px] sm:h-[560px]">
-            {/* Next card underlay */}
             {nextCard && (
               <div className="absolute inset-x-4 top-3 bottom-0 rounded-2xl border border-neutral-800/60 bg-[#0d0d0d] scale-[0.96] opacity-60" />
             )}
 
-            {/* Active card */}
             <div
               className={`absolute inset-0 transition-all duration-300 ease-out ${
                 exitDir === "left"
@@ -181,8 +184,10 @@ export default function GalleryPage() {
                 </div>
 
                 <div className="px-3 flex-1 min-h-0">
-                  <div
-                    className={`relative h-full min-h-[220px] max-h-[300px] rounded-xl overflow-hidden border ${rarity.border} bg-black`}
+                  <button
+                    type="button"
+                    onClick={() => current.image_url && setExpanded(true)}
+                    className={`relative h-full min-h-[220px] max-h-[300px] w-full rounded-xl overflow-hidden border ${rarity.border} bg-black block text-left`}
                   >
                     {current.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -199,7 +204,7 @@ export default function GalleryPage() {
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
-                    <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end">
+                    <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end pointer-events-none">
                       <span className="text-xs text-neutral-200 font-medium drop-shadow">
                         {current.username || "Anonymous"}
                       </span>
@@ -207,7 +212,12 @@ export default function GalleryPage() {
                         {current.style} · {current.focus}
                       </span>
                     </div>
-                  </div>
+                    {current.image_url && (
+                      <span className="absolute top-2 right-2 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-black/50 text-neutral-400 border border-neutral-800">
+                        Tap to expand
+                      </span>
+                    )}
+                  </button>
                 </div>
 
                 <div className="px-3 pt-3 pb-4">
@@ -255,7 +265,38 @@ export default function GalleryPage() {
             {index + 1} / {cards.length}
           </p>
         )}
+
+        <p className="text-center mt-6">
+          <Link href="/leaderboard" className="text-xs text-neutral-600 hover:text-neutral-400">
+            Ranks →
+          </Link>
+        </p>
       </div>
+
+      {/* Fullscreen expand */}
+      {expanded && current?.image_url && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"
+          onClick={() => setExpanded(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            type="button"
+            className="absolute top-4 right-4 text-neutral-400 hover:text-white text-sm px-3 py-2"
+            onClick={() => setExpanded(false)}
+          >
+            Close
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={current.image_url}
+            alt=""
+            className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

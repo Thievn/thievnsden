@@ -16,27 +16,34 @@ function lastNDays(n: number) {
   return days;
 }
 
+function isDemoJudgment(j: { is_demo?: boolean | null }) {
+  return j.is_demo === true;
+}
+
 export async function GET() {
   try {
     const supabase = createServiceClient();
 
-    const { count: userCount } = await supabase
-      .from("profiles")
-      .select("*", { count: "exact", head: true });
+    const { data: profiles } = await supabase.from("profiles").select("id, created_at");
 
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("created_at");
-
-    const { data: judgments } = await supabase
+    const { data: allJudgments } = await supabase
       .from("judgments")
-      .select("score, style, focus, rarity, created_at");
+      .select("score, style, focus, rarity, created_at, user_id, is_demo");
 
-    const total = judgments?.length || 0;
+    // Real metrics only — demos never inflate overview numbers
+    const judgments = (allJudgments || []).filter((j) => !isDemoJudgment(j));
+
+    const demoUserIds = new Set(
+      (allJudgments || [])
+        .filter((j) => isDemoJudgment(j) && j.user_id)
+        .map((j) => j.user_id as string)
+    );
+
+    const realProfiles = (profiles || []).filter((p) => !demoUserIds.has(p.id));
+
+    const total = judgments.length;
     const avgScore =
-      total > 0
-        ? judgments!.reduce((sum, j) => sum + Number(j.score), 0) / total
-        : 0;
+      total > 0 ? judgments.reduce((sum, j) => sum + Number(j.score), 0) / total : 0;
 
     const styleCounts: Record<string, number> = {};
     const focusCounts: Record<string, number> = {};
@@ -49,7 +56,7 @@ export async function GET() {
       "9-10": 0,
     };
 
-    (judgments || []).forEach((j) => {
+    judgments.forEach((j) => {
       styleCounts[j.style] = (styleCounts[j.style] || 0) + 1;
       focusCounts[j.focus] = (focusCounts[j.focus] || 0) + 1;
       rarityCounts[j.rarity] = (rarityCounts[j.rarity] || 0) + 1;
@@ -62,7 +69,6 @@ export async function GET() {
       else scoreBuckets["9-10"]++;
     });
 
-    // Last 14 days activity
     const days = lastNDays(14);
     const judgmentsByDay: Record<string, number> = {};
     const usersByDay: Record<string, number> = {};
@@ -71,24 +77,24 @@ export async function GET() {
       usersByDay[d] = 0;
     });
 
-    (judgments || []).forEach((j) => {
+    judgments.forEach((j) => {
       const key = dayKey(new Date(j.created_at));
       if (key in judgmentsByDay) judgmentsByDay[key]++;
     });
 
-    (profiles || []).forEach((p) => {
+    realProfiles.forEach((p) => {
+      if (!p.created_at) return;
       const key = dayKey(new Date(p.created_at));
       if (key in usersByDay) usersByDay[key]++;
     });
 
     const activity = days.map((d) => ({
       date: d,
-      label: d.slice(5), // MM-DD
+      label: d.slice(5),
       judgments: judgmentsByDay[d],
       users: usersByDay[d],
     }));
 
-    // Today / week
     const today = dayKey(new Date());
     const weekDays = lastNDays(7);
     const judgmentsToday = judgmentsByDay[today] || 0;
@@ -97,7 +103,7 @@ export async function GET() {
     const usersWeek = weekDays.reduce((s, d) => s + (usersByDay[d] || 0), 0);
 
     return NextResponse.json({
-      users: userCount || 0,
+      users: realProfiles.length,
       judgments: total,
       avgScore: Math.round(avgScore * 10) / 10,
       judgmentsToday,
@@ -109,6 +115,9 @@ export async function GET() {
       rarityCounts,
       scoreBuckets,
       activity,
+      // optional visibility for admin — not shown as "growth"
+      demoUsers: demoUserIds.size,
+      demoJudgments: (allJudgments || []).filter((j) => isDemoJudgment(j)).length,
     });
   } catch (err: any) {
     console.error(err);

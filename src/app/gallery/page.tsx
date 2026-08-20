@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { getRarity, type GalleryJudgment } from "@/lib/gallery";
 import { supabase } from "@/lib/supabase/client";
@@ -22,6 +22,13 @@ export default function GalleryPage() {
   const [busy, setBusy] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const dragXRef = useRef(0);
+  const locked = useRef(false); // horizontal vs vertical lock
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -45,6 +52,7 @@ export default function GalleryPage() {
 
   useEffect(() => {
     setExpanded(false);
+    setDragX(0);
   }, [index]);
 
   const current = cards[index] || null;
@@ -53,43 +61,47 @@ export default function GalleryPage() {
 
   const advance = useCallback(() => {
     setExitDir(null);
+    setDragX(0);
     setIndex((i) => i + 1);
     setBusy(false);
   }, []);
 
-  const vote = async (value: 1 | -1) => {
-    if (!current || busy) return;
-    setBusy(true);
-    setExitDir(value === 1 ? "right" : "left");
+  const vote = useCallback(
+    async (value: 1 | -1) => {
+      if (!current || busy) return;
+      setBusy(true);
+      setExitDir(value === 1 ? "right" : "left");
 
-    const voterKey = userId || getVoterKey();
+      const voterKey = userId || getVoterKey();
 
-    try {
-      const res = await fetch("/api/gallery/vote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          judgmentId: current.id,
-          voterKey,
-          value,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setCards((prev) =>
-          prev.map((c) =>
-            c.id === current.id
-              ? { ...c, likes: data.likes, dislikes: data.dislikes }
-              : c
-          )
-        );
+      try {
+        const res = await fetch("/api/gallery/vote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            judgmentId: current.id,
+            voterKey,
+            value,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setCards((prev) =>
+            prev.map((c) =>
+              c.id === current.id
+                ? { ...c, likes: data.likes, dislikes: data.dislikes }
+                : c
+            )
+          );
+        }
+      } catch {
+        // still advance
       }
-    } catch {
-      // still advance
-    }
 
-    setTimeout(advance, 280);
-  };
+      setTimeout(advance, 280);
+    },
+    [current, busy, userId, advance]
+  );
 
   const skip = () => {
     if (busy || !current) return;
@@ -97,6 +109,59 @@ export default function GalleryPage() {
     setExitDir(null);
     setTimeout(advance, 150);
   };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (busy || expanded || !current) return;
+    // Don't start drag from interactive controls inside
+    const t = e.target as HTMLElement;
+    if (t.closest("[data-no-swipe]")) return;
+
+    startX.current = e.clientX;
+    startY.current = e.clientY;
+    dragXRef.current = 0;
+    locked.current = false;
+    setDragging(true);
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!dragging || busy) return;
+    const dx = e.clientX - startX.current;
+    const dy = e.clientY - startY.current;
+
+    if (!locked.current) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      // Prefer horizontal for swipe-vote; vertical scroll ignored
+      if (Math.abs(dy) > Math.abs(dx) * 1.2) {
+        setDragging(false);
+        setDragX(0);
+        return;
+      }
+      locked.current = true;
+    }
+
+    dragXRef.current = dx;
+    setDragX(dx);
+  };
+
+  const onPointerUp = () => {
+    if (!dragging) return;
+    setDragging(false);
+    const dx = dragXRef.current;
+    const threshold = 80;
+
+    if (dx > threshold) {
+      vote(1);
+    } else if (dx < -threshold) {
+      vote(-1);
+    } else {
+      setDragX(0);
+    }
+    dragXRef.current = 0;
+  };
+
+  const dragRotate = dragging ? dragX * 0.04 : 0;
+  const dragOpacity = dragging ? Math.max(0.55, 1 - Math.abs(dragX) / 320) : 1;
 
   return (
     <div className="relative min-h-[calc(100vh-8rem)] overflow-hidden">
@@ -111,7 +176,7 @@ export default function GalleryPage() {
             The Den
           </p>
           <h1 className="text-2xl font-semibold text-neutral-50 tracking-tight">Gallery</h1>
-          <p className="text-neutral-500 text-sm mt-1">Swipe the void. Judge the judged.</p>
+          <p className="text-neutral-500 text-sm mt-1">Swipe left or right. Judge the judged.</p>
         </div>
 
         {loading && (
@@ -122,7 +187,7 @@ export default function GalleryPage() {
           <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-10 text-center">
             <p className="text-neutral-400 text-sm mb-2">Gallery is empty.</p>
             <p className="text-neutral-600 text-xs mb-5">
-              Save a Face The Den result and hit Post to Gallery — or seed demos in Admin.
+              Save a Face The Den result and hit Post to Gallery.
             </p>
             <Link
               href="/playground"
@@ -147,24 +212,48 @@ export default function GalleryPage() {
         )}
 
         {!loading && current && rarity && (
-          <div className="relative h-[520px] sm:h-[560px]">
+          <div className="relative h-[540px] sm:h-[580px] touch-pan-y">
             {nextCard && (
               <div className="absolute inset-x-4 top-3 bottom-0 rounded-2xl border border-neutral-800/60 bg-[#0d0d0d] scale-[0.96] opacity-60" />
             )}
 
+            {/* Swipe hints while dragging */}
+            {dragging && Math.abs(dragX) > 24 && (
+              <div
+                className={`pointer-events-none absolute top-1/3 z-10 text-sm font-semibold tracking-wide ${
+                  dragX > 0 ? "right-6 text-purple-300" : "left-6 text-red-300"
+                }`}
+              >
+                {dragX > 0 ? "↑ LIKE" : "↓ PASS"}
+              </div>
+            )}
+
             <div
-              className={`absolute inset-0 transition-all duration-300 ease-out ${
+              className={`absolute inset-0 ${!dragging && exitDir ? "transition-all duration-300 ease-out" : ""} ${
                 exitDir === "left"
                   ? "-translate-x-[120%] rotate-[-12deg] opacity-0"
                   : exitDir === "right"
                     ? "translate-x-[120%] rotate-[12deg] opacity-0"
-                    : "translate-x-0 rotate-0 opacity-100"
+                    : ""
               }`}
+              style={
+                !exitDir
+                  ? {
+                      transform: `translateX(${dragX}px) rotate(${dragRotate}deg)`,
+                      opacity: dragOpacity,
+                      transition: dragging ? "none" : "transform 0.2s ease-out, opacity 0.2s ease-out",
+                    }
+                  : undefined
+              }
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerUp}
             >
               <div
-                className={`h-full rounded-2xl border-2 ${rarity.border} ${rarity.glow} bg-gradient-to-b ${rarity.bg} overflow-hidden flex flex-col`}
+                className={`h-full rounded-2xl border-2 ${rarity.border} ${rarity.glow} bg-gradient-to-b ${rarity.bg} overflow-hidden flex flex-col select-none`}
               >
-                <div className="flex items-center justify-between px-3 pt-3 pb-2">
+                <div className="flex items-center justify-between px-3 pt-3 pb-2 shrink-0">
                   <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${rarity.text}`}>
                     {current.rarity}
                   </span>
@@ -183,17 +272,23 @@ export default function GalleryPage() {
                   </div>
                 </div>
 
-                <div className="px-3 flex-1 min-h-0">
+                {/* Image frame — fixed aspect so photo always fills cleanly */}
+                <div className="px-3 shrink-0">
                   <button
                     type="button"
-                    onClick={() => current.image_url && setExpanded(true)}
-                    className={`relative h-full min-h-[220px] max-h-[300px] w-full rounded-xl overflow-hidden border ${rarity.border} bg-black block text-left`}
+                    data-no-swipe
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (current.image_url) setExpanded(true);
+                    }}
+                    className={`relative w-full aspect-[3/4] max-h-[320px] rounded-xl overflow-hidden border ${rarity.border} bg-black block`}
                   >
                     {current.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={current.image_url}
                         alt=""
+                        draggable={false}
                         className="absolute inset-0 w-full h-full object-cover object-center"
                       />
                     ) : (
@@ -203,45 +298,49 @@ export default function GalleryPage() {
                         </div>
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/15 pointer-events-none" />
                     <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end pointer-events-none">
-                      <span className="text-xs text-neutral-200 font-medium drop-shadow">
+                      <span className="text-xs text-neutral-100 font-medium drop-shadow">
                         {current.username || "Anonymous"}
                       </span>
-                      <span className="text-[10px] uppercase tracking-wide text-neutral-400">
-                        {current.style} · {current.focus}
+                      <span className="text-[10px] uppercase tracking-wide text-neutral-300/90">
+                        {current.style}
+                        {current.filthy_mode ? ` · ${current.filthy_mode}` : ""} · {current.focus}
                       </span>
                     </div>
                     {current.image_url && (
-                      <span className="absolute top-2 right-2 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-black/50 text-neutral-400 border border-neutral-800">
+                      <span className="absolute top-2 right-2 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-black/55 text-neutral-300 border border-neutral-700/80">
                         Tap to expand
                       </span>
                     )}
                   </button>
                 </div>
 
-                <div className="px-3 pt-3 pb-4">
+                <div className="px-3 pt-3 pb-4 flex-1 min-h-0">
                   <p className="text-[13px] text-neutral-200 leading-relaxed line-clamp-4">
                     {current.verdict}
                   </p>
                 </div>
 
-                <div className={`h-1 w-full bg-gradient-to-r ${rarity.bar} opacity-80`} />
+                <div className={`h-1 w-full bg-gradient-to-r ${rarity.bar} opacity-80 shrink-0`} />
               </div>
             </div>
           </div>
         )}
 
         {current && (
-          <div className="mt-6 flex items-center justify-center gap-4">
+          <div className="mt-7 flex items-center justify-center gap-5">
             <button
               onClick={() => vote(-1)}
               disabled={busy}
-              className="w-14 h-14 rounded-full border border-neutral-700 bg-[#111] text-neutral-400 hover:border-red-800/60 hover:text-red-300 hover:bg-red-950/20 transition-all disabled:opacity-40 text-lg"
-              aria-label="Dislike"
+              className="group relative w-16 h-16 rounded-full border-2 border-red-900/50 bg-gradient-to-b from-[#1a0a0a] to-[#0c0c0c] text-red-400 shadow-[0_0_20px_-6px_rgba(220,38,38,0.35)] hover:border-red-600/70 hover:text-red-300 hover:shadow-[0_0_28px_-4px_rgba(220,38,38,0.5)] active:scale-90 transition-all disabled:opacity-40"
+              aria-label="Downvote"
             >
-              ↓
+              <span className="text-2xl font-bold leading-none group-hover:scale-110 inline-block transition-transform">
+                ↓
+              </span>
             </button>
+
             <button
               onClick={skip}
               disabled={busy}
@@ -249,13 +348,16 @@ export default function GalleryPage() {
             >
               Next
             </button>
+
             <button
               onClick={() => vote(1)}
               disabled={busy}
-              className="w-14 h-14 rounded-full border border-neutral-700 bg-[#111] text-neutral-400 hover:border-purple-700/60 hover:text-purple-300 hover:bg-purple-950/20 transition-all disabled:opacity-40 text-lg"
-              aria-label="Like"
+              className="group relative w-16 h-16 rounded-full border-2 border-purple-800/50 bg-gradient-to-b from-[#120a1a] to-[#0c0c0c] text-purple-300 shadow-[0_0_20px_-6px_rgba(147,51,234,0.4)] hover:border-purple-500/70 hover:text-purple-200 hover:shadow-[0_0_28px_-4px_rgba(147,51,234,0.55)] active:scale-90 transition-all disabled:opacity-40"
+              aria-label="Upvote"
             >
-              ↑
+              <span className="text-2xl font-bold leading-none group-hover:scale-110 inline-block transition-transform">
+                ↑
+              </span>
             </button>
           </div>
         )}
@@ -263,6 +365,7 @@ export default function GalleryPage() {
         {cards.length > 0 && index < cards.length && (
           <p className="text-center text-[11px] text-neutral-600 mt-4">
             {index + 1} / {cards.length}
+            <span className="text-neutral-700"> · swipe or tap arrows</span>
           </p>
         )}
 
@@ -273,7 +376,6 @@ export default function GalleryPage() {
         </p>
       </div>
 
-      {/* Fullscreen expand */}
       {expanded && current?.image_url && (
         <div
           className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"

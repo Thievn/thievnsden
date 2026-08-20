@@ -58,7 +58,7 @@ export default function JoinPage() {
         password,
         options: {
           data: {
-            username: trimmed, // keep exact casing the user typed
+            username: trimmed,
           },
         },
       });
@@ -70,6 +70,8 @@ export default function JoinPage() {
           id: data.user.id,
           username: trimmed,
           display_name: trimmed,
+          // store email so we can look up by username on login
+          // (column may need to be added — see note)
         });
 
         if (profileError) {

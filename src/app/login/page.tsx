@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // email OR username
   const [password, setPassword] = useState("");
   const [capsOn, setCapsOn] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -31,8 +31,43 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      let email = identifier.trim();
+
+      // If it doesn't look like an email, treat it as a username (case-insensitive)
+      if (!email.includes("@")) {
+        const { data: profile, error: lookupError } = await supabase
+          .from("profiles")
+          .select("id, username")
+          .ilike("username", email)
+          .maybeSingle();
+
+        if (lookupError || !profile) {
+          throw new Error("No account found with that username.");
+        }
+
+        // We need the email to sign in. Fetch it via a lightweight approach:
+        // Store email on profiles going forward. For now, fall back to asking
+        // the user to use email if we can't resolve it.
+        // Better path: use an RPC or store email on profile.
+        // Temporary: look up auth user is not possible from client with anon key.
+        // So we'll use a server route for username → email resolution.
+
+        const res = await fetch("/api/auth/resolve-username", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: email }),
+        });
+
+        const resolved = await res.json();
+        if (!res.ok || !resolved.email) {
+          throw new Error(resolved.error || "Could not find that username.");
+        }
+
+        email = resolved.email;
+      }
+
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email,
         password,
       });
 
@@ -54,7 +89,7 @@ export default function LoginPage() {
           Log in
         </h1>
         <p className="text-neutral-500 text-sm leading-relaxed">
-          Welcome back to the Den.
+          Use your username or email.
         </p>
       </div>
 
@@ -66,13 +101,13 @@ export default function LoginPage() {
         )}
 
         <div>
-          <label className="block text-sm text-neutral-500 mb-1.5">Email</label>
+          <label className="block text-sm text-neutral-500 mb-1.5">Username or email</label>
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            autoComplete="email"
+            type="text"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="Thieven or you@example.com"
+            autoComplete="username"
             className="w-full px-4 py-3 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 transition-colors"
           />
         </div>

@@ -86,7 +86,6 @@ function getRarity(score: number) {
   };
 }
 
-// Convert blob URL or any image source to a compressed data URL
 async function toDataUrl(src: string): Promise<string> {
   if (src.startsWith("data:")) return src;
 
@@ -97,7 +96,6 @@ async function toDataUrl(src: string): Promise<string> {
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result as string;
-      // Further compress if needed via canvas
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
@@ -142,6 +140,8 @@ export default function PlaygroundPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -169,6 +169,7 @@ export default function PlaygroundPage() {
     setScore(null);
     setPrevious([]);
     setError(null);
+    setSaved(false);
   };
 
   const startCamera = async () => {
@@ -202,6 +203,7 @@ export default function PlaygroundPage() {
     setScore(null);
     setPrevious([]);
     setError(null);
+    setSaved(false);
   };
 
   const stopCamera = () => {
@@ -218,9 +220,9 @@ export default function PlaygroundPage() {
     setLoading(true);
     setError(null);
     setStage("judging");
+    setSaved(false);
 
     try {
-      // Convert to data URL so the API can actually see the photo
       const dataUrl = await toDataUrl(image);
 
       const res = await fetch("/api/roast", {
@@ -252,6 +254,37 @@ export default function PlaygroundPage() {
     }
   };
 
+  const saveJudgment = async () => {
+    if (!verdict || score === null || !rarity) return;
+    setSaving(true);
+
+    try {
+      const res = await fetch("/api/judgments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          style,
+          focus,
+          filthyMode: style === "filthy" ? filthyMode : null,
+          score,
+          rarity: rarity.name,
+          verdict,
+          isPublic: false,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Save failed");
+
+      setSaved(true);
+    } catch (err) {
+      console.error(err);
+      alert("Could not save. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const reset = () => {
     setImage(null);
     setStage("idle");
@@ -259,6 +292,7 @@ export default function PlaygroundPage() {
     setScore(null);
     setPrevious([]);
     setError(null);
+    setSaved(false);
     stopCamera();
     if (fileRef.current) fileRef.current.value = "";
   };
@@ -485,12 +519,28 @@ export default function PlaygroundPage() {
               </button>
             </div>
 
+            {/* Save button */}
+            <div className="pt-1">
+              {saved ? (
+                <p className="text-center text-sm text-green-400/90">Saved to the Den</p>
+              ) : (
+                <button
+                  onClick={saveJudgment}
+                  disabled={saving}
+                  className="w-full py-2.5 rounded-xl border border-purple-800/50 text-purple-300 text-sm hover:bg-purple-950/30 transition-all disabled:opacity-50"
+                >
+                  {saving ? "Saving…" : "Save this result"}
+                </button>
+              )}
+            </div>
+
             <div className="flex gap-2">
               <button
                 onClick={() => {
                   setStage("setup");
                   setVerdict(null);
                   setScore(null);
+                  setSaved(false);
                 }}
                 className="flex-1 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 text-sm"
               >

@@ -6,9 +6,18 @@ import { supabase } from "@/lib/supabase/client";
 import { isAdmin } from "@/lib/admin";
 import { BarList, ActivityBars, RarityRing, ScoreBars } from "@/components/admin/Charts";
 import { AnalyticsTab } from "@/app/admin/AnalyticsTab";
+import { GalleryTab } from "@/app/admin/GalleryTab";
 import type { User } from "@supabase/supabase-js";
 
-type Tab = "overview" | "traffic" | "users" | "judgments" | "controls" | "reports" | "audit";
+type Tab =
+  | "overview"
+  | "traffic"
+  | "gallery"
+  | "users"
+  | "judgments"
+  | "controls"
+  | "reports"
+  | "audit";
 
 type AdminUser = {
   id: string;
@@ -234,11 +243,8 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
-      if (data.link) {
-        prompt("Recovery link (copy it):", data.link);
-      } else {
-        alert(data.message || "Reset sent.");
-      }
+      if (data.link) prompt("Recovery link (copy it):", data.link);
+      else alert(data.message || "Reset sent.");
     } catch (err: any) {
       alert(err.message || "Could not reset password.");
     } finally {
@@ -401,6 +407,17 @@ export default function AdminPage() {
 
   if (!user) return null;
 
+  const tabs = [
+    { id: "overview" as const, label: "Overview" },
+    { id: "traffic" as const, label: "Traffic" },
+    { id: "gallery" as const, label: "Gallery" },
+    { id: "users" as const, label: "Users" },
+    { id: "judgments" as const, label: "Judgments" },
+    { id: "controls" as const, label: "Controls" },
+    { id: "reports" as const, label: "Reports" },
+    { id: "audit" as const, label: "Audit" },
+  ];
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -424,17 +441,7 @@ export default function AdminPage() {
       </div>
 
       <div className="flex flex-wrap gap-1 mb-6 p-1 rounded-xl bg-[#111] border border-neutral-800/80 w-fit">
-        {(
-          [
-            { id: "overview", label: "Overview" },
-            { id: "traffic", label: "Traffic" },
-            { id: "users", label: "Users" },
-            { id: "judgments", label: "Judgments" },
-            { id: "controls", label: "Controls" },
-            { id: "reports", label: "Reports" },
-            { id: "audit", label: "Audit" },
-          ] as const
-        ).map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
@@ -493,6 +500,7 @@ export default function AdminPage() {
       )}
 
       {tab === "traffic" && <AnalyticsTab />}
+      {tab === "gallery" && <GalleryTab />}
 
       {tab === "users" && (
         <div className="space-y-4">
@@ -527,11 +535,15 @@ export default function AdminPage() {
           <div className="flex flex-wrap items-center gap-2">
             <select value={filterStyle} onChange={(e) => setFilterStyle(e.target.value)} className="px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-300 focus:outline-none">
               <option value="">All styles</option>
-              {"honest unhinged filthy petty deadpan".split(" ").map((s) => <option key={s} value={s}>{s}</option>)}
+              {"honest unhinged filthy petty deadpan".split(" ").map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
             </select>
             <select value={filterRarity} onChange={(e) => setFilterRarity(e.target.value)} className="px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-300 focus:outline-none">
               <option value="">All rarities</option>
-              {"Trash Common Uncommon Rare Epic Legendary".split(" ").map((r) => <option key={r} value={r}>{r}</option>)}
+              {"Trash Common Uncommon Rare Epic Legendary".split(" ").map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
             </select>
             {judgments.length > 0 && (
               <>
@@ -605,12 +617,14 @@ export default function AdminPage() {
           </div>
           <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-3">
             <p className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Feature toggles</p>
-            {[
-              { key: "age_gate_enabled" as const, label: "Age gate" },
-              { key: "signup_enabled" as const, label: "Allow signups" },
-              { key: "roast_enabled" as const, label: "Face The Den (roast)" },
-              { key: "public_judgments_enabled" as const, label: "Public judgments" },
-            ].map((t) => (
+            {(
+              [
+                { key: "age_gate_enabled" as const, label: "Age gate" },
+                { key: "signup_enabled" as const, label: "Allow signups" },
+                { key: "roast_enabled" as const, label: "Face The Den (roast)" },
+                { key: "public_judgments_enabled" as const, label: "Public judgments" },
+              ] as const
+            ).map((t) => (
               <label key={t.key} className="flex items-center justify-between gap-3">
                 <span className="text-sm text-neutral-300">{t.label}</span>
                 <input type="checkbox" checked={!!settings[t.key]} onChange={(e) => setSettings((s) => ({ ...s, [t.key]: e.target.checked }))} className="w-4 h-4 accent-red-600" />

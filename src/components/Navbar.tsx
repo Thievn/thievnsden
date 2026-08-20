@@ -83,12 +83,28 @@ export function Navbar() {
                 <AccountMenu user={user} username={username} />
               </div>
             ) : (
-              <Link
-                href="/join"
-                className="ml-2 px-3 py-1.5 rounded-lg text-[13px] font-medium border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 hover:bg-neutral-900/40 transition-all duration-200"
-              >
-                Join
-              </Link>
+              <div className="ml-2 flex items-center gap-1">
+                <Link
+                  href="/login"
+                  className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
+                    pathname === "/login"
+                      ? "text-neutral-200"
+                      : "text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/60"
+                  }`}
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/join"
+                  className={`px-3 py-1.5 rounded-lg text-[13px] font-medium border transition-all duration-200 ${
+                    pathname === "/join"
+                      ? "border-neutral-600 text-neutral-200 bg-neutral-900/40"
+                      : "border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 hover:bg-neutral-900/40"
+                  }`}
+                >
+                  Join
+                </Link>
+              </div>
             )}
           </nav>
 
@@ -161,13 +177,22 @@ export function Navbar() {
                 </button>
               </>
             ) : (
-              <Link
-                href="/join"
-                onClick={() => setOpen(false)}
-                className="block px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-neutral-100"
-              >
-                Join the Den
-              </Link>
+              <div className="pt-1 space-y-1">
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="block px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/join"
+                  onClick={() => setOpen(false)}
+                  className="block px-3 py-2.5 rounded-lg text-sm font-medium text-neutral-300 hover:text-neutral-100 hover:bg-neutral-900"
+                >
+                  Join the Den
+                </Link>
+              </div>
             )}
           </nav>
         )}

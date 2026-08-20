@@ -23,8 +23,8 @@ export function SeedsTab() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   const [makePublic, setMakePublic] = useState(true);
-  const [withImage, setWithImage] = useState(true);
 
   const load = async () => {
     setLoading(true);
@@ -35,6 +35,7 @@ export function SeedsTab() {
       setDemos(data.demos || []);
     } catch (err: any) {
       setMsg(err.message || "Could not load demos");
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -46,38 +47,39 @@ export function SeedsTab() {
 
   const seed = async (count: number) => {
     setBusy(true);
-    setMsg(
-      withImage
-        ? "Generating image + vision roast — this can take 30–90 seconds…"
-        : "Creating demo…"
-    );
+    setFailed(false);
+    setMsg("Generating selfie + vision roast — wait 30–90s. Nothing posts without a real image.");
     try {
       const res = await fetch("/api/admin/seeds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count, makePublic, withImage }),
+        body: JSON.stringify({ count, makePublic }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Seed failed");
 
-      const notes = (data.results || [])
-        .flatMap((r: any) => r.notes || [])
-        .filter(Boolean);
+      if (!res.ok || !data.success || data.created === 0) {
+        setFailed(true);
+        const detail =
+          data.error ||
+          (data.errors && data.errors.join(" | ")) ||
+          "Seed failed — no incomplete cards were saved.";
+        setMsg(`FAILED: ${detail}`);
+        return;
+      }
 
-      let line = `Created ${data.created} demo${data.created === 1 ? "" : "s"}`;
+      let line = `OK — created ${data.created} full demo${data.created === 1 ? "" : "s"} with images`;
       if (data.errors?.length) {
-        line += ` · ${data.errors.length} error(s): ${data.errors.join(" | ")}`;
+        line += ` · ${data.errors.length} failed: ${data.errors.join(" | ")}`;
+        setFailed(true);
       }
-      if (notes.length) {
-        line += ` · notes: ${notes.slice(0, 2).join(" | ")}`;
-      }
-      if (data.created > 0 && makePublic) {
-        line += " — check Gallery / Ranks";
-      }
+      if (makePublic) line += " · posted to Gallery";
       setMsg(line);
       await load();
     } catch (err: any) {
-      setMsg(err.message || "Seed failed (timeout or network). Check Vercel function logs.");
+      setFailed(true);
+      setMsg(
+        `FAILED: ${err.message || "network/timeout"}. Check Vercel logs. Nothing half-saved.`
+      );
     } finally {
       setBusy(false);
     }
@@ -87,6 +89,7 @@ export function SeedsTab() {
     if (!confirm("Delete ALL demo users, images, and judgments?")) return;
     setBusy(true);
     setMsg(null);
+    setFailed(false);
     try {
       const res = await fetch("/api/admin/seeds", { method: "DELETE" });
       const data = await res.json();
@@ -94,7 +97,8 @@ export function SeedsTab() {
       setMsg(`Purged ${data.purgedJudgments} judgments · ${data.purgedUsers} users`);
       await load();
     } catch (err: any) {
-      setMsg(err.message || "Purge failed");
+      setFailed(true);
+      setMsg(`FAILED: ${err.message || "Purge failed"}`);
     } finally {
       setBusy(false);
     }
@@ -106,20 +110,10 @@ export function SeedsTab() {
         <div>
           <p className="text-sm text-neutral-200 font-medium mb-1">Seeds lab</p>
           <p className="text-xs text-neutral-500 leading-relaxed">
-            Image path: Imagine 1K → Storage → vision roast. If image/storage fails, it still creates a
-            text judgment so Gallery can fill. Watch the status line for the real error.
+            Full pipeline only: Imagine selfie → Storage upload → vision roast → Gallery card.
+            If any step fails, nothing is posted and you get a clear FAILED message.
           </p>
         </div>
-
-        <label className="flex items-center justify-between gap-3">
-          <span className="text-sm text-neutral-300">Generate image + vision roast</span>
-          <input
-            type="checkbox"
-            checked={withImage}
-            onChange={(e) => setWithImage(e.target.checked)}
-            className="w-4 h-4 accent-purple-600"
-          />
-        </label>
 
         <label className="flex items-center justify-between gap-3">
           <span className="text-sm text-neutral-300">Auto-post to Gallery</span>
@@ -137,7 +131,7 @@ export function SeedsTab() {
             disabled={busy}
             className="px-4 py-2.5 rounded-xl text-sm border border-purple-800/50 text-purple-300 hover:bg-purple-950/30 disabled:opacity-40"
           >
-            {busy ? "Working…" : "Random demo"}
+            {busy ? "Generating…" : "Random demo"}
           </button>
           <button
             onClick={() => seed(3)}
@@ -162,7 +156,13 @@ export function SeedsTab() {
         </div>
 
         {msg && (
-          <p className="text-xs text-neutral-300 border border-neutral-800 rounded-lg px-3 py-2 break-words whitespace-pre-wrap">
+          <p
+            className={`text-xs rounded-lg px-3 py-2 break-words border ${
+              failed
+                ? "border-red-900/50 bg-red-950/20 text-red-300"
+                : "border-neutral-800 text-neutral-300"
+            }`}
+          >
             {msg}
           </p>
         )}
@@ -176,7 +176,7 @@ export function SeedsTab() {
           <p className="text-sm text-neutral-500">Loading…</p>
         ) : demos.length === 0 ? (
           <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-8 text-center">
-            <p className="text-sm text-neutral-500">No demos yet. Hit Random demo.</p>
+            <p className="text-sm text-neutral-500">No demos yet.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -190,8 +190,8 @@ export function SeedsTab() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={d.image_url} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-50" />
+                    <div className="w-full h-full flex items-center justify-center text-[9px] text-red-400/80">
+                      no img
                     </div>
                   )}
                 </div>

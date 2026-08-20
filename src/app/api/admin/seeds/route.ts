@@ -383,6 +383,10 @@ async function createOneDemo(makePublic: boolean, combo: Combo) {
 
     await ensureProfile(supabase, userId, username);
 
+    // Cosmetic engagement for gallery feel only — demos stay out of overview stats
+    const likes = Math.floor(Math.random() * 14) + 1; // 1–14
+    const dislikes = Math.floor(Math.random() * 5); // 0–4
+
     const { data: judgment, error: jErr } = await supabase
       .from("judgments")
       .insert({
@@ -396,8 +400,8 @@ async function createOneDemo(makePublic: boolean, combo: Combo) {
         image_url: imageUrl,
         is_public: makePublic,
         is_demo: true,
-        likes: 0,
-        dislikes: 0,
+        likes,
+        dislikes,
       })
       .select()
       .single();

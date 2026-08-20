@@ -9,6 +9,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { SiteChrome } from "@/components/SiteChrome";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
+import { JsonLd } from "@/components/JsonLd";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,10 +21,63 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteTitle = "Thievn's Den";
+const siteDescription =
+  "Dark humor, honest writing, AI art, gaming, and experimental tools from Thievn. Home of Face The Den and unfiltered thoughts.";
+
 export const metadata: Metadata = {
-  title: "Thievn's Den",
-  description: "Dark thoughts, cynical humor, AI art, and the occasional roast. Welcome to the Den.",
-  keywords: ["Thievn", "AI art", "dark humor", "anime", "gaming"],
+  metadataBase: new URL("https://thievnsden.com"),
+  title: {
+    default: siteTitle,
+    template: `%s · Thievn's Den`,
+  },
+  description: siteDescription,
+  applicationName: "Thievn's Den",
+  authors: [{ name: "Thievn", url: "https://thievnsden.com/about" }],
+  creator: "Thievn",
+  publisher: "Thievn",
+  keywords: [
+    "Thievn",
+    "Thievn's Den",
+    "dark humor",
+    "AI art",
+    "AI roast",
+    "Face The Den",
+    "gaming",
+    "personal essays",
+    "cynical humor",
+    "anime art",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://thievnsden.com",
+    siteName: "Thievn's Den",
+    title: siteTitle,
+    description: siteDescription,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteTitle,
+    description: siteDescription,
+    creator: "@Thievn",
+    site: "@Thievn",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  category: "entertainment",
 };
 
 export const viewport: Viewport = {
@@ -41,6 +95,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#070707] text-neutral-200 overflow-x-hidden">
+        <JsonLd />
         <AgeGate />
         <Navbar />
         <SiteChrome>

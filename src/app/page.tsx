@@ -1,4 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: { absolute: "Thievn's Den — Dark humor, AI art, and unfiltered thoughts" },
+  description:
+    "Thievn's Den is a personal site for dark humor, honest essays, AI-generated art, gaming takes, and tools like Face The Den. Unfiltered, not corporate.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Thievn's Den",
+    description:
+      "Dark humor, honest writing, AI art, gaming, and experimental tools. Welcome to the Den.",
+    url: "https://thievnsden.com",
+  },
+};
 
 export default function HomePage() {
   return (
@@ -80,7 +94,7 @@ export default function HomePage() {
               Face The Den
             </h2>
             <p className="text-neutral-500 text-sm leading-relaxed">
-              Offer a photo. Get roasted. More experiments coming soon.
+              Upload a photo. Get an AI judgment. Honest, unhinged, or somewhere in between.
             </p>
           </Link>
         </section>
@@ -90,7 +104,7 @@ export default function HomePage() {
             <p className="text-neutral-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
               This is a living space. Expect AI art drops, gaming takes, affiliate picks,
               and the occasional experiment. Nothing here is polished corporate content —
-              just the Den.
+              just the Den. Mature themes. 18+.
             </p>
           </div>
         </section>

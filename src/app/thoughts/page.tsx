@@ -1,4 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Thoughts",
+  description:
+    "Short essays from Thievn's Den — honest observations on goals, identity, loneliness, and the things people usually keep to themselves.",
+  alternates: { canonical: "/thoughts" },
+  openGraph: {
+    title: "Thoughts · Thievn's Den",
+    description:
+      "Dark, honest short writing. No motivational fluff — just the things people think and rarely say.",
+    url: "https://thievnsden.com/thoughts",
+  },
+};
 
 const thoughts = [
   {

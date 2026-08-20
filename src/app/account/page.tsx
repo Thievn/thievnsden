@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
+import { InstallAppCard } from "@/components/InstallAppCard";
 import type { User } from "@supabase/supabase-js";
 
 export default function AccountPage() {
@@ -60,7 +62,6 @@ export default function AccountPage() {
 
       setUsername(data.username);
       setMsg("Username updated.");
-      // Refresh session metadata
       await supabase.auth.refreshSession();
     } catch (err: any) {
       setError(err.message);
@@ -121,6 +122,20 @@ export default function AccountPage() {
           {error || msg}
         </div>
       )}
+
+      <div className="mb-5">
+        <InstallAppCard />
+      </div>
+
+      <div className="mb-5 rounded-2xl border border-neutral-800/80 bg-[#111] p-4">
+        <Link
+          href="/account/judgments"
+          className="text-sm text-neutral-300 hover:text-neutral-100 flex items-center justify-between"
+        >
+          <span>My judgments</span>
+          <span className="text-neutral-600">→</span>
+        </Link>
+      </div>
 
       <form onSubmit={updateUsername} className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 sm:p-6 space-y-4 mb-5">
         <p className="text-xs uppercase tracking-wide text-neutral-500">Username</p>

@@ -10,6 +10,8 @@ import { Footer } from "@/components/Footer";
 import { SiteChrome } from "@/components/SiteChrome";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { JsonLd } from "@/components/JsonLd";
+import { PwaRegister } from "@/components/PwaRegister";
+import { DenBoot } from "@/components/DenBoot";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -78,6 +80,14 @@ export const metadata: Metadata = {
     },
   },
   category: "entertainment",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Thievn's Den",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport: Viewport = {
@@ -85,6 +95,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   themeColor: "#070707",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -96,6 +107,7 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#070707] text-neutral-200 overflow-x-hidden">
         <JsonLd />
+        <DenBoot />
         <AgeGate />
         <Navbar />
         <SiteChrome>
@@ -105,6 +117,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <AnalyticsTracker />
         </Suspense>
+        <PwaRegister />
         <Analytics />
         <SpeedInsights />
       </body>

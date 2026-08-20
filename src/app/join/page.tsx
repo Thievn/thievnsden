@@ -32,8 +32,7 @@ export default function JoinPage() {
     e.preventDefault();
     setError(null);
 
-    const trimmed = username.trim();
-    if (!trimmed || trimmed.length < 3) {
+    if (!username.trim() || username.trim().length < 3) {
       setError("Username must be at least 3 characters.");
       return;
     }
@@ -53,34 +52,32 @@ export default function JoinPage() {
     setLoading(true);
 
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            username: trimmed,
-          },
-        },
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: username.trim(),
+          email: email.trim(),
+          password,
+        }),
       });
 
-      if (signUpError) throw signUpError;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not create account.");
 
-      if (data.user) {
-        const { error: profileError } = await supabase.from("profiles").upsert({
-          id: data.user.id,
-          username: trimmed,
-          display_name: trimmed,
-          // store email so we can look up by username on login
-          // (column may need to be added — see note)
-        });
+      // Sign them in so the session is active
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
-        if (profileError) {
-          console.error("Profile create error:", profileError);
-        }
+      if (signInError) {
+        // Account created but auto-login failed — still success, they can log in manually
+        console.error("Auto sign-in failed:", signInError);
       }
 
       setSuccess(true);
-      setTimeout(() => router.push("/playground"), 1500);
+      setTimeout(() => router.push("/playground"), 1200);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Could not create account.");
@@ -118,37 +115,30 @@ export default function JoinPage() {
           </div>
         )}
 
-        <div>
-          <label className="block text-sm text-neutral-500 mb-1.5">Username</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="YourName"
-            autoComplete="username"
-            className="w-full px-4 py-3 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 transition-colors"
-          />
-        </div>
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Username"
+          autoComplete="username"
+          className="w-full px-4 py-3 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 transition-colors"
+        />
+
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+          autoComplete="email"
+          className="w-full px-4 py-3 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 transition-colors"
+        />
 
         <div>
-          <label className="block text-sm text-neutral-500 mb-1.5">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            autoComplete="email"
-            className="w-full px-4 py-3 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 transition-colors"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm text-neutral-500 mb-1.5">Password</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+            placeholder="Password"
             autoComplete="new-password"
             className="w-full px-4 py-3 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 transition-colors"
           />
@@ -157,17 +147,14 @@ export default function JoinPage() {
           )}
         </div>
 
-        <div>
-          <label className="block text-sm text-neutral-500 mb-1.5">Confirm password</label>
-          <input
-            type="password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            placeholder="••••••••"
-            autoComplete="new-password"
-            className="w-full px-4 py-3 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 transition-colors"
-          />
-        </div>
+        <input
+          type="password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          placeholder="Confirm password"
+          autoComplete="new-password"
+          className="w-full px-4 py-3 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 transition-colors"
+        />
 
         <button
           type="submit"

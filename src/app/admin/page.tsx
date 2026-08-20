@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { isAdmin } from "@/lib/admin";
 import { BarList, ActivityBars, RarityRing, ScoreBars } from "@/components/admin/Charts";
+import { AnalyticsTab } from "@/app/admin/AnalyticsTab";
 import type { User } from "@supabase/supabase-js";
 
-type Tab = "overview" | "users" | "judgments" | "controls" | "reports" | "audit";
+type Tab = "overview" | "traffic" | "users" | "judgments" | "controls" | "reports" | "audit";
 
 type AdminUser = {
   id: string;
@@ -413,16 +414,10 @@ export default function AdminPage() {
           <p className="text-neutral-500 text-sm">Full control of the Den.</p>
         </div>
         <div className="flex gap-2">
-          <a
-            href="/api/admin/export?type=users"
-            className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200"
-          >
+          <a href="/api/admin/export?type=users" className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200">
             Export users CSV
           </a>
-          <a
-            href="/api/admin/export?type=judgments"
-            className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200"
-          >
+          <a href="/api/admin/export?type=judgments" className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200">
             Export judgments CSV
           </a>
         </div>
@@ -432,6 +427,7 @@ export default function AdminPage() {
         {(
           [
             { id: "overview", label: "Overview" },
+            { id: "traffic", label: "Traffic" },
             { id: "users", label: "Users" },
             { id: "judgments", label: "Judgments" },
             { id: "controls", label: "Controls" },
@@ -495,6 +491,8 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {tab === "traffic" && <AnalyticsTab />}
 
       {tab === "users" && (
         <div className="space-y-4">
@@ -657,7 +655,7 @@ export default function AdminPage() {
           <p className="text-sm text-neutral-500">Recent admin actions.</p>
           {audit.length === 0 ? (
             <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-8 text-center">
-              <p className="text-sm text-neutral-500">No audit entries yet. Actions will appear here after you run the audit_log SQL.</p>
+              <p className="text-sm text-neutral-500">No audit entries yet.</p>
             </div>
           ) : (
             <div className="rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden divide-y divide-neutral-800/60">

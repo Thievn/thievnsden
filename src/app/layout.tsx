@@ -5,6 +5,7 @@ import { AgeGate } from "@/components/AgeGate";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { SiteChrome } from "@/components/SiteChrome";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,7 @@ export default function RootLayout({
           <main className="flex-1 w-full">{children}</main>
         </SiteChrome>
         <Footer />
+        <Analytics />
       </body>
     </html>
   );

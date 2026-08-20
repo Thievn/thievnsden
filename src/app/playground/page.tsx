@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 
 type Style = "honest" | "unhinged" | "filthy" | "petty" | "deadpan";
@@ -143,10 +144,23 @@ export default function PlaygroundPage() {
   const [cameraActive, setCameraActive] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id ?? null);
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (cameraActive && videoRef.current && streamRef.current) {
@@ -257,13 +271,15 @@ export default function PlaygroundPage() {
 
   const saveJudgment = async () => {
     if (!verdict || score === null || !rarity) return;
+
+    if (!userId) {
+      alert("Log in or join to save results to your account.");
+      return;
+    }
+
     setSaving(true);
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
       const res = await fetch("/api/judgments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -275,7 +291,7 @@ export default function PlaygroundPage() {
           rarity: rarity.name,
           verdict,
           isPublic: false,
-          userId: session?.user?.id || null,
+          userId,
         }),
       });
 
@@ -283,9 +299,9 @@ export default function PlaygroundPage() {
       if (!res.ok) throw new Error(data.error || "Save failed");
 
       setSaved(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Could not save. Try again.");
+      alert(err.message || "Could not save. Try again.");
     } finally {
       setSaving(false);
     }
@@ -304,12 +320,10 @@ export default function PlaygroundPage() {
   };
 
   const rarity = score !== null ? getRarity(score) : null;
-  const panelClass =
-    stage === "judging" ? "den-panel-judging" : "den-panel";
+  const panelClass = stage === "judging" ? "den-panel-judging" : "den-panel";
 
   return (
     <div className="relative overflow-hidden">
-      {/* Living void background */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="void-orb-a absolute top-[-10%] left-[15%] h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle,_rgba(185,28,92,0.18)_0%,_transparent_70%)] blur-2xl" />
         <div className="void-orb-b absolute top-[20%] right-[-5%] h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,_rgba(124,58,237,0.16)_0%,_transparent_70%)] blur-2xl" />
@@ -318,7 +332,6 @@ export default function PlaygroundPage() {
       </div>
 
       <div className="relative max-w-2xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-        {/* Subtle banner */}
         <div className="mb-8 sm:mb-10 text-center">
           <div className="inline-flex items-center gap-2 mb-3 px-3 py-1 rounded-full border border-neutral-800/80 bg-[#0c0c0c]/80 backdrop-blur-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-red-500 to-purple-500 animate-pulse" />
@@ -335,7 +348,6 @@ export default function PlaygroundPage() {
           </p>
         </div>
 
-        {/* Animated border shell */}
         <div className={`relative rounded-2xl p-[1px] ${panelClass}`}>
           <div className="absolute inset-0 rounded-2xl den-border-glow opacity-60" />
           <div className="relative rounded-2xl bg-[#111] overflow-hidden border border-neutral-800/60">
@@ -570,8 +582,13 @@ export default function PlaygroundPage() {
 
                 <div className="pt-1">
                   {saved ? (
-                    <p className="text-center text-sm text-green-400/90">Saved to the Den</p>
-                  ) : (
+                    <div className="text-center space-y-2">
+                      <p className="text-sm text-green-400/90">Saved to your account</p>
+                      <Link href="/account/judgments" className="text-xs text-neutral-500 hover:text-neutral-300">
+                        View my judgments →
+                      </Link>
+                    </div>
+                  ) : userId ? (
                     <button
                       onClick={saveJudgment}
                       disabled={saving}
@@ -579,6 +596,24 @@ export default function PlaygroundPage() {
                     >
                       {saving ? "Saving…" : "Save this result"}
                     </button>
+                  ) : (
+                    <div className="rounded-xl border border-neutral-800 bg-[#0c0c0c] p-4 text-center space-y-2">
+                      <p className="text-xs text-neutral-500">Log in to save this to your account</p>
+                      <div className="flex gap-2 justify-center">
+                        <Link
+                          href="/login"
+                          className="px-3 py-1.5 rounded-lg text-xs text-neutral-300 border border-neutral-800 hover:border-neutral-600"
+                        >
+                          Log in
+                        </Link>
+                        <Link
+                          href="/join"
+                          className="px-3 py-1.5 rounded-lg text-xs text-purple-300 border border-purple-900/50 hover:bg-purple-950/30"
+                        >
+                          Join
+                        </Link>
+                      </div>
+                    </div>
                   )}
                 </div>
 

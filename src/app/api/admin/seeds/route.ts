@@ -6,6 +6,47 @@ import { getRarity } from "@/lib/gallery";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
+/** Same options as Face The Den playground */
+const STYLES = ["honest", "unhinged", "filthy", "petty", "deadpan"] as const;
+const FOCUSES = ["overall", "face", "body", "tits", "ass", "vibe"] as const;
+const FILTHY = ["degrade", "worship", "mixed"] as const;
+
+type Style = (typeof STYLES)[number];
+type Focus = (typeof FOCUSES)[number];
+type FilthyMode = (typeof FILTHY)[number];
+
+type Combo = {
+  style: Style;
+  focus: Focus;
+  filthyMode: FilthyMode | null;
+};
+
+/** Every valid Face The Den selection (style × focus × filthy sub when needed) */
+function buildAllCombos(): Combo[] {
+  const out: Combo[] = [];
+  for (const style of STYLES) {
+    for (const focus of FOCUSES) {
+      if (style === "filthy") {
+        for (const filthyMode of FILTHY) {
+          out.push({ style, focus, filthyMode });
+        }
+      } else {
+        out.push({ style, focus, filthyMode: null });
+      }
+    }
+  }
+  return out;
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 const FIRST = [
   "mia", "ava", "zoe", "chloe", "luna", "ivy", "nina", "ruby", "jade", "sienna",
   "kira", "elise", "nora", "wren", "tessa", "blair", "skye", "reese", "quinn", "harlow",
@@ -25,10 +66,6 @@ const FLIRTY = [
   "donttext", "lowkeyhot", "quiettrouble", "slowburn", "nightshift", "barelydressed",
   "yourmove", "leftonread", "nofilterx", "justlooking", "boredtonight",
 ];
-
-const STYLES = ["honest", "unhinged", "filthy", "petty", "deadpan"] as const;
-const FOCUSES = ["overall", "face", "body", "tits", "ass", "vibe"] as const;
-const FILTHY = ["degrade", "worship", "mixed"] as const;
 
 const SETTINGS = [
   "bedroom mirror selfie, soft warm lamp light",
@@ -75,6 +112,16 @@ const FOCUS_HINTS: Record<string, string> = {
   vibe: "Focus on the energy and vibe they give off more than pure looks.",
 };
 
+/** Framing hints so the generated photo fits the judgment focus */
+const FOCUS_SHOT: Record<Focus, string> = {
+  overall: "selfie showing face and upper body clearly",
+  face: "close-up face selfie, face fills most of the frame",
+  body: "mirror selfie showing full body from head to thighs",
+  tits: "mirror selfie angled to clearly show chest and torso",
+  ass: "mirror selfie from a side or three-quarter back angle showing lower body and ass",
+  vibe: "candid selfie with strong mood and expression",
+};
+
 function pick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -100,12 +147,14 @@ function buildImagePrompt(opts: {
   setting: string;
   outfit: string;
   presentation: string;
+  focus: Focus;
 }) {
   return [
     "Photorealistic amateur phone selfie photo,",
     `adult ${opts.presentation} looking ${opts.ageBand},`,
     `wearing ${opts.outfit},`,
     opts.setting + ",",
+    FOCUS_SHOT[opts.focus] + ",",
     "shot on a real smartphone, natural skin texture, realistic pores,",
     "slightly imperfect framing like a real selfie, natural lighting,",
     "no makeup perfection, no studio lighting, no fashion catalog look,",
@@ -239,13 +288,11 @@ async function visionJudge(opts: {
   return parseScoreVerdict(raw);
 }
 
-/** Ensure profiles row exists — judgments_user_id_fkey often points at profiles(id). */
 async function ensureProfile(
   supabase: ReturnType<typeof createServiceClient>,
   userId: string,
   username: string
 ) {
-  // Match signup payload exactly
   const { data, error } = await supabase
     .from("profiles")
     .upsert(
@@ -259,15 +306,9 @@ async function ensureProfile(
     .select("id, username")
     .single();
 
-  if (error) {
-    throw new Error(`PROFILE_FAILED: ${error.message}`);
-  }
+  if (error) throw new Error(`PROFILE_FAILED: ${error.message}`);
+  if (!data?.id) throw new Error("PROFILE_FAILED: profile row missing after upsert");
 
-  if (!data?.id) {
-    throw new Error("PROFILE_FAILED: profile row missing after upsert");
-  }
-
-  // Verify auth user still present (FK may point at auth.users)
   const { data: authUser, error: authErr } = await supabase.auth.admin.getUserById(userId);
   if (authErr || !authUser?.user) {
     throw new Error(
@@ -278,7 +319,7 @@ async function ensureProfile(
   return data;
 }
 
-async function createOneDemo(makePublic: boolean) {
+async function createOneDemo(makePublic: boolean, combo: Combo) {
   const supabase = createServiceClient();
   let username = randomUsername();
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -293,9 +334,8 @@ async function createOneDemo(makePublic: boolean) {
 
   const email = `demo+${username.replace(/[^a-z0-9]/gi, "")}${Date.now().toString(36).slice(-4)}@thievnsden.internal`;
   const password = `Demo!${Math.random().toString(36).slice(2)}A1`;
-  const style = pick(STYLES);
-  const focus = pick(FOCUSES);
-  const filthyMode = style === "filthy" ? pick(FILTHY) : null;
+
+  const { style, focus, filthyMode } = combo;
   const setting = pick(SETTINGS);
   const outfit = pick(OUTFITS);
   const ageBand = pick([
@@ -322,10 +362,15 @@ async function createOneDemo(makePublic: boolean) {
   const userId = created.user.id;
 
   try {
-    // Profile FIRST so FK is satisfied before the slow image work finishes
     await ensureProfile(supabase, userId, username);
 
-    const prompt = buildImagePrompt({ ageBand, setting, outfit, presentation });
+    const prompt = buildImagePrompt({
+      ageBand,
+      setting,
+      outfit,
+      presentation,
+      focus,
+    });
     const { b64, dataUrl } = await generateSelfieImage(prompt);
     const imageUrl = await uploadImage(userId, b64);
 
@@ -338,7 +383,6 @@ async function createOneDemo(makePublic: boolean) {
 
     const rarity = getRarity(score).name;
 
-    // Re-verify profile right before insert (guards long-running race)
     await ensureProfile(supabase, userId, username);
 
     const { data: judgment, error: jErr } = await supabase
@@ -368,7 +412,15 @@ async function createOneDemo(makePublic: boolean) {
       userId,
       judgment,
       imageUrl,
-      meta: { style, focus, setting, outfit, ageBand, presentation },
+      meta: {
+        style,
+        focus,
+        filthyMode,
+        setting,
+        outfit,
+        ageBand,
+        presentation,
+      },
     };
   } catch (err: any) {
     try {
@@ -404,21 +456,31 @@ export async function POST(req: NextRequest) {
     const count = Math.min(Math.max(Number(body.count) || 1, 1), 3);
     const makePublic = body.makePublic !== false;
 
+    // Shuffle full option matrix so Random ×3 covers different style/focus/filthy combos
+    const deck = shuffle(buildAllCombos());
+    const picks = deck.slice(0, count);
+
     const results = [];
     const errors: string[] = [];
 
-    for (let i = 0; i < count; i++) {
+    for (const combo of picks) {
       try {
-        results.push(await createOneDemo(makePublic));
+        results.push(await createOneDemo(makePublic, combo));
       } catch (err: any) {
         console.error("seed error", err);
-        errors.push(err.message || "failed");
+        errors.push(
+          `${combo.style}/${combo.focus}${combo.filthyMode ? `/${combo.filthyMode}` : ""}: ${
+            err.message || "failed"
+          }`
+        );
       }
     }
 
     await writeAudit({
       action: "seed_demos",
-      details: `created ${results.length}, errors ${errors.length}, public=${makePublic}`,
+      details: `created ${results.length}, errors ${errors.length}, public=${makePublic}, combos=${picks
+        .map((c) => `${c.style}+${c.focus}${c.filthyMode ? `+${c.filthyMode}` : ""}`)
+        .join(",")}`,
     });
 
     if (results.length === 0) {
@@ -439,6 +501,7 @@ export async function POST(req: NextRequest) {
       created: results.length,
       results,
       errors,
+      combosUsed: picks,
     });
   } catch (err: any) {
     console.error(err);
@@ -452,7 +515,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from("judgments")
       .select(
-        "id, user_id, style, focus, score, rarity, verdict, image_url, is_public, is_demo, likes, dislikes, created_at"
+        "id, user_id, style, focus, score, rarity, verdict, image_url, is_public, is_demo, likes, dislikes, filthy_mode, created_at"
       )
       .eq("is_demo", true)
       .order("created_at", { ascending: false })

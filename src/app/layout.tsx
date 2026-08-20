@@ -4,6 +4,7 @@ import "./globals.css";
 import { AgeGate } from "@/components/AgeGate";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { SiteChrome } from "@/components/SiteChrome";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +39,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-[#070707] text-neutral-200 overflow-x-hidden">
         <AgeGate />
         <Navbar />
-        <main className="flex-1 w-full">{children}</main>
+        <SiteChrome>
+          <main className="flex-1 w-full">{children}</main>
+        </SiteChrome>
         <Footer />
       </body>
     </html>

@@ -33,17 +33,8 @@ export function AccountMenu({ user, username }: { user: User; username: string }
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
-          admin
-            ? "text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-300 to-purple-400 hover:from-red-300 hover:to-purple-300"
-            : "text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 hover:from-red-300 hover:to-purple-300"
-        }`}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[13px] font-medium transition-all text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 hover:from-red-300 hover:to-purple-300"
       >
-        {admin && (
-          <span className="text-[11px] opacity-80" title="Admin">
-            ☠
-          </span>
-        )}
         <span className="max-w-[90px] truncate">{username}</span>
         <svg
           className={`w-3 h-3 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`}
@@ -59,12 +50,7 @@ export function AccountMenu({ user, username }: { user: User; username: string }
         <div className="absolute right-0 mt-2 w-52 rounded-xl border border-neutral-800 bg-[#0c0c0c] shadow-2xl shadow-black/50 overflow-hidden z-50">
           <div className="px-3 py-2.5 border-b border-neutral-800/80">
             <p className="text-xs text-neutral-500">Signed in as</p>
-            <p className={`text-sm font-medium truncate ${
-              admin
-                ? "text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400"
-                : "text-neutral-200"
-            }`}>
-              {admin && <span className="mr-1">☠</span>}
+            <p className="text-sm font-medium truncate text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400">
               {username}
             </p>
           </div>
@@ -89,9 +75,10 @@ export function AccountMenu({ user, username }: { user: User; username: string }
               <Link
                 href="/admin"
                 onClick={() => setOpen(false)}
-                className="block px-3 py-2 text-sm text-red-400/90 hover:text-red-300 hover:bg-red-950/30 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-950/30 transition-colors"
               >
-                ☠ Admin panel
+                <span className="text-base leading-none">☠</span>
+                <span>Admin panel</span>
               </Link>
             )}
           </div>

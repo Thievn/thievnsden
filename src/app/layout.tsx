@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -7,6 +8,7 @@ import { AgeGate } from "@/components/AgeGate";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { SiteChrome } from "@/components/SiteChrome";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,6 +47,9 @@ export default function RootLayout({
           <main className="flex-1 w-full">{children}</main>
         </SiteChrome>
         <Footer />
+        <Suspense fallback={null}>
+          <AnalyticsTracker />
+        </Suspense>
         <Analytics />
         <SpeedInsights />
       </body>

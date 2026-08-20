@@ -99,6 +99,16 @@ export default function MyJudgmentsPage() {
     }
   };
 
+  const copyShare = async (id: string) => {
+    const url = `${window.location.origin}/g/${id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      alert("Link copied");
+    } catch {
+      prompt("Copy link:", url);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       <div className="mb-8">
@@ -180,13 +190,27 @@ export default function MyJudgmentsPage() {
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {j.is_public ? (
-                  <button
-                    onClick={() => setPublic(j.id, false)}
-                    disabled={busyId === j.id}
-                    className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40"
-                  >
-                    Make private
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setPublic(j.id, false)}
+                      disabled={busyId === j.id}
+                      className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40"
+                    >
+                      Make private
+                    </button>
+                    <Link
+                      href={`/g/${j.id}`}
+                      className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200"
+                    >
+                      Open card
+                    </Link>
+                    <button
+                      onClick={() => copyShare(j.id)}
+                      className="px-3 py-1.5 rounded-lg text-xs border border-purple-800/40 text-purple-300 hover:bg-purple-950/20"
+                    >
+                      Copy share link
+                    </button>
+                  </>
                 ) : (
                   <button
                     onClick={() => setPublic(j.id, true)}

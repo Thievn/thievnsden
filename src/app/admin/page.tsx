@@ -7,7 +7,7 @@ import { isAdmin } from "@/lib/admin";
 import { BarList, ActivityBars, RarityRing, ScoreBars } from "@/components/admin/Charts";
 import type { User } from "@supabase/supabase-js";
 
-type Tab = "overview" | "users" | "judgments";
+type Tab = "overview" | "users" | "judgments" | "controls" | "reports";
 
 type AdminUser = {
   id: string;
@@ -30,6 +30,26 @@ type AdminJudgment = {
   created_at: string;
 };
 
+type SiteSettings = {
+  maintenance_mode: boolean;
+  maintenance_message: string;
+  announcement_enabled: boolean;
+  announcement_text: string;
+  age_gate_enabled: boolean;
+  signup_enabled: boolean;
+  roast_enabled: boolean;
+  public_judgments_enabled: boolean;
+};
+
+type Report = {
+  id: string;
+  judgment_id: string | null;
+  reason: string;
+  notes: string;
+  status: string;
+  created_at: string;
+};
+
 const RARITY_COLORS: Record<string, string> = {
   Legendary: "#fbbf24",
   Epic: "#ef4444",
@@ -37,6 +57,17 @@ const RARITY_COLORS: Record<string, string> = {
   Uncommon: "#a855f7",
   Common: "#a3a3a3",
   Trash: "#525252",
+};
+
+const DEFAULT_SETTINGS: SiteSettings = {
+  maintenance_mode: false,
+  maintenance_message: "The Den is closed for a bit. Come back soon.",
+  announcement_enabled: false,
+  announcement_text: "",
+  age_gate_enabled: true,
+  signup_enabled: true,
+  roast_enabled: true,
+  public_judgments_enabled: false,
 };
 
 export default function AdminPage() {
@@ -66,6 +97,9 @@ export default function AdminPage() {
   const [filterStyle, setFilterStyle] = useState("");
   const [filterRarity, setFilterRarity] = useState("");
   const [busy, setBusy] = useState(false);
+  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
+  const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
+  const [reports, setReports] = useState<Report[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -84,10 +118,7 @@ export default function AdminPage() {
 
   const loadStats = async () => {
     const res = await fetch("/api/admin/stats");
-    if (res.ok) {
-      const data = await res.json();
-      setStats(data);
-    }
+    if (res.ok) setStats(await res.json());
   };
 
   const loadUsers = async () => {
@@ -109,13 +140,50 @@ export default function AdminPage() {
     }
   };
 
+  const loadSettings = async () => {
+    const res = await fetch("/api/admin/settings");
+    if (res.ok) {
+      const data = await res.json();
+      setSettings({ ...DEFAULT_SETTINGS, ...data.settings });
+    }
+  };
+
+  const loadReports = async () => {
+    const res = await fetch("/api/admin/reports");
+    if (res.ok) {
+      const data = await res.json();
+      setReports(data.reports || []);
+    }
+  };
+
   useEffect(() => {
     if (tab === "users") loadUsers();
     if (tab === "judgments") loadJudgments();
+    if (tab === "controls") loadSettings();
+    if (tab === "reports") loadReports();
   }, [tab, filterStyle, filterRarity]);
 
+  const saveSettings = async () => {
+    setBusy(true);
+    setSettingsMsg(null);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Save failed");
+      setSettingsMsg("Settings saved.");
+    } catch (err: any) {
+      setSettingsMsg(err.message || "Could not save. Did you run the SQL for site_settings?");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const deleteUser = async (userId: string, username: string) => {
-    if (!confirm(`Delete user "${username}" and all their judgments? This cannot be undone.`)) return;
+    if (!confirm(`Delete user "${username}" and all their judgments?`)) return;
     setBusy(true);
     try {
       const res = await fetch("/api/admin/users", {
@@ -191,6 +259,46 @@ export default function AdminPage() {
     }
   };
 
+  const flagJudgment = async (id: string) => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          judgment_id: id,
+          reason: "admin_flag",
+          notes: "Flagged from admin panel",
+        }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      alert("Flagged.");
+    } catch {
+      alert("Could not flag. Did you run the reports SQL?");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resolveReport = async (id: string) => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/reports", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: "resolved" }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setReports((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, status: "resolved" } : r))
+      );
+    } catch {
+      alert("Could not resolve.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const filteredUsers = users.filter((u) => {
     const q = search.toLowerCase();
     return u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
@@ -226,18 +334,20 @@ export default function AdminPage() {
         <p className="text-neutral-500 text-sm">Full control of the Den.</p>
       </div>
 
-      <div className="flex gap-1 mb-6 p-1 rounded-xl bg-[#111] border border-neutral-800/80 w-fit">
+      <div className="flex flex-wrap gap-1 mb-6 p-1 rounded-xl bg-[#111] border border-neutral-800/80 w-fit">
         {(
           [
             { id: "overview", label: "Overview" },
             { id: "users", label: "Users" },
             { id: "judgments", label: "Judgments" },
+            { id: "controls", label: "Controls" },
+            { id: "reports", label: "Reports" },
           ] as const
         ).map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               tab === t.id
                 ? "bg-gradient-to-r from-red-900/40 to-purple-900/40 text-neutral-100"
                 : "text-neutral-500 hover:text-neutral-300"
@@ -248,10 +358,8 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* OVERVIEW / ANALYTICS */}
       {tab === "overview" && (
         <div className="space-y-5">
-          {/* KPI row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: "Users", value: stats.users, sub: `+${stats.usersToday} today` },
@@ -259,115 +367,61 @@ export default function AdminPage() {
               { label: "Avg score", value: stats.avgScore || "—", sub: "all time" },
               { label: "This week", value: stats.judgmentsWeek, sub: `${stats.usersWeek} new users` },
             ].map((s) => (
-              <div
-                key={s.label}
-                className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4 sm:p-5"
-              >
-                <p className="text-[10px] sm:text-xs uppercase tracking-wide text-neutral-500 mb-1">
-                  {s.label}
-                </p>
-                <p className="text-xl sm:text-2xl font-semibold text-neutral-100 tabular-nums">
-                  {s.value}
-                </p>
+              <div key={s.label} className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4 sm:p-5">
+                <p className="text-[10px] sm:text-xs uppercase tracking-wide text-neutral-500 mb-1">{s.label}</p>
+                <p className="text-xl sm:text-2xl font-semibold text-neutral-100 tabular-nums">{s.value}</p>
                 <p className="text-[10px] text-neutral-600 mt-1">{s.sub}</p>
               </div>
             ))}
           </div>
 
-          {/* Activity chart */}
           <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
-            <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">
-              Activity · last 14 days
-            </p>
-            {stats.activity.length > 0 ? (
-              <ActivityBars data={stats.activity} />
-            ) : (
-              <p className="text-sm text-neutral-600">No activity yet</p>
-            )}
+            <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">Activity · last 14 days</p>
+            {stats.activity.length > 0 ? <ActivityBars data={stats.activity} /> : <p className="text-sm text-neutral-600">No activity yet</p>}
           </div>
 
-          {/* Style + Focus bars */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
               <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">Styles</p>
-              <BarList
-                data={Object.entries(stats.styleCounts)
-                  .map(([label, value]) => ({ label, value }))
-                  .sort((a, b) => b.value - a.value)}
-                color="from-red-600 to-red-400"
-              />
+              <BarList data={Object.entries(stats.styleCounts).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value)} color="from-red-600 to-red-400" />
             </div>
             <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
               <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">Focus</p>
-              <BarList
-                data={Object.entries(stats.focusCounts)
-                  .map(([label, value]) => ({ label, value }))
-                  .sort((a, b) => b.value - a.value)}
-                color="from-purple-600 to-purple-400"
-              />
+              <BarList data={Object.entries(stats.focusCounts).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value)} color="from-purple-600 to-purple-400" />
             </div>
           </div>
 
-          {/* Rarity ring + score distribution */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
               <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">Rarity</p>
               <RarityRing data={rarityRingData} />
             </div>
             <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
-              <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">
-                Score distribution
-              </p>
+              <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">Score distribution</p>
               <ScoreBars data={stats.scoreBuckets} />
             </div>
           </div>
         </div>
       )}
 
-      {/* USERS */}
       {tab === "users" && (
         <div className="space-y-4">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search username or email"
-            className="w-full sm:w-72 px-4 py-2.5 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600"
-          />
-
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search username or email" className="w-full sm:w-72 px-4 py-2.5 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600" />
           <div className="rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden">
             {filteredUsers.length === 0 ? (
               <p className="p-6 text-sm text-neutral-500">No users found.</p>
             ) : (
               <div className="divide-y divide-neutral-800/60">
                 {filteredUsers.map((u) => (
-                  <div
-                    key={u.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
-                  >
+                  <div key={u.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-neutral-200 truncate">{u.username}</p>
                       <p className="text-xs text-neutral-500 truncate">{u.email || "—"}</p>
-                      <p className="text-[11px] text-neutral-600 mt-0.5">
-                        {u.judgment_count} judgments · joined{" "}
-                        {new Date(u.created_at).toLocaleDateString()}
-                      </p>
+                      <p className="text-[11px] text-neutral-600 mt-0.5">{u.judgment_count} judgments · joined {new Date(u.created_at).toLocaleDateString()}</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <button
-                        onClick={() => nukeUserJudgments(u.id, u.username)}
-                        disabled={busy || u.judgment_count === 0}
-                        className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-600 disabled:opacity-40"
-                      >
-                        Nuke content
-                      </button>
-                      <button
-                        onClick={() => deleteUser(u.id, u.username)}
-                        disabled={busy}
-                        className="px-3 py-1.5 rounded-lg text-xs border border-red-900/50 text-red-400/90 hover:bg-red-950/30 disabled:opacity-40"
-                      >
-                        Delete
-                      </button>
+                      <button onClick={() => nukeUserJudgments(u.id, u.username)} disabled={busy || u.judgment_count === 0} className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40">Nuke content</button>
+                      <button onClick={() => deleteUser(u.id, u.username)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-red-900/50 text-red-400/90 hover:bg-red-950/30 disabled:opacity-40">Delete</button>
                     </div>
                   </div>
                 ))}
@@ -377,82 +431,156 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* JUDGMENTS */}
       {tab === "judgments" && (
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
-            <select
-              value={filterStyle}
-              onChange={(e) => setFilterStyle(e.target.value)}
-              className="px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-300 focus:outline-none"
-            >
+            <select value={filterStyle} onChange={(e) => setFilterStyle(e.target.value)} className="px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-300 focus:outline-none">
               <option value="">All styles</option>
-              {"honest unhinged filthy petty deadpan".split(" ").map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
+              {"honest unhinged filthy petty deadpan".split(" ").map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
-            <select
-              value={filterRarity}
-              onChange={(e) => setFilterRarity(e.target.value)}
-              className="px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-300 focus:outline-none"
-            >
+            <select value={filterRarity} onChange={(e) => setFilterRarity(e.target.value)} className="px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-300 focus:outline-none">
               <option value="">All rarities</option>
-              {"Trash Common Uncommon Rare Epic Legendary".split(" ").map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
+              {"Trash Common Uncommon Rare Epic Legendary".split(" ").map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
-
           <div className="space-y-3">
             {judgments.length === 0 ? (
               <p className="text-sm text-neutral-500 p-4">No judgments found.</p>
             ) : (
               judgments.map((j) => (
-                <div
-                  key={j.id}
-                  className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4"
-                >
+                <div key={j.id} className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                     <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-neutral-500">
                       <span className="text-neutral-300">{j.username}</span>
-                      <span>·</span>
-                      <span>{j.rarity}</span>
-                      <span>·</span>
-                      <span>{Number(j.score).toFixed(1)}/10</span>
-                      <span>·</span>
-                      <span>{j.style}</span>
-                      <span>·</span>
-                      <span>{j.focus}</span>
+                      <span>·</span><span>{j.rarity}</span>
+                      <span>·</span><span>{Number(j.score).toFixed(1)}/10</span>
+                      <span>·</span><span>{j.style}</span>
+                      <span>·</span><span>{j.focus}</span>
                     </div>
-                    <span className="text-[11px] text-neutral-600">
-                      {new Date(j.created_at).toLocaleString()}
-                    </span>
+                    <span className="text-[11px] text-neutral-600">{new Date(j.created_at).toLocaleString()}</span>
                   </div>
                   <p className="text-sm text-neutral-300 leading-relaxed mb-3">{j.verdict}</p>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => togglePublic(j.id, j.is_public)}
-                      disabled={busy}
-                      className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40"
-                    >
-                      {j.is_public ? "Hide" : "Make public"}
-                    </button>
-                    <button
-                      onClick={() => deleteJudgment(j.id)}
-                      disabled={busy}
-                      className="px-3 py-1.5 rounded-lg text-xs border border-red-900/50 text-red-400/90 hover:bg-red-950/30 disabled:opacity-40"
-                    >
-                      Delete
-                    </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => togglePublic(j.id, j.is_public)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40">{j.is_public ? "Hide" : "Make public"}</button>
+                    <button onClick={() => flagJudgment(j.id)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-amber-900/40 text-amber-400/90 hover:bg-amber-950/20 disabled:opacity-40">Flag</button>
+                    <button onClick={() => deleteJudgment(j.id)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-red-900/50 text-red-400/90 hover:bg-red-950/30 disabled:opacity-40">Delete</button>
                   </div>
                 </div>
               ))
             )}
           </div>
+        </div>
+      )}
+
+      {/* CONTROLS */}
+      {tab === "controls" && (
+        <div className="space-y-5 max-w-xl">
+          {settingsMsg && (
+            <div className={`px-3 py-2.5 rounded-lg text-sm border ${
+              settingsMsg.includes("saved") ? "bg-green-950/30 border-green-900/40 text-green-400" : "bg-red-950/40 border-red-900/50 text-red-300"
+            }`}>
+              {settingsMsg}
+            </div>
+          )}
+
+          <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-4">
+            <p className="text-xs uppercase tracking-wide text-neutral-500">Maintenance</p>
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-sm text-neutral-300">Maintenance mode</span>
+              <input type="checkbox" checked={settings.maintenance_mode} onChange={(e) => setSettings((s) => ({ ...s, maintenance_mode: e.target.checked }))} className="w-4 h-4 accent-red-600" />
+            </label>
+            <textarea
+              value={settings.maintenance_message}
+              onChange={(e) => setSettings((s) => ({ ...s, maintenance_message: e.target.value }))}
+              placeholder="Message shown when Den is closed"
+              rows={2}
+              className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600"
+            />
+          </div>
+
+          <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-4">
+            <p className="text-xs uppercase tracking-wide text-neutral-500">Announcement banner</p>
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-sm text-neutral-300">Show banner</span>
+              <input type="checkbox" checked={settings.announcement_enabled} onChange={(e) => setSettings((s) => ({ ...s, announcement_enabled: e.target.checked }))} className="w-4 h-4 accent-purple-600" />
+            </label>
+            <input
+              type="text"
+              value={settings.announcement_text}
+              onChange={(e) => setSettings((s) => ({ ...s, announcement_text: e.target.value }))}
+              placeholder="Banner message"
+              className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600"
+            />
+          </div>
+
+          <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-3">
+            <p className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Feature toggles</p>
+            {[
+              { key: "age_gate_enabled" as const, label: "Age gate" },
+              { key: "signup_enabled" as const, label: "Allow signups" },
+              { key: "roast_enabled" as const, label: "Face The Den (roast)" },
+              { key: "public_judgments_enabled" as const, label: "Public judgments" },
+            ].map((t) => (
+              <label key={t.key} className="flex items-center justify-between gap-3">
+                <span className="text-sm text-neutral-300">{t.label}</span>
+                <input
+                  type="checkbox"
+                  checked={!!settings[t.key]}
+                  onChange={(e) => setSettings((s) => ({ ...s, [t.key]: e.target.checked }))}
+                  className="w-4 h-4 accent-red-600"
+                />
+              </label>
+            ))}
+          </div>
+
+          <button
+            onClick={saveSettings}
+            disabled={busy}
+            className="w-full py-3 rounded-xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white text-sm font-medium disabled:opacity-50"
+          >
+            {busy ? "Saving…" : "Save settings"}
+          </button>
+        </div>
+      )}
+
+      {/* REPORTS */}
+      {tab === "reports" && (
+        <div className="space-y-4">
+          <p className="text-sm text-neutral-500">Flagged items from the Judgments tab appear here.</p>
+          {reports.length === 0 ? (
+            <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-8 text-center">
+              <p className="text-sm text-neutral-500">No reports yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reports.map((r) => (
+                <div key={r.id} className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded ${
+                      r.status === "open" ? "bg-amber-950/40 text-amber-400 border border-amber-900/40" : "bg-neutral-900 text-neutral-500 border border-neutral-800"
+                    }`}>
+                      {r.status}
+                    </span>
+                    <span className="text-[11px] text-neutral-600">{new Date(r.created_at).toLocaleString()}</span>
+                  </div>
+                  <p className="text-sm text-neutral-300 mb-1">{r.reason}</p>
+                  {r.notes && <p className="text-xs text-neutral-500 mb-3">{r.notes}</p>}
+                  {r.judgment_id && (
+                    <p className="text-[11px] text-neutral-600 mb-3 font-mono">judgment: {r.judgment_id.slice(0, 8)}…</p>
+                  )}
+                  {r.status === "open" && (
+                    <button
+                      onClick={() => resolveReport(r.id)}
+                      disabled={busy}
+                      className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40"
+                    >
+                      Mark resolved
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

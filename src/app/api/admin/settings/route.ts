@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { writeAudit } from "@/lib/audit";
 
 const DEFAULTS = {
   maintenance_mode: false,
@@ -62,6 +63,14 @@ export async function PATCH(req: NextRequest) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    await writeAudit({
+      action: "update_settings",
+      details: JSON.stringify({
+        maintenance_mode: payload.maintenance_mode,
+        announcement_enabled: payload.announcement_enabled,
+      }),
+    });
 
     return NextResponse.json({ settings: data, success: true });
   } catch (err: any) {

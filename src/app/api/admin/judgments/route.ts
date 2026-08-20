@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { writeAudit } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
   try {
@@ -25,7 +26,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Attach usernames
     const userIds = [...new Set((data || []).map((j) => j.user_id).filter(Boolean))];
     let nameMap: Record<string, string> = {};
 
@@ -54,22 +54,41 @@ export async function GET(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const { judgmentId, userId } = await req.json();
+    const body = await req.json();
     const supabase = createServiceClient();
 
-    if (userId) {
-      // Nuke all of a user's judgments
-      const { error } = await supabase.from("judgments").delete().eq("user_id", userId);
+    // Bulk delete
+    if (Array.isArray(body.judgmentIds) && body.judgmentIds.length > 0) {
+      const { error } = await supabase.from("judgments").delete().in("id", body.judgmentIds);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      await writeAudit({
+        action: "bulk_delete_judgments",
+        details: `Deleted ${body.judgmentIds.length} judgments`,
+      });
+      return NextResponse.json({ success: true, count: body.judgmentIds.length });
+    }
+
+    if (body.userId) {
+      const { error } = await supabase.from("judgments").delete().eq("user_id", body.userId);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      await writeAudit({
+        action: "nuke_user_judgments",
+        target: body.userId,
+      });
       return NextResponse.json({ success: true });
     }
 
-    if (!judgmentId) {
+    if (!body.judgmentId) {
       return NextResponse.json({ error: "judgmentId required" }, { status: 400 });
     }
 
-    const { error } = await supabase.from("judgments").delete().eq("id", judgmentId);
+    const { error } = await supabase.from("judgments").delete().eq("id", body.judgmentId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    await writeAudit({
+      action: "delete_judgment",
+      target: body.judgmentId,
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
@@ -92,6 +111,12 @@ export async function PATCH(req: NextRequest) {
       .eq("id", judgmentId);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    await writeAudit({
+      action: is_public ? "publish_judgment" : "hide_judgment",
+      target: judgmentId,
+    });
+
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error(err);

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { writeAudit } from "@/lib/audit";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const supabase = createServiceClient();
 
@@ -14,17 +15,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Judgment counts per user
-    const { data: judgments } = await supabase
-      .from("judgments")
-      .select("user_id");
+    const { data: judgments } = await supabase.from("judgments").select("user_id");
 
     const counts: Record<string, number> = {};
     (judgments || []).forEach((j) => {
       if (j.user_id) counts[j.user_id] = (counts[j.user_id] || 0) + 1;
     });
 
-    // Auth emails via admin API
     const users = await Promise.all(
       (profiles || []).map(async (p) => {
         let email = "";
@@ -60,14 +57,71 @@ export async function DELETE(req: NextRequest) {
 
     const supabase = createServiceClient();
 
-    // Delete their judgments first
     await supabase.from("judgments").delete().eq("user_id", userId);
     await supabase.from("profiles").delete().eq("id", userId);
     await supabase.auth.admin.deleteUser(userId);
+
+    await writeAudit({
+      action: "delete_user",
+      target: userId,
+      details: "User and judgments removed",
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error(err);
     return NextResponse.json({ error: err.message || "Delete failed" }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { userId, action } = await req.json();
+    if (!userId || action !== "reset_password") {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+
+    const supabase = createServiceClient();
+    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+
+    if (userError || !userData?.user?.email) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(userData.user.email, {
+      redirectTo: "https://thievnsden.com/login",
+    });
+
+    // admin API alternative if resetPasswordForEmail needs anon - use generateLink
+    if (error) {
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: "recovery",
+        email: userData.user.email,
+      });
+      if (linkError) {
+        return NextResponse.json({ error: linkError.message }, { status: 500 });
+      }
+      await writeAudit({
+        action: "force_password_reset",
+        target: userId,
+        details: `Recovery link generated for ${userData.user.email}`,
+      });
+      return NextResponse.json({
+        success: true,
+        message: "Recovery link generated",
+        link: linkData?.properties?.action_link || null,
+      });
+    }
+
+    await writeAudit({
+      action: "force_password_reset",
+      target: userId,
+      details: `Reset email sent to ${userData.user.email}`,
+    });
+
+    return NextResponse.json({ success: true, message: "Password reset email sent" });
+  } catch (err: any) {
+    console.error(err);
+    return NextResponse.json({ error: err.message || "Failed" }, { status: 500 });
   }
 }

@@ -7,12 +7,14 @@ import { isAdmin } from "@/lib/admin";
 import { BarList, ActivityBars, RarityRing, ScoreBars } from "@/components/admin/Charts";
 import { AnalyticsTab } from "@/app/admin/AnalyticsTab";
 import { GalleryTab } from "@/app/admin/GalleryTab";
+import { SeedsTab } from "@/app/admin/SeedsTab";
 import type { User } from "@supabase/supabase-js";
 
 type Tab =
   | "overview"
   | "traffic"
   | "gallery"
+  | "seeds"
   | "users"
   | "judgments"
   | "controls"
@@ -411,6 +413,7 @@ export default function AdminPage() {
     { id: "overview" as const, label: "Overview" },
     { id: "traffic" as const, label: "Traffic" },
     { id: "gallery" as const, label: "Gallery" },
+    { id: "seeds" as const, label: "Seeds" },
     { id: "users" as const, label: "Users" },
     { id: "judgments" as const, label: "Judgments" },
     { id: "controls" as const, label: "Controls" },
@@ -501,6 +504,7 @@ export default function AdminPage() {
 
       {tab === "traffic" && <AnalyticsTab />}
       {tab === "gallery" && <GalleryTab />}
+      {tab === "seeds" && <SeedsTab />}
 
       {tab === "users" && (
         <div className="space-y-4">

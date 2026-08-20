@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 type Style = "honest" | "unhinged" | "filthy" | "petty" | "deadpan";
 type Focus = "overall" | "face" | "body" | "tits" | "ass" | "vibe";
@@ -259,6 +260,8 @@ export default function PlaygroundPage() {
     setSaving(true);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+
       const res = await fetch("/api/judgments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -270,6 +273,7 @@ export default function PlaygroundPage() {
           rarity: rarity.name,
           verdict,
           isPublic: false,
+          userId: session?.user?.id || null,
         }),
       });
 
@@ -519,7 +523,6 @@ export default function PlaygroundPage() {
               </button>
             </div>
 
-            {/* Save button */}
             <div className="pt-1">
               {saved ? (
                 <p className="text-center text-sm text-green-400/90">Saved to the Den</p>

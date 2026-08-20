@@ -6,13 +6,25 @@ import { getRarity } from "@/lib/gallery";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const ADJECTIVES = [
-  "void", "crimson", "silent", "bitter", "hollow", "faded", "night", "rust",
-  "cold", "sharp", "soft", "wild", "pale", "dark", "quiet", "loud",
+// Real-looking handles — names, flirty, ordinary internet usernames
+const FIRST = [
+  "mia", "ava", "zoe", "chloe", "luna", "ivy", "nina", "ruby", "jade", "sienna",
+  "kira", "elise", "nora", "wren", "tessa", "blair", "skye", "reese", "quinn", "harlow",
+  "alex", "jordan", "casey", "riley", "morgan", "drew", "jamie", "cameron", "avery", "parker",
+  "sam", "chris", "taylor", "jules", "remy", "finn", "cole", "dylan", "nate", "evan",
+  "sophia", "emma", "olivia", "isabella", "amelia", "harper", "evelyn", "abigail", "ella", "scarlett",
+  "layla", "penelope", "aria", "chloe", "victoria", "madison", "grace", "chloe", "zoey", "lily",
 ];
-const NOUNS = [
-  "moth", "mirror", "blade", "echo", "rook", "ash", "thorn", "glass",
-  "wolf", "crow", "veil", "spark", "haze", "drift", "ember", "wisp",
+
+const LAST_BITS = [
+  "lee", "rae", "ann", "mae", "rose", "lynn", "kate", "jay", "nix", "ray",
+  "fox", "brook", "vale", "hayes", "west", "lane", "reed", "blake", "cole", "drew",
+];
+
+const FLIRTY = [
+  "softlips", "afterhours", "notyourtype", "badidea", "almostlegal", "onemoredrink",
+  "donttext", "lowkeyhot", "quiettrouble", "slowburn", "nightshift", "barelydressed",
+  "yourmove", "leftonread", "nofilterx", "justlooking", "maybe later", "boredtonight",
 ];
 
 const STYLES = ["honest", "unhinged", "filthy", "petty", "deadpan"] as const;
@@ -46,8 +58,37 @@ function pick<T>(arr: readonly T[]): T {
 }
 
 function randomUsername() {
-  const n = Math.floor(Math.random() * 90) + 10;
-  return `${pick(ADJECTIVES)}${pick(NOUNS)}${n}`;
+  const mode = Math.random();
+
+  // First + numbers (mia17, dylan04)
+  if (mode < 0.35) {
+    const n = Math.floor(Math.random() * 90) + 1;
+    const pad = n < 10 ? `0${n}` : String(n);
+    return `${pick(FIRST)}${Math.random() < 0.5 ? pad : n}`;
+  }
+
+  // First + last bit (rubylyn, natewest)
+  if (mode < 0.55) {
+    return `${pick(FIRST)}${pick(LAST_BITS)}`;
+  }
+
+  // First_last or first.last style without the dot (avarae, jordanlee)
+  if (mode < 0.7) {
+    return `${pick(FIRST)}${pick(LAST_BITS)}${Math.floor(Math.random() * 9) + 1}`;
+  }
+
+  // Flirty handle, cleaned
+  if (mode < 0.88) {
+    const base = pick(FLIRTY).replace(/\s+/g, "");
+    if (Math.random() < 0.4) {
+      return `${base}${Math.floor(Math.random() * 40) + 1}`;
+    }
+    return base;
+  }
+
+  // x + name + year-ish
+  const year = 90 + Math.floor(Math.random() * 15);
+  return `${pick(FIRST)}${year}`;
 }
 
 async function generateJudgmentText(opts: {
@@ -106,8 +147,19 @@ async function generateJudgmentText(opts: {
 
 async function createOneDemo(makePublic: boolean) {
   const supabase = createServiceClient();
-  const username = randomUsername();
-  const email = `demo+${username}@thievnsden.internal`;
+  let username = randomUsername();
+  // light uniqueness retry
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("id")
+      .ilike("username", username)
+      .maybeSingle();
+    if (!existing) break;
+    username = randomUsername();
+  }
+
+  const email = `demo+${username.replace(/[^a-z0-9]/gi, "")}${Date.now().toString(36).slice(-4)}@thievnsden.internal`;
   const password = `Demo!${Math.random().toString(36).slice(2)}A1`;
   const style = pick(STYLES);
   const focus = pick(FOCUSES);

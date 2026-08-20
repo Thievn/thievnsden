@@ -32,7 +32,8 @@ export default function JoinPage() {
     e.preventDefault();
     setError(null);
 
-    if (!username.trim() || username.length < 3) {
+    const trimmed = username.trim();
+    if (!trimmed || trimmed.length < 3) {
       setError("Username must be at least 3 characters.");
       return;
     }
@@ -52,30 +53,27 @@ export default function JoinPage() {
     setLoading(true);
 
     try {
-      // Sign up
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
           data: {
-            username: username.trim().toLowerCase(),
+            username: trimmed, // keep exact casing the user typed
           },
         },
       });
 
       if (signUpError) throw signUpError;
 
-      // Create profile row
       if (data.user) {
         const { error: profileError } = await supabase.from("profiles").upsert({
           id: data.user.id,
-          username: username.trim().toLowerCase(),
-          display_name: username.trim(),
+          username: trimmed,
+          display_name: trimmed,
         });
 
         if (profileError) {
           console.error("Profile create error:", profileError);
-          // Don't block signup if profile fails — can fix later
         }
       }
 
@@ -124,7 +122,7 @@ export default function JoinPage() {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="yourname"
+            placeholder="YourName"
             autoComplete="username"
             className="w-full px-4 py-3 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 transition-colors"
           />

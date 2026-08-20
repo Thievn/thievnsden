@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
+import { getRarity } from "@/lib/gallery";
 
 type Judgment = {
   id: string;
@@ -12,7 +13,10 @@ type Judgment = {
   score: number;
   rarity: string;
   verdict: string;
-  is_public?: boolean;
+  image_url?: string | null;
+  is_public: boolean;
+  likes?: number;
+  dislikes?: number;
   created_at: string;
 };
 
@@ -21,6 +25,15 @@ export default function MyJudgmentsPage() {
   const [items, setItems] = useState<Judgment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = async (uid: string) => {
+    const res = await fetch(`/api/judgments?userId=${uid}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Could not load");
+    setItems(data.judgments || []);
+  };
 
   useEffect(() => {
     (async () => {
@@ -33,11 +46,10 @@ export default function MyJudgmentsPage() {
         return;
       }
 
+      setUserId(session.user.id);
+
       try {
-        const res = await fetch(`/api/judgments?userId=${session.user.id}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Could not load");
-        setItems(data.judgments || []);
+        await load(session.user.id);
       } catch (err: any) {
         setError(err.message || "Could not load judgments");
       } finally {
@@ -46,6 +58,47 @@ export default function MyJudgmentsPage() {
     })();
   }, [router]);
 
+  const setPublic = async (id: string, is_public: boolean) => {
+    if (!userId) return;
+    setBusyId(id);
+    try {
+      const res = await fetch("/api/judgments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ judgmentId: id, userId, is_public }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Update failed");
+      setItems((prev) =>
+        prev.map((j) => (j.id === id ? { ...j, is_public } : j))
+      );
+    } catch (err: any) {
+      alert(err.message || "Could not update");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const remove = async (id: string) => {
+    if (!userId) return;
+    if (!confirm("Delete this judgment permanently?")) return;
+    setBusyId(id);
+    try {
+      const res = await fetch("/api/judgments", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ judgmentId: id, userId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+      setItems((prev) => prev.filter((j) => j.id !== id));
+    } catch (err: any) {
+      alert(err.message || "Could not delete");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       <div className="mb-8">
@@ -53,7 +106,9 @@ export default function MyJudgmentsPage() {
           ← Account
         </Link>
         <h1 className="text-2xl font-semibold text-neutral-50 mt-2">My judgments</h1>
-        <p className="text-neutral-500 text-sm mt-1">Results you’ve saved to the Den.</p>
+        <p className="text-neutral-500 text-sm mt-1">
+          Private by default. Post one to the Gallery when you want it public.
+        </p>
       </div>
 
       {loading && <p className="text-neutral-500 text-sm">Loading…</p>}
@@ -80,24 +135,78 @@ export default function MyJudgmentsPage() {
       )}
 
       <div className="space-y-3">
-        {items.map((j) => (
-          <div key={j.id} className="rounded-xl border border-neutral-800/80 bg-[#111] p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs uppercase tracking-wide text-neutral-500">
-                {j.rarity} · {Number(j.score).toFixed(1)}/10
-              </span>
-              <span className="text-[11px] text-neutral-600">
-                {new Date(j.created_at).toLocaleDateString()}
-              </span>
+        {items.map((j) => {
+          const rarity = getRarity(Number(j.score));
+          return (
+            <div
+              key={j.id}
+              className={`rounded-xl border bg-[#111] p-4 ${rarity.border} ${rarity.glow}`}
+            >
+              <div className="flex items-center justify-between mb-2 gap-2">
+                <span className={`text-xs uppercase tracking-wide ${rarity.text}`}>
+                  {j.rarity} · {Number(j.score).toFixed(1)}/10
+                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border ${
+                      j.is_public
+                        ? "border-purple-800/50 text-purple-300 bg-purple-950/30"
+                        : "border-neutral-800 text-neutral-600"
+                    }`}
+                  >
+                    {j.is_public ? "Gallery" : "Private"}
+                  </span>
+                  <span className="text-[11px] text-neutral-600">
+                    {new Date(j.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-sm text-neutral-300 leading-relaxed">{j.verdict}</p>
+
+              <div className="mt-2 flex gap-2 text-[10px] uppercase tracking-wide text-neutral-600">
+                <span>{j.style}</span>
+                <span>·</span>
+                <span>{j.focus}</span>
+                {(j.likes != null || j.dislikes != null) && j.is_public && (
+                  <>
+                    <span>·</span>
+                    <span>
+                      ↑ {j.likes || 0} · ↓ {j.dislikes || 0}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {j.is_public ? (
+                  <button
+                    onClick={() => setPublic(j.id, false)}
+                    disabled={busyId === j.id}
+                    className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40"
+                  >
+                    Make private
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setPublic(j.id, true)}
+                    disabled={busyId === j.id}
+                    className="px-3 py-1.5 rounded-lg text-xs border border-purple-800/50 text-purple-300 hover:bg-purple-950/30 disabled:opacity-40"
+                  >
+                    Post to Gallery
+                  </button>
+                )}
+                <button
+                  onClick={() => remove(j.id)}
+                  disabled={busyId === j.id}
+                  className="px-3 py-1.5 rounded-lg text-xs border border-red-900/40 text-red-400/90 hover:bg-red-950/20 disabled:opacity-40"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-            <p className="text-sm text-neutral-300 leading-relaxed">{j.verdict}</p>
-            <div className="mt-2 flex gap-2 text-[10px] uppercase tracking-wide text-neutral-600">
-              <span>{j.style}</span>
-              <span>·</span>
-              <span>{j.focus}</span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

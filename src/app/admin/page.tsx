@@ -7,7 +7,7 @@ import { isAdmin } from "@/lib/admin";
 import { BarList, ActivityBars, RarityRing, ScoreBars } from "@/components/admin/Charts";
 import type { User } from "@supabase/supabase-js";
 
-type Tab = "overview" | "users" | "judgments" | "controls" | "reports";
+type Tab = "overview" | "users" | "judgments" | "controls" | "reports" | "audit";
 
 type AdminUser = {
   id: string;
@@ -47,6 +47,15 @@ type Report = {
   reason: string;
   notes: string;
   status: string;
+  created_at: string;
+};
+
+type AuditEntry = {
+  id: string;
+  action: string;
+  actor: string | null;
+  target: string | null;
+  details: string | null;
   created_at: string;
 };
 
@@ -100,6 +109,8 @@ export default function AdminPage() {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [settingsMsg, setSettingsMsg] = useState<string | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
+  const [audit, setAudit] = useState<AuditEntry[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
@@ -137,6 +148,7 @@ export default function AdminPage() {
     if (res.ok) {
       const data = await res.json();
       setJudgments(data.judgments || []);
+      setSelected(new Set());
     }
   };
 
@@ -156,11 +168,20 @@ export default function AdminPage() {
     }
   };
 
+  const loadAudit = async () => {
+    const res = await fetch("/api/admin/audit");
+    if (res.ok) {
+      const data = await res.json();
+      setAudit(data.entries || []);
+    }
+  };
+
   useEffect(() => {
     if (tab === "users") loadUsers();
     if (tab === "judgments") loadJudgments();
     if (tab === "controls") loadSettings();
     if (tab === "reports") loadReports();
+    if (tab === "audit") loadAudit();
   }, [tab, filterStyle, filterRarity]);
 
   const saveSettings = async () => {
@@ -176,7 +197,7 @@ export default function AdminPage() {
       if (!res.ok) throw new Error(data.error || "Save failed");
       setSettingsMsg("Settings saved.");
     } catch (err: any) {
-      setSettingsMsg(err.message || "Could not save. Did you run the SQL for site_settings?");
+      setSettingsMsg(err.message || "Could not save.");
     } finally {
       setBusy(false);
     }
@@ -196,6 +217,29 @@ export default function AdminPage() {
       await loadStats();
     } catch {
       alert("Could not delete user.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resetPassword = async (userId: string, username: string) => {
+    if (!confirm(`Send password reset for "${username}"?`)) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, action: "reset_password" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      if (data.link) {
+        prompt("Recovery link (copy it):", data.link);
+      } else {
+        alert(data.message || "Reset sent.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Could not reset password.");
     } finally {
       setBusy(false);
     }
@@ -240,6 +284,26 @@ export default function AdminPage() {
     }
   };
 
+  const bulkDelete = async () => {
+    if (selected.size === 0) return;
+    if (!confirm(`Delete ${selected.size} selected judgments?`)) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/judgments", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ judgmentIds: [...selected] }),
+      });
+      if (!res.ok) throw new Error("Failed");
+      await loadJudgments();
+      await loadStats();
+    } catch {
+      alert("Bulk delete failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const togglePublic = async (id: string, current: boolean) => {
     setBusy(true);
     try {
@@ -274,7 +338,7 @@ export default function AdminPage() {
       if (!res.ok) throw new Error("Failed");
       alert("Flagged.");
     } catch {
-      alert("Could not flag. Did you run the reports SQL?");
+      alert("Could not flag.");
     } finally {
       setBusy(false);
     }
@@ -297,6 +361,20 @@ export default function AdminPage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === judgments.length) setSelected(new Set());
+    else setSelected(new Set(judgments.map((j) => j.id)));
   };
 
   const filteredUsers = users.filter((u) => {
@@ -324,14 +402,30 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-2xl">☠</span>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-300 to-purple-400">
-            Admin
-          </h1>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-2xl">☠</span>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-300 to-purple-400">
+              Admin
+            </h1>
+          </div>
+          <p className="text-neutral-500 text-sm">Full control of the Den.</p>
         </div>
-        <p className="text-neutral-500 text-sm">Full control of the Den.</p>
+        <div className="flex gap-2">
+          <a
+            href="/api/admin/export?type=users"
+            className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200"
+          >
+            Export users CSV
+          </a>
+          <a
+            href="/api/admin/export?type=judgments"
+            className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200"
+          >
+            Export judgments CSV
+          </a>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-1 mb-6 p-1 rounded-xl bg-[#111] border border-neutral-800/80 w-fit">
@@ -342,6 +436,7 @@ export default function AdminPage() {
             { id: "judgments", label: "Judgments" },
             { id: "controls", label: "Controls" },
             { id: "reports", label: "Reports" },
+            { id: "audit", label: "Audit" },
           ] as const
         ).map((t) => (
           <button
@@ -374,12 +469,10 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
-
           <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
             <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">Activity · last 14 days</p>
             {stats.activity.length > 0 ? <ActivityBars data={stats.activity} /> : <p className="text-sm text-neutral-600">No activity yet</p>}
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
               <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">Styles</p>
@@ -390,7 +483,6 @@ export default function AdminPage() {
               <BarList data={Object.entries(stats.focusCounts).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value)} color="from-purple-600 to-purple-400" />
             </div>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5">
               <p className="text-xs uppercase tracking-wide text-neutral-500 mb-4">Rarity</p>
@@ -419,7 +511,8 @@ export default function AdminPage() {
                       <p className="text-xs text-neutral-500 truncate">{u.email || "—"}</p>
                       <p className="text-[11px] text-neutral-600 mt-0.5">{u.judgment_count} judgments · joined {new Date(u.created_at).toLocaleDateString()}</p>
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex flex-wrap gap-2 shrink-0">
+                      <button onClick={() => resetPassword(u.id, u.username)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40">Reset password</button>
                       <button onClick={() => nukeUserJudgments(u.id, u.username)} disabled={busy || u.judgment_count === 0} className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40">Nuke content</button>
                       <button onClick={() => deleteUser(u.id, u.username)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-red-900/50 text-red-400/90 hover:bg-red-950/30 disabled:opacity-40">Delete</button>
                     </div>
@@ -433,7 +526,7 @@ export default function AdminPage() {
 
       {tab === "judgments" && (
         <div className="space-y-4">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <select value={filterStyle} onChange={(e) => setFilterStyle(e.target.value)} className="px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-300 focus:outline-none">
               <option value="">All styles</option>
               {"honest unhinged filthy petty deadpan".split(" ").map((s) => <option key={s} value={s}>{s}</option>)}
@@ -442,28 +535,45 @@ export default function AdminPage() {
               <option value="">All rarities</option>
               {"Trash Common Uncommon Rare Epic Legendary".split(" ").map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
+            {judgments.length > 0 && (
+              <>
+                <button onClick={toggleSelectAll} className="px-3 py-2 rounded-xl text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200">
+                  {selected.size === judgments.length ? "Deselect all" : "Select all"}
+                </button>
+                {selected.size > 0 && (
+                  <button onClick={bulkDelete} disabled={busy} className="px-3 py-2 rounded-xl text-xs border border-red-900/50 text-red-400 hover:bg-red-950/30 disabled:opacity-40">
+                    Delete selected ({selected.size})
+                  </button>
+                )}
+              </>
+            )}
           </div>
           <div className="space-y-3">
             {judgments.length === 0 ? (
               <p className="text-sm text-neutral-500 p-4">No judgments found.</p>
             ) : (
               judgments.map((j) => (
-                <div key={j.id} className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-neutral-500">
-                      <span className="text-neutral-300">{j.username}</span>
-                      <span>·</span><span>{j.rarity}</span>
-                      <span>·</span><span>{Number(j.score).toFixed(1)}/10</span>
-                      <span>·</span><span>{j.style}</span>
-                      <span>·</span><span>{j.focus}</span>
+                <div key={j.id} className={`rounded-2xl border bg-[#111] p-4 ${selected.has(j.id) ? "border-purple-800/60" : "border-neutral-800/80"}`}>
+                  <div className="flex gap-3">
+                    <input type="checkbox" checked={selected.has(j.id)} onChange={() => toggleSelect(j.id)} className="mt-1 accent-purple-600" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-neutral-500">
+                          <span className="text-neutral-300">{j.username}</span>
+                          <span>·</span><span>{j.rarity}</span>
+                          <span>·</span><span>{Number(j.score).toFixed(1)}/10</span>
+                          <span>·</span><span>{j.style}</span>
+                          <span>·</span><span>{j.focus}</span>
+                        </div>
+                        <span className="text-[11px] text-neutral-600">{new Date(j.created_at).toLocaleString()}</span>
+                      </div>
+                      <p className="text-sm text-neutral-300 leading-relaxed mb-3">{j.verdict}</p>
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => togglePublic(j.id, j.is_public)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40">{j.is_public ? "Hide" : "Make public"}</button>
+                        <button onClick={() => flagJudgment(j.id)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-amber-900/40 text-amber-400/90 hover:bg-amber-950/20 disabled:opacity-40">Flag</button>
+                        <button onClick={() => deleteJudgment(j.id)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-red-900/50 text-red-400/90 hover:bg-red-950/30 disabled:opacity-40">Delete</button>
+                      </div>
                     </div>
-                    <span className="text-[11px] text-neutral-600">{new Date(j.created_at).toLocaleString()}</span>
-                  </div>
-                  <p className="text-sm text-neutral-300 leading-relaxed mb-3">{j.verdict}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={() => togglePublic(j.id, j.is_public)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40">{j.is_public ? "Hide" : "Make public"}</button>
-                    <button onClick={() => flagJudgment(j.id)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-amber-900/40 text-amber-400/90 hover:bg-amber-950/20 disabled:opacity-40">Flag</button>
-                    <button onClick={() => deleteJudgment(j.id)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-red-900/50 text-red-400/90 hover:bg-red-950/30 disabled:opacity-40">Delete</button>
                   </div>
                 </div>
               ))
@@ -472,47 +582,29 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* CONTROLS */}
       {tab === "controls" && (
         <div className="space-y-5 max-w-xl">
           {settingsMsg && (
-            <div className={`px-3 py-2.5 rounded-lg text-sm border ${
-              settingsMsg.includes("saved") ? "bg-green-950/30 border-green-900/40 text-green-400" : "bg-red-950/40 border-red-900/50 text-red-300"
-            }`}>
+            <div className={`px-3 py-2.5 rounded-lg text-sm border ${settingsMsg.includes("saved") ? "bg-green-950/30 border-green-900/40 text-green-400" : "bg-red-950/40 border-red-900/50 text-red-300"}`}>
               {settingsMsg}
             </div>
           )}
-
           <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-4">
             <p className="text-xs uppercase tracking-wide text-neutral-500">Maintenance</p>
             <label className="flex items-center justify-between gap-3">
               <span className="text-sm text-neutral-300">Maintenance mode</span>
               <input type="checkbox" checked={settings.maintenance_mode} onChange={(e) => setSettings((s) => ({ ...s, maintenance_mode: e.target.checked }))} className="w-4 h-4 accent-red-600" />
             </label>
-            <textarea
-              value={settings.maintenance_message}
-              onChange={(e) => setSettings((s) => ({ ...s, maintenance_message: e.target.value }))}
-              placeholder="Message shown when Den is closed"
-              rows={2}
-              className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600"
-            />
+            <textarea value={settings.maintenance_message} onChange={(e) => setSettings((s) => ({ ...s, maintenance_message: e.target.value }))} rows={2} className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200 focus:outline-none focus:border-neutral-600" />
           </div>
-
           <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-4">
             <p className="text-xs uppercase tracking-wide text-neutral-500">Announcement banner</p>
             <label className="flex items-center justify-between gap-3">
               <span className="text-sm text-neutral-300">Show banner</span>
               <input type="checkbox" checked={settings.announcement_enabled} onChange={(e) => setSettings((s) => ({ ...s, announcement_enabled: e.target.checked }))} className="w-4 h-4 accent-purple-600" />
             </label>
-            <input
-              type="text"
-              value={settings.announcement_text}
-              onChange={(e) => setSettings((s) => ({ ...s, announcement_text: e.target.value }))}
-              placeholder="Banner message"
-              className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600"
-            />
+            <input type="text" value={settings.announcement_text} onChange={(e) => setSettings((s) => ({ ...s, announcement_text: e.target.value }))} placeholder="Banner message" className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200 focus:outline-none focus:border-neutral-600" />
           </div>
-
           <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-3">
             <p className="text-xs uppercase tracking-wide text-neutral-500 mb-1">Feature toggles</p>
             {[
@@ -523,27 +615,16 @@ export default function AdminPage() {
             ].map((t) => (
               <label key={t.key} className="flex items-center justify-between gap-3">
                 <span className="text-sm text-neutral-300">{t.label}</span>
-                <input
-                  type="checkbox"
-                  checked={!!settings[t.key]}
-                  onChange={(e) => setSettings((s) => ({ ...s, [t.key]: e.target.checked }))}
-                  className="w-4 h-4 accent-red-600"
-                />
+                <input type="checkbox" checked={!!settings[t.key]} onChange={(e) => setSettings((s) => ({ ...s, [t.key]: e.target.checked }))} className="w-4 h-4 accent-red-600" />
               </label>
             ))}
           </div>
-
-          <button
-            onClick={saveSettings}
-            disabled={busy}
-            className="w-full py-3 rounded-xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white text-sm font-medium disabled:opacity-50"
-          >
+          <button onClick={saveSettings} disabled={busy} className="w-full py-3 rounded-xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white text-sm font-medium disabled:opacity-50">
             {busy ? "Saving…" : "Save settings"}
           </button>
         </div>
       )}
 
-      {/* REPORTS */}
       {tab === "reports" && (
         <div className="space-y-4">
           <p className="text-sm text-neutral-500">Flagged items from the Judgments tab appear here.</p>
@@ -556,27 +637,38 @@ export default function AdminPage() {
               {reports.map((r) => (
                 <div key={r.id} className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4">
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded ${
-                      r.status === "open" ? "bg-amber-950/40 text-amber-400 border border-amber-900/40" : "bg-neutral-900 text-neutral-500 border border-neutral-800"
-                    }`}>
-                      {r.status}
-                    </span>
+                    <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded ${r.status === "open" ? "bg-amber-950/40 text-amber-400 border border-amber-900/40" : "bg-neutral-900 text-neutral-500 border border-neutral-800"}`}>{r.status}</span>
                     <span className="text-[11px] text-neutral-600">{new Date(r.created_at).toLocaleString()}</span>
                   </div>
                   <p className="text-sm text-neutral-300 mb-1">{r.reason}</p>
                   {r.notes && <p className="text-xs text-neutral-500 mb-3">{r.notes}</p>}
-                  {r.judgment_id && (
-                    <p className="text-[11px] text-neutral-600 mb-3 font-mono">judgment: {r.judgment_id.slice(0, 8)}…</p>
-                  )}
                   {r.status === "open" && (
-                    <button
-                      onClick={() => resolveReport(r.id)}
-                      disabled={busy}
-                      className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40"
-                    >
-                      Mark resolved
-                    </button>
+                    <button onClick={() => resolveReport(r.id)} disabled={busy} className="px-3 py-1.5 rounded-lg text-xs border border-neutral-800 text-neutral-400 hover:text-neutral-200 disabled:opacity-40">Mark resolved</button>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "audit" && (
+        <div className="space-y-4">
+          <p className="text-sm text-neutral-500">Recent admin actions.</p>
+          {audit.length === 0 ? (
+            <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-8 text-center">
+              <p className="text-sm text-neutral-500">No audit entries yet. Actions will appear here after you run the audit_log SQL.</p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden divide-y divide-neutral-800/60">
+              {audit.map((e) => (
+                <div key={e.id} className="p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                    <span className="text-sm text-neutral-200 font-medium">{e.action}</span>
+                    <span className="text-[11px] text-neutral-600">{new Date(e.created_at).toLocaleString()}</span>
+                  </div>
+                  {e.target && <p className="text-xs text-neutral-500 font-mono truncate">target: {e.target}</p>}
+                  {e.details && <p className="text-xs text-neutral-500 mt-0.5">{e.details}</p>}
                 </div>
               ))}
             </div>

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { SeedQueuePanel } from "@/app/admin/SeedQueuePanel";
 
 type Demo = {
   id: string;
@@ -206,7 +207,7 @@ export function SeedsTab() {
         ? OUTFITS_WOMAN
         : [...OUTFITS_WOMAN, ...OUTFITS_MAN];
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/seeds");
@@ -219,11 +220,11 @@ export function SeedsTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   useEffect(() => {
     if (gender === "man") {
@@ -233,6 +234,24 @@ export function SeedsTab() {
       setOutfit(OUTFITS_WOMAN[0]);
     }
   }, [gender]);
+
+  const queueFilters = {
+    gender: gender === "random" ? undefined : gender,
+    ageBand,
+    ethnicity: ethnicity === "random" ? undefined : ethnicity,
+    bodyType,
+    height,
+    expression,
+    hair,
+    camera,
+    pose,
+    setting,
+    outfit,
+    chest,
+    style,
+    focus,
+    filthyMode: style === "filthy" ? filthyMode : null,
+  };
 
   const createCustom = async () => {
     setBusy(true);
@@ -245,23 +264,7 @@ export function SeedsTab() {
         body: JSON.stringify({
           count: 1,
           makePublic,
-          custom: {
-            gender: gender === "random" ? undefined : gender,
-            ageBand,
-            ethnicity: ethnicity === "random" ? undefined : ethnicity,
-            bodyType,
-            height,
-            expression,
-            hair,
-            camera,
-            pose,
-            setting,
-            outfit,
-            chest,
-            style,
-            focus,
-            filthyMode: style === "filthy" ? filthyMode : null,
-          },
+          custom: queueFilters,
         }),
       });
       const data = await res.json();
@@ -363,17 +366,22 @@ export function SeedsTab() {
   };
 
   const anyBusy = busy || !!rowBusy;
-
-  const field = "w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200";
+  const field =
+    "w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200";
 
   return (
     <div className="space-y-5">
+      <SeedQueuePanel
+        makePublic={makePublic}
+        filters={queueFilters}
+        onDemosMaybeChanged={load}
+      />
+
       <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-4">
         <div>
           <p className="text-sm text-neutral-200 font-medium mb-1">Custom demo creator</p>
           <p className="text-xs text-neutral-500 leading-relaxed">
-            Full control over who shows up. One at a time is reliable. Gender locks clothing lists.
-            Use pose + camera for butt shots, third-party photos, etc.
+            Full control over one demo. Same filters feed the bulk queue when “Use filters” is on.
           </p>
         </div>
 
@@ -393,7 +401,9 @@ export function SeedsTab() {
             <span>Gender</span>
             <select value={gender} onChange={(e) => setGender(e.target.value)} className={field}>
               {GENDERS.map((g) => (
-                <option key={g.id} value={g.id}>{g.label}</option>
+                <option key={g.id} value={g.id}>
+                  {g.label}
+                </option>
               ))}
             </select>
           </label>
@@ -401,15 +411,23 @@ export function SeedsTab() {
             <span>Age</span>
             <select value={ageBand} onChange={(e) => setAgeBand(e.target.value)} className={field}>
               {AGES.map((a) => (
-                <option key={a} value={a}>{a}</option>
+                <option key={a} value={a}>
+                  {a}
+                </option>
               ))}
             </select>
           </label>
           <label className="text-xs text-neutral-500 space-y-1">
             <span>Ethnicity / look</span>
-            <select value={ethnicity} onChange={(e) => setEthnicity(e.target.value)} className={field}>
+            <select
+              value={ethnicity}
+              onChange={(e) => setEthnicity(e.target.value)}
+              className={field}
+            >
               {ETHNICITIES.map((e) => (
-                <option key={e} value={e}>{e}</option>
+                <option key={e} value={e}>
+                  {e}
+                </option>
               ))}
             </select>
           </label>
@@ -417,7 +435,9 @@ export function SeedsTab() {
             <span>Body type</span>
             <select value={bodyType} onChange={(e) => setBodyType(e.target.value)} className={field}>
               {BODY_TYPES.map((b) => (
-                <option key={b} value={b}>{b}</option>
+                <option key={b} value={b}>
+                  {b}
+                </option>
               ))}
             </select>
           </label>
@@ -425,7 +445,9 @@ export function SeedsTab() {
             <span>Height vibe</span>
             <select value={height} onChange={(e) => setHeight(e.target.value)} className={field}>
               {HEIGHTS.map((h) => (
-                <option key={h} value={h}>{h}</option>
+                <option key={h} value={h}>
+                  {h}
+                </option>
               ))}
             </select>
           </label>
@@ -433,7 +455,9 @@ export function SeedsTab() {
             <span>Hair</span>
             <select value={hair} onChange={(e) => setHair(e.target.value)} className={field}>
               {HAIR.map((h) => (
-                <option key={h} value={h}>{h}</option>
+                <option key={h} value={h}>
+                  {h}
+                </option>
               ))}
             </select>
           </label>
@@ -443,9 +467,15 @@ export function SeedsTab() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="text-xs text-neutral-500 space-y-1">
             <span>Expression</span>
-            <select value={expression} onChange={(e) => setExpression(e.target.value)} className={field}>
+            <select
+              value={expression}
+              onChange={(e) => setExpression(e.target.value)}
+              className={field}
+            >
               {EXPRESSIONS.map((e) => (
-                <option key={e} value={e}>{e}</option>
+                <option key={e} value={e}>
+                  {e}
+                </option>
               ))}
             </select>
           </label>
@@ -453,7 +483,9 @@ export function SeedsTab() {
             <span>Camera</span>
             <select value={camera} onChange={(e) => setCamera(e.target.value)} className={field}>
               {CAMERAS.map((c) => (
-                <option key={c.id} value={c.id}>{c.label}</option>
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
               ))}
             </select>
           </label>
@@ -461,7 +493,9 @@ export function SeedsTab() {
             <span>Pose / framing</span>
             <select value={pose} onChange={(e) => setPose(e.target.value)} className={field}>
               {POSES.map((p) => (
-                <option key={p.id} value={p.id}>{p.label}</option>
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
               ))}
             </select>
           </label>
@@ -473,7 +507,9 @@ export function SeedsTab() {
             <span>Environment</span>
             <select value={setting} onChange={(e) => setSetting(e.target.value)} className={field}>
               {SETTINGS.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
             </select>
           </label>
@@ -481,7 +517,9 @@ export function SeedsTab() {
             <span>Outfit</span>
             <select value={outfit} onChange={(e) => setOutfit(e.target.value)} className={field}>
               {outfits.map((o) => (
-                <option key={o} value={o}>{o}</option>
+                <option key={o} value={o}>
+                  {o}
+                </option>
               ))}
             </select>
           </label>
@@ -489,7 +527,9 @@ export function SeedsTab() {
             <span>Chest visibility</span>
             <select value={chest} onChange={(e) => setChest(e.target.value)} className={field}>
               {CHEST.map((c) => (
-                <option key={c.id} value={c.id}>{c.label}</option>
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
               ))}
             </select>
           </label>
@@ -501,7 +541,9 @@ export function SeedsTab() {
             <span>Style</span>
             <select value={style} onChange={(e) => setStyle(e.target.value)} className={field}>
               {STYLES.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
             </select>
           </label>
@@ -509,16 +551,24 @@ export function SeedsTab() {
             <span>Focus</span>
             <select value={focus} onChange={(e) => setFocus(e.target.value)} className={field}>
               {FOCUSES.map((f) => (
-                <option key={f} value={f}>{f}</option>
+                <option key={f} value={f}>
+                  {f}
+                </option>
               ))}
             </select>
           </label>
           {style === "filthy" && (
             <label className="text-xs text-neutral-500 space-y-1 sm:col-span-2">
               <span>Filthy mode</span>
-              <select value={filthyMode} onChange={(e) => setFilthyMode(e.target.value)} className={field}>
+              <select
+                value={filthyMode}
+                onChange={(e) => setFilthyMode(e.target.value)}
+                className={field}
+              >
                 {FILTHY.map((f) => (
-                  <option key={f} value={f}>{f}</option>
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
                 ))}
               </select>
             </label>
@@ -547,7 +597,10 @@ export function SeedsTab() {
           >
             Purge all
           </button>
-          <Link href="/playground" className="px-4 py-2.5 rounded-xl text-sm border border-neutral-800 text-neutral-400">
+          <Link
+            href="/playground"
+            className="px-4 py-2.5 rounded-xl text-sm border border-neutral-800 text-neutral-400"
+          >
             Playground
           </Link>
         </div>
@@ -578,14 +631,19 @@ export function SeedsTab() {
         ) : (
           <div className="space-y-3">
             {demos.map((d) => (
-              <div key={d.id} className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4 space-y-3">
+              <div
+                key={d.id}
+                className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4 space-y-3"
+              >
                 <div className="flex gap-3">
                   <div className="w-14 h-[74px] rounded-lg overflow-hidden border border-neutral-800 bg-black shrink-0">
                     {d.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={d.image_url} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[9px] text-red-400/80">no img</div>
+                      <div className="w-full h-full flex items-center justify-center text-[9px] text-red-400/80">
+                        no img
+                      </div>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -600,13 +658,25 @@ export function SeedsTab() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button onClick={() => regen(d.id, "image")} disabled={anyBusy} className="px-3 py-1.5 rounded-lg text-[11px] border border-purple-900/40 text-purple-300/90 disabled:opacity-40">
+                  <button
+                    onClick={() => regen(d.id, "image")}
+                    disabled={anyBusy}
+                    className="px-3 py-1.5 rounded-lg text-[11px] border border-purple-900/40 text-purple-300/90 disabled:opacity-40"
+                  >
                     Regen pic
                   </button>
-                  <button onClick={() => regen(d.id, "verdict")} disabled={anyBusy || !d.image_url} className="px-3 py-1.5 rounded-lg text-[11px] border border-neutral-800 text-neutral-400 disabled:opacity-40">
+                  <button
+                    onClick={() => regen(d.id, "verdict")}
+                    disabled={anyBusy || !d.image_url}
+                    className="px-3 py-1.5 rounded-lg text-[11px] border border-neutral-800 text-neutral-400 disabled:opacity-40"
+                  >
                     Regen judgment
                   </button>
-                  <button onClick={() => deleteOne(d.id, d.username)} disabled={anyBusy} className="px-3 py-1.5 rounded-lg text-[11px] border border-red-900/40 text-red-400/90 disabled:opacity-40">
+                  <button
+                    onClick={() => deleteOne(d.id, d.username)}
+                    disabled={anyBusy}
+                    className="px-3 py-1.5 rounded-lg text-[11px] border border-red-900/40 text-red-400/90 disabled:opacity-40"
+                  >
                     Delete
                   </button>
                 </div>

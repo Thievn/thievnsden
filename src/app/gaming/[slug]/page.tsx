@@ -8,6 +8,7 @@ import { STATUS_STYLES, itemSlug } from "@/lib/gaming-data";
 import { ThoughtReactions } from "@/components/ThoughtReactions";
 import { ThoughtComments } from "@/components/ThoughtComments";
 import { ShareBar } from "@/components/ShareBar";
+import { CoverImage } from "@/components/gaming/CoverImage";
 
 export default function GamingArticlePage() {
   const params = useParams();
@@ -75,13 +76,8 @@ export default function GamingArticlePage() {
       </Link>
 
       {item.cover ? (
-        <div className="relative aspect-[16/9] rounded-2xl overflow-hidden mb-8 border border-neutral-800/80">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.cover}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+        <div className="rounded-2xl overflow-hidden mb-8 border border-neutral-800/80">
+          <CoverImage src={item.cover} className="aspect-[16/9]" />
         </div>
       ) : null}
 

@@ -17,15 +17,37 @@ export default function Icon() {
           borderRadius: 8,
         }}
       >
+        {/* Keyhole approximation for Satori */}
         <div
           style={{
-            width: 14,
-            height: 14,
-            borderRadius: 999,
-            background: "linear-gradient(135deg, #ef4444 0%, #a855f7 100%)",
-            boxShadow: "0 0 10px rgba(185, 28, 92, 0.8)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
-        />
+        >
+          <div
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: 999,
+              border: "2.5px solid #e11d48",
+              background: "#070707",
+            }}
+          />
+          <div
+            style={{
+              width: 7,
+              height: 10,
+              marginTop: -2,
+              borderLeft: "2.5px solid #c026d3",
+              borderRight: "2.5px solid #c026d3",
+              borderBottom: "2.5px solid #a855f7",
+              borderBottomLeftRadius: 2,
+              borderBottomRightRadius: 2,
+              background: "#070707",
+            }}
+          />
+        </div>
       </div>
     ),
     { ...size }

@@ -27,6 +27,9 @@ const siteTitle = "Thievn's Den";
 const siteDescription =
   "Dark humor, honest writing, AI art, gaming, and experimental tools from Thievn. Home of Face The Den and unfiltered thoughts.";
 
+const ogImage =
+  "/api/og?title=Thievn%27s%20Den&subtitle=Dark%20humor%20%C2%B7%20Gaming%20%C2%B7%20Face%20The%20Den";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://thievnsden.com"),
   title: {
@@ -60,6 +63,7 @@ export const metadata: Metadata = {
     siteName: "Thievn's Den",
     title: siteTitle,
     description: siteDescription,
+    images: [{ url: ogImage, width: 1200, height: 630, alt: "Thievn's Den" }],
   },
   twitter: {
     card: "summary_large_image",
@@ -67,6 +71,7 @@ export const metadata: Metadata = {
     description: siteDescription,
     creator: "@Thievn",
     site: "@Thievn",
+    images: [ogImage],
   },
   robots: {
     index: true,

@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Thievn's Den",
     short_name: "The Den",
     description:
-      "Dark humor, Face The Den, thoughts, and the void. Install for the full Den experience.",
+      "Dark humor, Face The Den, thoughts, loot, and gaming. Install for the full Den experience.",
     start_url: "/",
     scope: "/",
     display: "standalone",

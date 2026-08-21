@@ -31,10 +31,19 @@ const STATUSES: GamingStatus[] = [
   "library",
 ];
 
+const TONES = [
+  { id: "den", label: "Den (honest)" },
+  { id: "positive", label: "Positive" },
+  { id: "critical", label: "Critical" },
+  { id: "balanced", label: "Balanced" },
+  { id: "hype", label: "Hype" },
+] as const;
+
+type ToneId = (typeof TONES)[number]["id"];
+
 function emptyItem(): GamingItem {
-  const id = `item-${Date.now()}`;
   return {
-    id,
+    id: `item-${Date.now()}`,
     kind: "article",
     title: "New piece",
     slug: `new-piece-${Date.now().toString().slice(-4)}`,
@@ -59,10 +68,20 @@ export function GamingTab() {
   const [loaded, setLoaded] = useState(false);
   const [searchQ, setSearchQ] = useState("");
   const [searchResults, setSearchResults] = useState<
-    { id: number; name: string; released?: string; background_image?: string; url?: string; slug?: string }[]
+    {
+      id: number;
+      name: string;
+      released?: string;
+      background_image?: string;
+      url?: string;
+      slug?: string;
+    }[]
   >([]);
   const [searching, setSearching] = useState(false);
   const [draftingId, setDraftingId] = useState<string | null>(null);
+  const [tones, setTones] = useState<Record<string, ToneId>>({});
+  const [pulses, setPulses] = useState<Record<string, string>>({});
+  const [pulseLoading, setPulseLoading] = useState<string | null>(null);
   const listEndRef = useRef<HTMLDivElement>(null);
 
   const load = async () => {
@@ -97,9 +116,7 @@ export function GamingTab() {
         body: JSON.stringify({ config, items: normalized }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || data.hint || "Save failed");
-      }
+      if (!res.ok) throw new Error(data.error || data.hint || "Save failed");
       setMsg("Gaming settings saved. Public page will pick this up on refresh.");
       setDirty(false);
       if (data.config) setConfig({ ...DEFAULT_GAMING_CONFIG, ...data.config });
@@ -173,14 +190,50 @@ export function GamingTab() {
       published: true,
     };
     setItems((prev) => [...prev, item]);
-    setMsg(`Imported “${g.name}”. Draft with Grok or write the note, then Save gaming.`);
+    setMsg(`Imported “${g.name}”. Fetch pulse + pick tone, then draft.`);
     setTimeout(() => listEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
   };
 
-  const draftWithGrok = async (id: string, mode: "note" | "article") => {
+  const fetchPulse = async (id: string) => {
     const item = items.find((i) => i.id === id);
     if (!item?.title) {
       setMsg("Add a title first.");
+      return;
+    }
+    setPulseLoading(id);
+    setMsg(null);
+    try {
+      const res = await fetch(
+        `/api/admin/gaming/pulse?q=${encodeURIComponent(item.title)}`
+      );
+      const data = await res.json();
+      if (data.error && !data.pulse) throw new Error(data.error);
+      setPulses((p) => ({ ...p, [id]: data.pulse || "" }));
+      if (data.game?.background_image && !item.cover) {
+        updateItem(id, { cover: data.game.background_image });
+      }
+      if (data.game?.url && !item.url) {
+        updateItem(id, { url: data.game.url });
+      }
+      setMsg(data.pulse ? "Pulse loaded. Draft when ready." : "No pulse data found.");
+    } catch (err: any) {
+      setMsg(err.message || "Pulse failed");
+    } finally {
+      setPulseLoading(null);
+    }
+  };
+
+  const draftWithGrok = async (
+    id: string,
+    mode: "note" | "article" | "rewrite"
+  ) => {
+    const item = items.find((i) => i.id === id);
+    if (!item?.title) {
+      setMsg("Add a title first.");
+      return;
+    }
+    if (mode === "rewrite" && !item.body && !item.note) {
+      setMsg("Nothing to rewrite yet.");
       return;
     }
     setDraftingId(id);
@@ -191,18 +244,32 @@ export function GamingTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: item.title,
-          hint: item.meta || item.note || "",
+          hint: item.meta || "",
+          pulse: pulses[id] || "",
+          tone: tones[id] || "den",
           mode,
+          existing: mode === "rewrite" ? item.body || item.note : undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Draft failed");
       markDirty();
-      updateItem(id, {
-        note: data.note || item.note,
-        body: data.body || item.body,
-      });
-      setMsg(mode === "article" ? "Article drafted. Review and Save." : "Note drafted. Review and Save.");
+      if (mode === "note") {
+        updateItem(id, { note: data.note || item.note });
+      } else {
+        updateItem(id, {
+          note: data.note || item.note,
+          body: data.body || item.body,
+        });
+      }
+      const toneLabel = TONES.find((t) => t.id === (tones[id] || "den"))?.label;
+      setMsg(
+        mode === "rewrite"
+          ? `Rewrote in ${toneLabel}. Review and Save.`
+          : mode === "article"
+            ? `Article drafted (${toneLabel}). Review and Save.`
+            : `Note drafted (${toneLabel}). Review and Save.`
+      );
     } catch (err: any) {
       setMsg(err.message || "Grok draft failed");
     } finally {
@@ -214,12 +281,21 @@ export function GamingTab() {
     return <p className="text-sm text-neutral-500">Loading gaming…</p>;
   }
 
+  const msgOk =
+    msg &&
+    (msg.toLowerCase().includes("saved") ||
+      msg.toLowerCase().includes("imported") ||
+      msg.toLowerCase().includes("drafted") ||
+      msg.toLowerCase().includes("added") ||
+      msg.toLowerCase().includes("pulse") ||
+      msg.toLowerCase().includes("rewrote"));
+
   return (
     <div className="space-y-6">
       {msg && (
         <div
           className={`px-3 py-2.5 rounded-lg text-sm border ${
-            msg.toLowerCase().includes("saved") || msg.toLowerCase().includes("imported") || msg.toLowerCase().includes("drafted") || msg.toLowerCase().includes("added")
+            msgOk
               ? "bg-green-950/30 border-green-900/40 text-green-400"
               : "bg-red-950/40 border-red-900/50 text-red-300"
           }`}
@@ -291,7 +367,7 @@ export function GamingTab() {
         </label>
 
         <div className="pt-2 border-t border-neutral-900 space-y-2">
-          <p className="text-xs text-neutral-500">Import game (fills title, cover, link)</p>
+          <p className="text-xs text-neutral-500">Import game (title, cover, link)</p>
           <div className="flex gap-2">
             <input
               type="text"
@@ -356,6 +432,10 @@ export function GamingTab() {
           </button>
         </div>
 
+        <p className="text-[11px] text-neutral-600 leading-relaxed">
+          Den tone = honest, not forced-negative. Use pulse so drafts respect what players are actually saying.
+        </p>
+
         {items.map((item) => (
           <div
             key={item.id}
@@ -390,6 +470,30 @@ export function GamingTab() {
               placeholder="Meta (season, date…)"
               className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200 focus:outline-none focus:border-neutral-600"
             />
+
+            <div className="space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] text-neutral-500">Community pulse</span>
+                <button
+                  type="button"
+                  onClick={() => fetchPulse(item.id)}
+                  disabled={pulseLoading === item.id}
+                  className="text-[11px] text-neutral-400 hover:text-neutral-200 disabled:opacity-40"
+                >
+                  {pulseLoading === item.id ? "Fetching…" : "Fetch from RAWG"}
+                </button>
+              </div>
+              <textarea
+                value={pulses[item.id] || ""}
+                onChange={(e) =>
+                  setPulses((p) => ({ ...p, [item.id]: e.target.value }))
+                }
+                rows={3}
+                placeholder="Ratings, majority take, or paste what people are saying…"
+                className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-xs text-neutral-300 focus:outline-none focus:border-neutral-600 resize-y"
+              />
+            </div>
+
             <textarea
               value={item.note}
               onChange={(e) => updateItem(item.id, { note: e.target.value })}
@@ -404,14 +508,31 @@ export function GamingTab() {
               placeholder="Full article body (paragraphs separated by blank lines)"
               className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200 focus:outline-none focus:border-neutral-600 resize-y"
             />
-            <div className="flex flex-wrap gap-2">
+
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={tones[item.id] || "den"}
+                onChange={(e) =>
+                  setTones((t) => ({
+                    ...t,
+                    [item.id]: e.target.value as ToneId,
+                  }))
+                }
+                className="px-2 py-1.5 rounded-lg bg-[#0a0a0a] border border-neutral-800 text-[11px] text-neutral-300"
+              >
+                {TONES.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
                 disabled={draftingId === item.id}
                 onClick={() => draftWithGrok(item.id, "note")}
                 className="px-2.5 py-1.5 rounded-lg text-[11px] border border-neutral-700 text-neutral-300 hover:text-white disabled:opacity-40"
               >
-                {draftingId === item.id ? "Drafting…" : "Grok note"}
+                {draftingId === item.id ? "…" : "Grok note"}
               </button>
               <button
                 type="button"
@@ -421,7 +542,16 @@ export function GamingTab() {
               >
                 Grok article
               </button>
+              <button
+                type="button"
+                disabled={draftingId === item.id}
+                onClick={() => draftWithGrok(item.id, "rewrite")}
+                className="px-2.5 py-1.5 rounded-lg text-[11px] border border-neutral-700 text-neutral-400 hover:text-neutral-200 disabled:opacity-40"
+              >
+                Rewrite tone
+              </button>
             </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <select
                 value={item.kind}

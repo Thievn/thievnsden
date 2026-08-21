@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { GamingItem } from "@/lib/gaming-data";
 import { STATUS_STYLES, itemSlug } from "@/lib/gaming-data";
 import { ShareBar } from "@/components/ShareBar";
+import { CoverImage } from "@/components/gaming/CoverImage";
 
 const DEN_NAMES = [
   "A voice from the Den",
@@ -109,6 +110,10 @@ export function GameCard({
     persist({ up, down, voted, comments: next });
   };
 
+  const coverAspect = featured
+    ? "aspect-[21/9] sm:aspect-[2.4/1]"
+    : "aspect-[16/9]";
+
   return (
     <article
       className={`rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden flex flex-col ${
@@ -116,35 +121,18 @@ export function GameCard({
       }`}
     >
       <Link href={href} className="group block">
-        {item.cover ? (
-          <div
-            className={`relative bg-neutral-900 overflow-hidden ${
-              featured ? "aspect-[21/9] sm:aspect-[2.4/1]" : "aspect-[16/9]"
-            }`}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.cover}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-500"
-            />
+        <CoverImage
+          src={item.cover}
+          className={coverAspect}
+          imgClassName="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-500"
+        />
+        <div className="absolute inset-0 pointer-events-none">
+          <div className={`relative ${coverAspect}`}>
             <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/20 to-transparent" />
           </div>
-        ) : (
-          <div
-            className={`relative bg-gradient-to-br from-red-950/40 via-[#111] to-purple-950/30 ${
-              featured ? "aspect-[21/9] sm:aspect-[2.4/1]" : "aspect-[16/9]"
-            }`}
-          >
-            <div className="absolute inset-0 flex items-end p-5">
-              <span className="text-xs uppercase tracking-widest text-neutral-600">
-                Thievn's Den
-              </span>
-            </div>
-          </div>
-        )}
+        </div>
 
-        <div className={`p-5 ${item.cover ? "" : "pt-4"}`}>
+        <div className="p-5 relative">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span
               className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${style.className}`}

@@ -17,14 +17,34 @@ export async function GET() {
       >
         <div
           style={{
-            width: 96,
-            height: 96,
-            borderRadius: 999,
-            background:
-              "radial-gradient(circle at 30% 30%, #ef4444 0%, #b91c5c 40%, #7c3aed 75%, #070707 100%)",
-            boxShadow: "0 0 40px rgba(185,28,92,0.5)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
-        />
+        >
+          <div
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: 999,
+              border: "8px solid #e11d48",
+              background: "#070707",
+            }}
+          />
+          <div
+            style={{
+              width: 40,
+              height: 64,
+              marginTop: -10,
+              borderLeft: "8px solid #c026d3",
+              borderRight: "8px solid #c026d3",
+              borderBottom: "8px solid #a855f7",
+              borderBottomLeftRadius: 6,
+              borderBottomRightRadius: 6,
+              background: "#070707",
+            }}
+          />
+        </div>
       </div>
     ),
     { width: 192, height: 192 }

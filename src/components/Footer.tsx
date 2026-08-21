@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DenMark } from "@/components/DenMark";
 
 export function Footer() {
   return (
@@ -7,8 +8,8 @@ export function Footer() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-red-600" />
-              <p className="text-neutral-100 font-medium tracking-tight text-sm sm:text-base">Thievn&apos;s Den</p>
+              <DenMark className="w-3.5 h-4.5 shrink-0" />
+              <p className="text-neutral-100 font-medium tracking-tight text-sm sm:text-base">Thievn's Den</p>
             </div>
             <p className="text-xs sm:text-sm text-neutral-500">
               Dark thoughts • Cynical humor • AI art
@@ -34,7 +35,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 pt-5 border-t border-neutral-900/80 text-xs text-neutral-600 flex flex-col sm:flex-row justify-between gap-2">
-          <p>© {new Date().getFullYear()} Thievn&apos;s Den</p>
+          <p>© {new Date().getFullYear()} Thievn's Den</p>
           <p>Some links may be affiliate links.</p>
         </div>
       </div>

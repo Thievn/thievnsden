@@ -66,30 +66,30 @@ const items = [
 ];
 
 function LootImage({ id, name }: { id: string; name: string }) {
-  const [failed, setFailed] = useState(false);
+  const [state, setState] = useState<"loading" | "ok" | "missing">("loading");
   const src = `/loot/${id}.jpg`;
-
-  if (failed) {
-    return (
-      <div className="relative aspect-[16/10] sm:aspect-[4/3] bg-[#0a0a0a] border-b border-neutral-800/60 flex items-center justify-center">
-        <div className="text-center px-4">
-          <div className="w-10 h-10 mx-auto mb-2.5 rounded-full border border-neutral-800 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-60" />
-          </div>
-          <p className="text-[11px] text-neutral-600">Photo coming</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative aspect-[16/10] sm:aspect-[4/3] bg-[#0a0a0a] border-b border-neutral-800/60 overflow-hidden">
+      {state !== "ok" && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#0c0c0c] to-[#080808]">
+          <div className="text-center px-4">
+            <div className="w-11 h-11 mx-auto mb-3 rounded-full border border-neutral-800/90 bg-black/40 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-70" />
+            </div>
+            <p className="text-[11px] text-neutral-500 tracking-wide">Photo coming</p>
+          </div>
+        </div>
+      )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={name}
-        className="absolute inset-0 w-full h-full object-cover"
-        onError={() => setFailed(true)}
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+          state === "ok" ? "opacity-100" : "opacity-0"
+        }`}
+        onLoad={() => setState("ok")}
+        onError={() => setState("missing")}
       />
     </div>
   );

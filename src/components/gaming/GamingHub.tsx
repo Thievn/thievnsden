@@ -11,7 +11,7 @@ import {
 } from "@/lib/gaming-data";
 import { GameCard } from "@/components/gaming/GameCard";
 
-function sectionTitle(id: FilterId | "playing") {
+function sectionTitle(id: FilterId | string) {
   switch (id) {
     case "playing":
       return "Now playing";
@@ -25,6 +25,8 @@ function sectionTitle(id: FilterId | "playing") {
       return "Watchlist";
     case "library":
       return "Library pulse";
+    case "article":
+      return "Articles";
     default:
       return "Feed";
   }
@@ -84,13 +86,17 @@ export function GamingHub() {
   const merged = useMemo(() => {
     const base = items.filter((i) => i.published !== false);
     const withoutPlaceholderRadar = base.filter(
-      (i) => !(i.kind === "radar" && i.id === "radar-placeholder" && radarExtra.length > 0)
+      (i) =>
+        !(i.kind === "radar" && i.id === "radar-placeholder" && radarExtra.length > 0)
     );
     return [...withoutPlaceholderRadar, ...radarExtra].sort((a, b) => a.sort - b.sort);
   }, [items, radarExtra]);
 
   const visible = useMemo(() => {
     if (filter === "all") return merged;
+    if (filter === "drama") {
+      return merged.filter((i) => i.kind === "drama" || i.kind === "article");
+    }
     return merged.filter((i) => i.kind === filter);
   }, [merged, filter]);
 
@@ -102,26 +108,22 @@ export function GamingHub() {
         ? `Currently in: ${playing.map((p) => p.title).join(" · ")}`
         : config.currently_line;
 
+  const feature =
+    filter === "all"
+      ? visible.find((i) => i.featured) || visible[0]
+      : null;
+  const rest =
+    filter === "all" && feature
+      ? visible.filter((i) => i.id !== feature.id)
+      : visible;
+
   const grouped =
     filter === "all"
-      ? ([
-          "playing",
-          "radar",
-          "drama",
-          "season",
-          "watchlist",
-          "library",
-        ] as const)
-          .map((kind) => ({
-            kind,
-            items: merged.filter((i) => i.kind === kind),
-          }))
-          .filter((g) => g.items.length > 0)
+      ? null
       : [{ kind: filter, items: visible }];
 
   return (
     <div className="relative min-h-[70vh]">
-      {/* Atmosphere */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="den-ember absolute left-1/2 top-0 h-[420px] w-[720px] max-w-[140%] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.14)_0%,_transparent_70%)] blur-2xl" />
         <div className="den-grain" />
@@ -142,9 +144,8 @@ export function GamingHub() {
           <p className="mt-3 text-sm text-neutral-400">{currently}</p>
         </header>
 
-        {/* Filters */}
         <div className="sticky top-14 z-20 -mx-4 sm:mx-0 px-4 sm:px-0 py-3 mb-8 backdrop-blur-md bg-[#070707]/85 border-b border-neutral-900/80">
-          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
             {FILTERS.map((f) => (
               <button
                 key={f.id}
@@ -166,31 +167,63 @@ export function GamingHub() {
           <p className="text-xs text-neutral-600 mb-4">Pulling live releases…</p>
         )}
 
-        <div className="space-y-12">
-          {grouped.map((g) => (
-            <section key={g.kind}>
-              <div className="flex items-end justify-between gap-3 mb-4">
-                <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-400">
-                  {sectionTitle(g.kind as FilterId)}
-                </h2>
-                <span className="text-[11px] text-neutral-600 tabular-nums">
-                  {g.items.length}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {g.items.map((item) => (
-                  <GameCard key={item.id} item={item} />
-                ))}
-              </div>
-            </section>
-          ))}
+        {filter === "all" ? (
+          <div className="space-y-10">
+            {feature && (
+              <section>
+                <p className="text-xs uppercase tracking-wide text-neutral-500 mb-3">
+                  Feature
+                </p>
+                <div className="grid grid-cols-1">
+                  <GameCard item={feature} featured />
+                </div>
+              </section>
+            )}
 
-          {visible.length === 0 && (
-            <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-10 text-center">
-              <p className="text-sm text-neutral-500">Nothing in this filter yet.</p>
-            </div>
-          )}
-        </div>
+            {rest.length > 0 && (
+              <section>
+                <div className="flex items-end justify-between gap-3 mb-4">
+                  <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+                    Latest
+                  </h2>
+                  <span className="text-[11px] text-neutral-600 tabular-nums">
+                    {rest.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {rest.map((item) => (
+                    <GameCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-12">
+            {(grouped || []).map((g) => (
+              <section key={g.kind}>
+                <div className="flex items-end justify-between gap-3 mb-4">
+                  <h2 className="text-sm font-medium uppercase tracking-wide text-neutral-400">
+                    {sectionTitle(g.kind)}
+                  </h2>
+                  <span className="text-[11px] text-neutral-600 tabular-nums">
+                    {g.items.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {g.items.map((item) => (
+                    <GameCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </section>
+            ))}
+            {visible.length === 0 && (
+              <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-10 text-center">
+                <p className="text-sm text-neutral-500">Nothing in this filter yet.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

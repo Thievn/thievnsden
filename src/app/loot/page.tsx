@@ -65,6 +65,38 @@ const items = [
   },
 ];
 
+function LootImage({ id, name }: { id: string; name: string }) {
+  const [failed, setFailed] = useState(false);
+  // Prefer jpg; if missing, onError flips to placeholder
+  const src = `/loot/${id}.jpg`;
+
+  if (failed) {
+    return (
+      <div className="relative aspect-[16/10] sm:aspect-[4/3] bg-[#0a0a0a] border-b border-neutral-800/60 flex items-center justify-center">
+        <div className="text-center px-4">
+          <div className="w-10 h-10 mx-auto mb-2.5 rounded-full border border-neutral-800 flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-60" />
+          </div>
+          <p className="text-[11px] text-neutral-600">Photo coming</p>
+          <p className="text-[10px] text-neutral-700 mt-1 font-mono">{id}.jpg</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative aspect-[16/10] sm:aspect-[4/3] bg-[#0a0a0a] border-b border-neutral-800/60 overflow-hidden">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={name}
+        className="absolute inset-0 w-full h-full object-cover"
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+}
+
 function ReviewBlock({ review }: { review: string }) {
   const [open, setOpen] = useState(false);
   const needsToggle = review.length > 110;
@@ -130,14 +162,7 @@ export default function LootPage() {
               key={item.id}
               className="card group rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden flex flex-col"
             >
-              <div className="relative aspect-[16/10] sm:aspect-[4/3] bg-[#0a0a0a] border-b border-neutral-800/60 flex items-center justify-center">
-                <div className="text-center px-4">
-                  <div className="w-10 h-10 mx-auto mb-2.5 rounded-full border border-neutral-800 flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-60" />
-                  </div>
-                  <p className="text-[11px] text-neutral-600">Photo coming</p>
-                </div>
-              </div>
+              <LootImage id={item.id} name={item.name} />
 
               <div className="p-4 sm:p-5 flex flex-col flex-1">
                 <div className="flex items-center justify-between mb-2">
@@ -173,7 +198,8 @@ export default function LootPage() {
 
         <div className="rounded-2xl border border-neutral-800/80 bg-[#0d0d0d] p-5 sm:p-8 text-center">
           <p className="text-neutral-500 text-sm max-w-lg mx-auto leading-relaxed">
-            These are things that stayed. Photos get updated as the collection does.
+            These are things that stayed. Drop photos into <code className="text-neutral-400">public/loot/</code> as{" "}
+            <code className="text-neutral-400">&#123;id&#125;.jpg</code> and they show up here.
           </p>
         </div>
       </div>

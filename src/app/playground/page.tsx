@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { GalleryStack } from "@/components/GalleryStack";
 import { JudgePanel } from "@/app/playground/JudgePanel";
+import { RanksList } from "@/components/RanksList";
 
 type Tab = "judge" | "gallery" | "ranks";
 
@@ -61,16 +61,8 @@ export default function PlaygroundPage() {
         </div>
       )}
       {tab === "ranks" && (
-        <div className="max-w-2xl mx-auto px-4 pb-16 text-center">
-          <p className="text-neutral-400 text-sm mb-5">
-            Top scoring public judgments from the Den.
-          </p>
-          <Link
-            href="/leaderboard"
-            className="inline-flex px-5 py-2.5 rounded-xl border border-purple-800/40 text-purple-300 text-sm hover:bg-purple-950/30"
-          >
-            Open full ranks →
-          </Link>
+        <div className="relative max-w-2xl mx-auto px-4 pb-16">
+          <RanksList compact limit={20} showHeader />
         </div>
       )}
     </div>

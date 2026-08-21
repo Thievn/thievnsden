@@ -13,7 +13,6 @@ export default function PlaygroundPage() {
 
   return (
     <div className="relative overflow-hidden min-h-[calc(100vh-8rem)]">
-      {/* Ember + grain — playground only, no void orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="den-ember absolute bottom-[-20%] left-1/2 h-[55%] w-[120%] max-w-none"
@@ -121,7 +120,7 @@ export default function PlaygroundPage() {
       )}
       {tab === "ranks" && (
         <div className="relative max-w-4xl mx-auto px-4 pb-16">
-          <RanksList compact limit={10} showHeader />
+          <RanksList compact showHeader />
         </div>
       )}
     </div>

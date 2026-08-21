@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { GamingItem } from "@/lib/gaming-data";
-import { STATUS_STYLES } from "@/lib/gaming-data";
+import { STATUS_STYLES, itemSlug } from "@/lib/gaming-data";
 import { ShareBar } from "@/components/ShareBar";
 
 const DEN_NAMES = [
@@ -20,8 +21,16 @@ type Comment = {
   time: string;
 };
 
-export function GameCard({ item }: { item: GamingItem }) {
+export function GameCard({
+  item,
+  featured = false,
+}: {
+  item: GamingItem;
+  featured?: boolean;
+}) {
   const style = STATUS_STYLES[item.status] || STATUS_STYLES.hype;
+  const slug = itemSlug(item);
+  const href = `/gaming/${slug}`;
   const storageKey = `den-game-${item.id}`;
 
   const [up, setUp] = useState(0);
@@ -100,48 +109,73 @@ export function GameCard({ item }: { item: GamingItem }) {
     persist({ up, down, voted, comments: next });
   };
 
-  const sharePath = `/gaming?card=${encodeURIComponent(item.id)}`;
-
   return (
-    <article className="rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden flex flex-col">
-      {item.cover ? (
-        <div className="relative aspect-[16/9] bg-neutral-900">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.cover}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover opacity-90"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-transparent to-transparent" />
-        </div>
-      ) : null}
-
-      <div className="p-5 flex flex-col flex-1 gap-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1.5">
-              <span
-                className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${style.className}`}
-              >
-                {style.label}
-              </span>
-              {item.meta ? (
-                <span className="text-[11px] text-neutral-500">{item.meta}</span>
-              ) : null}
-            </div>
-            <h3 className="text-base font-medium text-neutral-100 leading-snug">
-              {item.title}
-            </h3>
+    <article
+      className={`rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden flex flex-col ${
+        featured ? "sm:col-span-2" : ""
+      }`}
+    >
+      <Link href={href} className="group block">
+        {item.cover ? (
+          <div
+            className={`relative bg-neutral-900 overflow-hidden ${
+              featured ? "aspect-[21/9] sm:aspect-[2.4/1]" : "aspect-[16/9]"
+            }`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.cover}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/20 to-transparent" />
           </div>
-          {typeof item.hours === "number" ? (
-            <span className="text-xs text-neutral-500 tabular-nums shrink-0">
-              {item.hours}h
+        ) : (
+          <div
+            className={`relative bg-gradient-to-br from-red-950/40 via-[#111] to-purple-950/30 ${
+              featured ? "aspect-[21/9] sm:aspect-[2.4/1]" : "aspect-[16/9]"
+            }`}
+          >
+            <div className="absolute inset-0 flex items-end p-5">
+              <span className="text-xs uppercase tracking-widest text-neutral-600">
+                Thievn's Den
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className={`p-5 ${item.cover ? "" : "pt-4"}`}>
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span
+              className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${style.className}`}
+            >
+              {style.label}
             </span>
-          ) : null}
+            {item.meta ? (
+              <span className="text-[11px] text-neutral-500">{item.meta}</span>
+            ) : null}
+          </div>
+          <h3
+            className={`font-medium text-neutral-100 leading-snug group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-red-300 group-hover:to-purple-300 transition-all ${
+              featured ? "text-xl sm:text-2xl" : "text-base"
+            }`}
+          >
+            {item.title}
+          </h3>
+          <p
+            className={`mt-2 text-neutral-400 leading-relaxed ${
+              featured ? "text-sm sm:text-base max-w-2xl" : "text-sm line-clamp-3"
+            }`}
+          >
+            {item.note}
+          </p>
+          <p className="mt-3 text-xs font-medium text-red-400/80 group-hover:text-red-300">
+            Read more →
+          </p>
         </div>
+      </Link>
 
-        <p className="text-sm text-neutral-400 leading-relaxed flex-1">{item.note}</p>
-
+      <div className="px-5 pb-5 flex flex-col gap-3 mt-auto">
         <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-neutral-900/80">
           <button
             type="button"
@@ -174,7 +208,11 @@ export function GameCard({ item }: { item: GamingItem }) {
           >
             Comments ({comments.length})
           </button>
-          <ShareBar path={sharePath} title={`${item.title} · Thievn's Den`} className="ml-auto" />
+          <ShareBar
+            path={href}
+            title={`${item.title} · Thievn's Den`}
+            className="ml-auto"
+          />
         </div>
 
         {openComments && (

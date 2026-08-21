@@ -11,10 +11,8 @@ const links = [
   { href: "/", label: "Home" },
   { href: "/thoughts", label: "Thoughts" },
   { href: "/loot", label: "Loot" },
-  { href: "/playground", label: "Playground" },
-  { href: "/gallery", label: "Gallery" },
-  { href: "/leaderboard", label: "Ranks" },
   { href: "/gaming", label: "Gaming" },
+  { href: "/playground", label: "Playground" },
   { href: "/about", label: "About" },
 ];
 
@@ -54,6 +52,11 @@ export function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const isActive = (href: string) =>
+    href === "/"
+      ? pathname === "/"
+      : pathname === href || pathname.startsWith(href + "/");
+
   return (
     <header className="sticky top-0 z-50 border-b border-neutral-900/80 bg-[#070707]/80 backdrop-blur-xl">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -71,7 +74,7 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={`px-2.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
-                  pathname === link.href || pathname.startsWith(link.href + "/")
+                  isActive(link.href)
                     ? "text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400"
                     : "text-neutral-500 hover:text-neutral-200 hover:bg-neutral-900/60"
                 }`}
@@ -133,8 +136,8 @@ export function Navbar() {
                 href={link.href}
                 onClick={() => setOpen(false)}
                 className={`block px-3 py-2.5 rounded-lg text-sm font-medium ${
-                  pathname === link.href
-                    ? "text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 bg-red-950/20"
+                  isActive(link.href)
+                    ? "text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400"
                     : "text-neutral-400 hover:text-neutral-100 hover:bg-neutral-900"
                 }`}
               >

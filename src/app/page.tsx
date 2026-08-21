@@ -33,21 +33,21 @@ export default function HomePage() {
             Unfiltered takes.
           </h1>
           <p className="animate-fade-in-up animate-delay-200 max-w-md sm:max-w-lg mx-auto text-neutral-400 text-base sm:text-lg leading-relaxed mb-8 sm:mb-12 px-2">
-            A corner of the internet for AI-generated anime art, gaming rants,
+            A corner of the internet for honest writing, AI art, gaming, loot picks,
             and the things people think but won&apos;t say out loud.
           </p>
           <div className="animate-fade-in-up animate-delay-300 flex flex-col sm:flex-row flex-wrap justify-center gap-3 sm:gap-4 px-4">
             <Link
-              href="/playground"
+              href="/thoughts"
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white font-medium text-center transition-all hover:from-red-600 hover:via-red-700 hover:to-purple-800 active:scale-[0.98]"
             >
-              Face The Den
+              Read Thoughts
             </Link>
             <Link
-              href="/thoughts"
+              href="/loot"
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-neutral-800 text-neutral-300 font-medium text-center hover:bg-neutral-900/60 hover:border-neutral-700 hover:text-neutral-100 transition-all active:scale-[0.98]"
             >
-              Read Thoughts
+              Browse Loot
             </Link>
           </div>
         </section>
@@ -84,18 +84,38 @@ export default function HomePage() {
           </Link>
 
           <Link
-            href="/playground"
-            className="card group p-5 sm:p-6 rounded-2xl border border-neutral-800/80 bg-[#111] sm:col-span-2 lg:col-span-1"
+            href="/gaming"
+            className="card group p-5 sm:p-6 rounded-2xl border border-neutral-800/80 bg-[#111]"
           >
             <div className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 text-[11px] font-medium tracking-wide uppercase mb-2.5">
-              Playground
+              Gaming
             </div>
             <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-300 transition-colors duration-200">
-              Face The Den
+              Builds, rants, takes
             </h2>
             <p className="text-neutral-500 text-sm leading-relaxed">
-              Upload a photo. Get an AI judgment. Honest, unhinged, or somewhere in between.
+              What I&apos;m playing, what&apos;s broken, and what&apos;s actually worth the time.
             </p>
+          </Link>
+
+          <Link
+            href="/playground"
+            className="card group p-5 sm:p-6 rounded-2xl border border-neutral-800/80 bg-[#111] sm:col-span-2 lg:col-span-3"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 text-[11px] font-medium tracking-wide uppercase mb-2.5">
+                  Experiments
+                </div>
+                <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-300 transition-colors duration-200">
+                  Face The Den
+                </h2>
+                <p className="text-neutral-500 text-sm leading-relaxed max-w-xl">
+                  Optional side experiment — upload, get judged, browse the gallery. Not the whole site.
+                </p>
+              </div>
+              <span className="text-sm text-neutral-500 group-hover:text-neutral-300 shrink-0">Open →</span>
+            </div>
           </Link>
         </section>
 

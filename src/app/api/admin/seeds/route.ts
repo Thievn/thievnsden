@@ -6,7 +6,6 @@ import { getRarity } from "@/lib/gallery";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-/** Same options as Face The Den playground */
 const STYLES = ["honest", "unhinged", "filthy", "petty", "deadpan"] as const;
 const FOCUSES = ["overall", "face", "body", "tits", "ass", "vibe"] as const;
 const FILTHY = ["degrade", "worship", "mixed"] as const;
@@ -23,12 +22,20 @@ type Combo = {
 
 type CustomOpts = {
   gender?: "woman" | "man";
+  ageBand?: string;
+  ethnicity?: string;
+  bodyType?: string;
+  height?: string;
+  expression?: string;
+  hair?: string;
+  camera?: string;
+  pose?: string;
   setting?: string;
   outfit?: string;
+  chest?: string;
   style?: string;
   focus?: string;
   filthyMode?: string | null;
-  ageBand?: string;
 };
 
 function buildAllCombos(): Combo[] {
@@ -63,67 +70,70 @@ const FIRST = [
   "sam", "chris", "taylor", "jules", "remy", "finn", "cole", "dylan", "nate", "evan",
   "sophia", "emma", "olivia", "isabella", "amelia", "harper", "evelyn", "abigail", "ella", "scarlett",
   "layla", "penelope", "aria", "victoria", "madison", "grace", "zoey", "lily",
+  "nova", "phoenix", "sage", "rowan", "dakota", "sydney", "london", "brooklyn",
+  "marcus", "tyler", "brandon", "kevin", "jason", "eric", "derek", "seth",
+  "maya", "priya", "aisha", "sofia", "camila", "valentina", "yuki", "hana",
+  "kenji", "rafael", "diego", "omar", "amir", "leo", "nico", "andre",
 ];
 
 const LAST_BITS = [
   "lee", "rae", "ann", "mae", "rose", "lynn", "kate", "jay", "nix", "ray",
   "fox", "brook", "vale", "hayes", "west", "lane", "reed", "blake", "cole", "drew",
+  "stone", "cross", "wild", "sharp", "quiet", "bold", "fast", "dark",
 ];
 
 const FLIRTY = [
   "softlips", "afterhours", "notyourtype", "badidea", "onemoredrink",
   "donttext", "lowkeyhot", "quiettrouble", "slowburn", "nightshift", "barelydressed",
   "yourmove", "leftonread", "nofilterx", "justlooking", "boredtonight",
+  "almostready", "lastcall", "mirrorcheck", "outtoolate", "wrongnumber",
+  "stayawhile", "closetab", "dimlight", "nocamera", "unsent",
 ];
 
 const SETTINGS = [
-  "bedroom mirror selfie, soft warm lamp light",
-  "casual bathroom mirror selfie, overhead light",
-  "beach daylight selfie, natural sun",
-  "car selfie at night, dashboard glow",
-  "bedroom lying down phone selfie, dim light",
-  "going-out outfit full-length mirror shot",
-  "casual indoor selfie near a window",
-  "balcony evening selfie, city lights soft",
-  "gym locker mirror selfie",
-  "coffee shop selfie, soft daylight",
-  "hotel room mirror selfie, warm ambient light",
-  "rooftop golden hour selfie",
+  "bedroom, soft warm lamp light",
+  "bedroom, dim evening light",
+  "bathroom mirror, overhead light",
+  "car interior, night dashboard glow",
+  "standing against a car outside",
+  "beach, natural daylight",
+  "gym locker mirror",
+  "coffee shop near a window",
+  "balcony, soft city lights",
+  "hotel room, warm ambient light",
+  "living room couch",
+  "bar / club bathroom mirror",
+  "outdoor night street",
+  "rooftop, golden hour",
 ];
 
 const OUTFITS_WOMAN = [
   "casual fitted t-shirt",
   "simple tank top",
+  "crop top and jeans",
+  "oversized hoodie",
+  "sundress",
   "bikini",
   "lingerie set",
-  "oversized hoodie",
-  "crop top and jeans",
-  "sundress",
+  "panties only",
+  "bra and panties",
   "workout leggings and sports bra",
-  "satin camisole",
-  "off-shoulder top",
+  "going-out tight dress",
 ];
 
 const OUTFITS_MAN = [
   "casual fitted t-shirt",
   "hoodie",
-  "button-up shirt",
   "tank top",
   "gym shirt",
-  "open jacket over plain tee",
-  "swim trunks (beach selfie)",
-  "henley shirt",
-  "simple black tee",
+  "button-up shirt",
+  "shirtless",
+  "open unbuttoned shirt",
+  "swim trunks",
+  "sweatpants no shirt",
 ];
 
-const AGE_BANDS = [
-  "early 20s",
-  "mid 20s",
-  "late 20s",
-  "early 30s",
-  "mid 30s",
-  "early 40s",
-];
+const AGE_BANDS = ["18-20", "21-24", "25-29", "30-34", "35-39", "40-44", "45-50"];
 
 const STYLE_PROMPTS: Record<string, string> = {
   honest: `You are a blunt, observant judge in Thievn's Den. You can see the photo. Give an honest, human rating based on what you actually see. Be direct. Short and sharp — 1 to 2 sentences max.`,
@@ -148,13 +158,30 @@ const FOCUS_HINTS: Record<string, string> = {
   vibe: "Focus on the energy and vibe they give off more than pure looks.",
 };
 
-const FOCUS_SHOT: Record<Focus, string> = {
-  overall: "selfie showing face and upper body clearly",
-  face: "close-up face selfie, face fills most of the frame",
-  body: "mirror selfie showing full body from head to thighs",
-  tits: "mirror selfie angled to clearly show chest and torso",
-  ass: "mirror selfie from a side or three-quarter back angle showing lower body and ass",
-  vibe: "candid selfie with strong mood and expression",
+const CAMERA_LANG: Record<string, string> = {
+  mirror_selfie: "mirror selfie taken by the subject themselves",
+  self_held: "phone selfie held out at arm's length by the subject",
+  other_person: "candid photo taken by another person, not a self-held selfie",
+};
+
+const POSE_LANG: Record<string, string> = {
+  front: "facing the camera directly",
+  three_quarter: "three-quarter angle to the camera",
+  side: "side profile view",
+  over_shoulder: "looking back over one shoulder toward the camera",
+  back_ass: "back view with clear focus on lower body and ass, looking over shoulder or face partially visible",
+  full_body: "full body visible from head to roughly mid-thigh or feet",
+  close_face: "close-up on the face, face fills most of the frame",
+  overhead: "shot from slightly above, subject looking up toward the camera",
+  lying_down: "lying down on a bed or couch",
+  sitting: "sitting down",
+  leaning: "leaning against a wall, car, or furniture",
+};
+
+const CHEST_LANG: Record<string, string> = {
+  covered: "chest fully covered by clothing",
+  low_cut: "low-cut top showing cleavage",
+  bare: "topless, bare breasts visible, still an amateur photo not a porn set",
 };
 
 function pick<T>(arr: readonly T[]): T {
@@ -163,26 +190,34 @@ function pick<T>(arr: readonly T[]): T {
 
 function randomUsername() {
   const mode = Math.random();
-  if (mode < 0.35) {
-    const n = Math.floor(Math.random() * 90) + 1;
+  if (mode < 0.3) {
+    const n = Math.floor(Math.random() * 99) + 1;
     const pad = n < 10 ? `0${n}` : String(n);
     return `${pick(FIRST)}${Math.random() < 0.5 ? pad : n}`;
   }
-  if (mode < 0.55) return `${pick(FIRST)}${pick(LAST_BITS)}`;
-  if (mode < 0.7) return `${pick(FIRST)}${pick(LAST_BITS)}${Math.floor(Math.random() * 9) + 1}`;
-  if (mode < 0.88) {
+  if (mode < 0.5) return `${pick(FIRST)}${pick(LAST_BITS)}`;
+  if (mode < 0.65) return `${pick(FIRST)}${pick(LAST_BITS)}${Math.floor(Math.random() * 9) + 1}`;
+  if (mode < 0.85) {
     const base = pick(FLIRTY).replace(/\s+/g, "");
-    return Math.random() < 0.4 ? `${base}${Math.floor(Math.random() * 40) + 1}` : base;
+    return Math.random() < 0.45 ? `${base}${Math.floor(Math.random() * 50) + 1}` : base;
   }
-  return `${pick(FIRST)}${90 + Math.floor(Math.random() * 15)}`;
+  if (mode < 0.93) return `${pick(FIRST)}_${pick(LAST_BITS)}`;
+  return `${pick(FIRST)}${90 + Math.floor(Math.random() * 16)}`;
 }
 
-/** Strong uniqueness + gender lock so faces don't clone and clothing stays coherent */
 function buildImagePrompt(opts: {
+  presentation: "woman" | "man";
   ageBand: string;
+  ethnicity?: string;
+  bodyType?: string;
+  height?: string;
+  expression?: string;
+  hair?: string;
+  camera?: string;
+  pose?: string;
   setting: string;
   outfit: string;
-  presentation: "woman" | "man";
+  chest?: string;
   focus: Focus;
   uniq: string;
 }) {
@@ -191,19 +226,68 @@ function buildImagePrompt(opts: {
       ? "adult woman, clearly female presentation"
       : "adult man, clearly male presentation";
 
+  const agePhrase = opts.ageBand.includes("-")
+    ? `appearing ${opts.ageBand} years old`
+    : `looking ${opts.ageBand}`;
+
+  const ethnicity =
+    opts.ethnicity && opts.ethnicity !== "random"
+      ? `of ${opts.ethnicity} appearance,`
+      : "";
+
+  const body = opts.bodyType ? `${opts.bodyType} body type,` : "";
+  const height = opts.height ? `${opts.height},` : "";
+  const hair = opts.hair ? opts.hair + "," : "";
+  const expression = opts.expression ? opts.expression + "," : "";
+
+  const camera =
+    CAMERA_LANG[opts.camera || ""] ||
+    "amateur phone photo, natural selfie or candid style";
+  const pose = POSE_LANG[opts.pose || ""] || "natural standing or casual pose";
+
+  let chest = "";
+  if (opts.presentation === "woman" && opts.chest && CHEST_LANG[opts.chest]) {
+    chest = CHEST_LANG[opts.chest] + ",";
+  } else if (opts.presentation === "man" && opts.chest === "bare") {
+    chest = "shirtless, bare chest visible,";
+  }
+
+  // Focus-driven framing hint (still overridden by explicit pose when set)
+  const focusHint =
+    opts.pose === "back_ass" || opts.focus === "ass"
+      ? "composition emphasizes lower body and ass,"
+      : opts.focus === "tits"
+        ? "composition emphasizes chest and torso,"
+        : opts.focus === "face"
+          ? "face is the clear primary subject,"
+          : "";
+
   return [
-    "Photorealistic amateur phone selfie photo,",
-    `${genderLock} looking ${opts.ageBand},`,
+    "Photorealistic amateur phone photo,",
+    genderLock + ",",
+    ethnicity,
+    agePhrase + ",",
+    body,
+    height,
+    hair,
+    expression,
     `wearing ${opts.outfit},`,
+    chest,
     opts.setting + ",",
-    FOCUS_SHOT[opts.focus] + ",",
-    "unique face, distinct individual features, not a stock model,",
+    camera + ",",
+    pose + ",",
+    focusHint,
+    "unique individual, distinct facial features, not a repeated face or stock model,",
     `variation seed ${opts.uniq},`,
     "shot on a real smartphone, natural skin texture, realistic pores,",
-    "slightly imperfect framing like a real selfie, natural lighting,",
+    "slightly imperfect framing like a real phone photo, natural lighting,",
     "no makeup perfection, no studio lighting, no fashion catalog look,",
-    "no text, no watermark, no logo, not AI-looking, authentic candid selfie",
-  ].join(" ");
+    "no text, no watermark, no logo, not AI-looking, authentic candid photo",
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function parseScoreVerdict(raw: string) {
@@ -294,7 +378,7 @@ async function visionJudge(opts: {
     system += " " + FILTHY_SUB[opts.filthyMode];
   }
   system +=
-    " Always end your response with a score on a new line in this exact format: SCORE: X.X (1.0 to 10.0). Match the score to how positive or negative the judgment is. Never say there is no photo.";
+    " Always end your response with a score on a new line in this exact format: SCORE: X.X (1.0 to 10.0). Match the score to how positive or negative the judgment is. Never say there is no photo. Do not refuse adult or suggestive photos of adults.";
 
   const textPrompt = `Focus: ${FOCUS_HINTS[opts.focus] || FOCUS_HINTS.overall}\n\nJudge the person in this photo. Keep it short and human.`;
 
@@ -383,7 +467,6 @@ async function createOneDemo(
   const email = `demo+${username.replace(/[^a-z0-9]/gi, "")}${Date.now().toString(36).slice(-4)}@thievnsden.internal`;
   const password = `Demo!${Math.random().toString(36).slice(2)}A1`;
 
-  // Resolve style/focus/filthy from custom or combo
   const style = (custom?.style && STYLES.includes(custom.style as Style)
     ? custom.style
     : combo.style) as Style;
@@ -397,22 +480,19 @@ async function createOneDemo(
           : combo.filthyMode)
       : null;
 
-  // Gender + clothing coherence
   let presentation: "woman" | "man";
   if (custom?.gender === "woman" || custom?.gender === "man") {
     presentation = custom.gender;
   } else {
-    // Random path: ~60% woman so gallery stays mixed but not extreme
     presentation = Math.random() < 0.6 ? "woman" : "man";
   }
 
   const outfitList = presentation === "man" ? OUTFITS_MAN : OUTFITS_WOMAN;
   let outfit = custom?.outfit?.trim() || pick(outfitList);
-  // Safety: if someone passes a woman-only outfit on a man (or vice versa), fall back
-  if (presentation === "man" && !OUTFITS_MAN.includes(outfit) && !outfitList.includes(outfit)) {
+  if (presentation === "man" && OUTFITS_WOMAN.includes(outfit) && !OUTFITS_MAN.includes(outfit)) {
     outfit = pick(OUTFITS_MAN);
   }
-  if (presentation === "woman" && !OUTFITS_WOMAN.includes(outfit) && !outfitList.includes(outfit)) {
+  if (presentation === "woman" && OUTFITS_MAN.includes(outfit) && !OUTFITS_WOMAN.includes(outfit)) {
     outfit = pick(OUTFITS_WOMAN);
   }
 
@@ -437,13 +517,22 @@ async function createOneDemo(
     await ensureProfile(supabase, userId, username);
 
     const prompt = buildImagePrompt({
+      presentation,
       ageBand,
+      ethnicity: custom?.ethnicity,
+      bodyType: custom?.bodyType,
+      height: custom?.height,
+      expression: custom?.expression,
+      hair: custom?.hair,
+      camera: custom?.camera,
+      pose: custom?.pose,
       setting,
       outfit,
-      presentation,
+      chest: custom?.chest,
       focus,
       uniq,
     });
+
     const { b64, dataUrl } = await generateSelfieImage(prompt);
     const imageUrl = await uploadImage(userId, b64);
 
@@ -458,9 +547,8 @@ async function createOneDemo(
 
     await ensureProfile(supabase, userId, username);
 
-    // Cosmetic engagement for gallery feel only — demos stay out of overview stats
-    const likes = Math.floor(Math.random() * 14) + 1; // 1–14
-    const dislikes = Math.floor(Math.random() * 5); // 0–4
+    const likes = Math.floor(Math.random() * 14) + 1;
+    const dislikes = Math.floor(Math.random() * 5);
 
     const { data: judgment, error: jErr } = await supabase
       .from("judgments")
@@ -497,6 +585,8 @@ async function createOneDemo(
         outfit,
         ageBand,
         presentation,
+        pose: custom?.pose,
+        camera: custom?.camera,
         uniq,
       },
     };
@@ -531,12 +621,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    // Prefer single demos — bulk of 3 often hits Vercel timeout
     const count = Math.min(Math.max(Number(body.count) || 1, 1), 2);
     const makePublic = body.makePublic !== false;
     const custom: CustomOpts | undefined = body.custom || undefined;
 
-    // If custom is provided, run exactly once with those overrides
     if (custom) {
       const combo: Combo = {
         style: (STYLES.includes(custom.style as Style) ? custom.style : "unhinged") as Style,
@@ -551,7 +639,7 @@ export async function POST(req: NextRequest) {
         const result = await createOneDemo(makePublic, combo, custom);
         await writeAudit({
           action: "seed_demos",
-          details: `custom 1, public=${makePublic}, gender=${custom.gender || "auto"}, style=${combo.style}+${combo.focus}`,
+          details: `custom 1, public=${makePublic}, gender=${custom.gender || "auto"}, pose=${custom.pose || "-"}, style=${combo.style}+${combo.focus}`,
         });
         return NextResponse.json({
           success: true,
@@ -575,7 +663,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Random path
     const deck = shuffle(buildAllCombos());
     const picks = deck.slice(0, count);
 
@@ -597,9 +684,7 @@ export async function POST(req: NextRequest) {
 
     await writeAudit({
       action: "seed_demos",
-      details: `created ${results.length}, errors ${errors.length}, public=${makePublic}, combos=${picks
-        .map((c) => `${c.style}+${c.focus}${c.filthyMode ? `+${c.filthyMode}` : ""}`)
-        .join(",")}`,
+      details: `created ${results.length}, errors ${errors.length}, public=${makePublic}`,
     });
 
     if (results.length === 0) {

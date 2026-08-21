@@ -237,29 +237,65 @@ export function JudgePanel() {
   const panelClass = stage === "judging" ? "den-panel-judging" : "den-panel";
 
   return (
-    <div className="relative max-w-2xl mx-auto px-4 sm:px-6 pb-16">
+    <div className="relative max-w-2xl mx-auto px-4 sm:px-6 pb-20">
       <div className={`relative rounded-2xl p-[1px] ${panelClass}`}>
         <div className="absolute inset-0 rounded-2xl den-border-glow opacity-60" />
-        <div className="relative rounded-2xl bg-[#111] overflow-hidden border border-neutral-800/60">
+        <div className="relative rounded-2xl bg-[#0d0d0d]/95 overflow-hidden border border-neutral-800/70 backdrop-blur-sm">
           {stage === "idle" && !cameraActive && (
-            <div className="p-6 sm:p-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-5 sm:p-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <button
                   onClick={() => fileRef.current?.click()}
-                  className="invite-pulse group flex flex-col items-center justify-center gap-2 p-8 rounded-xl border border-dashed border-neutral-700 hover:border-red-900/50 hover:bg-red-950/10 transition-all"
+                  className="invite-pulse group flex flex-col items-center justify-center gap-3 min-h-[140px] sm:min-h-[160px] p-8 rounded-2xl border border-dashed border-neutral-700 hover:border-red-800/60 hover:bg-red-950/15 transition-all"
                 >
-                  <span className="text-sm text-neutral-300 font-medium">Upload photo</span>
+                  <span className="w-10 h-10 rounded-full border border-neutral-700 group-hover:border-red-800/50 flex items-center justify-center text-neutral-500 group-hover:text-red-300 transition-colors">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </span>
+                  <span className="text-sm text-neutral-200 font-semibold tracking-wide">Upload photo</span>
                   <span className="text-xs text-neutral-600">From gallery</span>
                 </button>
                 <button
                   onClick={startCamera}
-                  className="invite-pulse group flex flex-col items-center justify-center gap-2 p-8 rounded-xl border border-dashed border-neutral-700 hover:border-purple-900/50 hover:bg-purple-950/10 transition-all"
+                  className="invite-pulse group flex flex-col items-center justify-center gap-3 min-h-[140px] sm:min-h-[160px] p-8 rounded-2xl border border-dashed border-neutral-700 hover:border-purple-800/60 hover:bg-purple-950/15 transition-all"
                 >
-                  <span className="text-sm text-neutral-300 font-medium">Take a selfie</span>
+                  <span className="w-10 h-10 rounded-full border border-neutral-700 group-hover:border-purple-800/50 flex items-center justify-center text-neutral-500 group-hover:text-purple-300 transition-colors">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </span>
+                  <span className="text-sm text-neutral-200 font-semibold tracking-wide">Take a selfie</span>
                   <span className="text-xs text-neutral-600">Use camera</span>
                 </button>
               </div>
               <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+
+              {/* How it works — fills dead space */}
+              <div className="mt-8 pt-6 border-t border-neutral-800/70">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-600 text-center mb-4">
+                  How it works
+                </p>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                  {[
+                    { n: "1", t: "Upload", d: "Photo or selfie" },
+                    { n: "2", t: "Get scored", d: "Honest → filthy" },
+                    { n: "3", t: "Climb", d: "Gallery & ranks" },
+                  ].map((s) => (
+                    <div
+                      key={s.n}
+                      className="rounded-xl border border-neutral-800/80 bg-black/40 px-2 py-3.5 text-center"
+                    >
+                      <div className="text-[11px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 mb-1">
+                        {s.n}
+                      </div>
+                      <div className="text-xs font-medium text-neutral-200">{s.t}</div>
+                      <div className="text-[10px] text-neutral-600 mt-0.5">{s.d}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 

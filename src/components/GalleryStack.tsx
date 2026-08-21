@@ -20,7 +20,7 @@ type Props = {
 
 /**
  * Gallery stack — swipe left/right only navigates (no silent vote).
- * Explicit Void / Claim buttons handle votes.
+ * Explicit Nope / Fire buttons handle votes.
  */
 export function GalleryStack({ compact = false }: Props) {
   const [cards, setCards] = useState<GalleryJudgment[]>([]);
@@ -194,13 +194,13 @@ export function GalleryStack({ compact = false }: Props) {
               Face The Den
             </p>
             <h1 className="text-2xl font-semibold text-neutral-50 tracking-tight">Gallery</h1>
-            <p className="text-neutral-500 text-sm mt-1">Swipe to browse · Void or Claim to vote</p>
+            <p className="text-neutral-500 text-sm mt-1">Swipe to browse · Nope or Fire to vote</p>
           </div>
         )}
 
         {compact && (
           <p className="text-center text-xs text-neutral-500 mb-3">
-            Swipe to browse · buttons vote
+            Swipe to browse · Nope / Fire to vote
           </p>
         )}
 
@@ -271,7 +271,6 @@ export function GalleryStack({ compact = false }: Props) {
               <div
                 className={`h-full rounded-2xl border-2 ${rarity.border} ${rarity.glow} bg-gradient-to-b ${rarity.bg} overflow-hidden flex flex-col select-none`}
               >
-                {/* Header strip */}
                 <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5 shrink-0">
                   <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${rarity.text}`}>
                     {current.rarity}
@@ -279,10 +278,10 @@ export function GalleryStack({ compact = false }: Props) {
                   <div className="flex items-center gap-2.5">
                     <span className="text-[10px] text-neutral-500 tabular-nums">
                       <span className="text-purple-400/90">{current.likes || 0}</span>
-                      <span className="text-neutral-600 mx-1">claimed</span>
+                      <span className="text-neutral-600 mx-1">fire</span>
                       <span className="text-neutral-600">·</span>
                       <span className="text-red-400/80 ml-1">{current.dislikes || 0}</span>
-                      <span className="text-neutral-600 ml-1">voided</span>
+                      <span className="text-neutral-600 ml-1">nope</span>
                     </span>
                     <div
                       className={`flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/40 border ${rarity.border}`}
@@ -295,7 +294,6 @@ export function GalleryStack({ compact = false }: Props) {
                   </div>
                 </div>
 
-                {/* Image — taller frame, face-safe crop (object-top) */}
                 <div className="px-2.5 shrink-0 flex-1 min-h-0 flex">
                   <button
                     type="button"
@@ -332,7 +330,6 @@ export function GalleryStack({ compact = false }: Props) {
                   </button>
                 </div>
 
-                {/* Verdict */}
                 <div className="px-3 pt-2.5 pb-3 shrink-0">
                   <p className="text-[13px] text-neutral-200 leading-relaxed line-clamp-3">
                     {current.verdict}
@@ -353,7 +350,7 @@ export function GalleryStack({ compact = false }: Props) {
                 disabled={busy}
                 className="group flex-1 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-red-900/60 bg-gradient-to-b from-[#2a0a0a] via-[#1a0808] to-[#0c0c0c] text-red-200 shadow-[0_0_24px_-4px_rgba(220,38,38,0.45)] hover:shadow-[0_0_28px_-2px_rgba(220,38,38,0.55)] hover:border-red-700/70 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
               >
-                <span className="text-[14px] font-bold tracking-[0.12em] uppercase">Void</span>
+                <span className="text-[14px] font-bold tracking-[0.12em] uppercase">Nope</span>
               </button>
 
               <button
@@ -367,13 +364,13 @@ export function GalleryStack({ compact = false }: Props) {
               <button
                 onClick={() => vote(1)}
                 disabled={busy}
-                className="group flex-1 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-purple-700/60 bg-gradient-to-b from-[#1a0a2a] via-[#12081a] to-[#0c0c0c] text-purple-100 shadow-[0_0_24px_-4px_rgba(147,51,234,0.5)] hover:shadow-[0_0_28px_-2px_rgba(147,51,234,0.6)] hover:border-purple-500/70 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
+                className="group flex-1 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-orange-700/50 bg-gradient-to-b from-[#2a1508] via-[#1a0e08] to-[#0c0c0c] text-orange-100 shadow-[0_0_24px_-4px_rgba(234,88,12,0.45)] hover:shadow-[0_0_28px_-2px_rgba(234,88,12,0.55)] hover:border-orange-500/60 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
               >
-                <span className="text-[14px] font-bold tracking-[0.12em] uppercase">Claim</span>
+                <span className="text-[14px] font-bold tracking-[0.12em] uppercase">Fire</span>
               </button>
             </div>
             <p className="text-center text-[10px] text-neutral-600 leading-relaxed">
-              Swipe browses only · Void / Claim vote
+              Swipe browses only · Nope / Fire vote
             </p>
           </div>
         )}

@@ -47,17 +47,30 @@ const SETTINGS = [
   "going-out outfit full-length mirror shot",
   "casual indoor selfie near a window",
   "balcony evening selfie, city lights soft",
+  "gym locker mirror selfie",
+  "coffee shop selfie, soft daylight",
 ];
 
-const OUTFITS = [
+const OUTFITS_WOMAN = [
   "casual fitted t-shirt",
   "simple tank top",
   "bikini",
   "lingerie set",
   "oversized hoodie",
-  "crop top",
-  "button-up shirt partially open",
+  "crop top and jeans",
   "sundress",
+  "workout leggings and sports bra",
+];
+
+const OUTFITS_MAN = [
+  "casual fitted t-shirt",
+  "hoodie",
+  "button-up shirt",
+  "tank top",
+  "gym shirt",
+  "open jacket over plain tee",
+  "swim trunks (beach selfie)",
+  "henley shirt",
 ];
 
 function pick<T>(arr: readonly T[]): T {
@@ -235,7 +248,7 @@ export async function POST(
 
     if (action === "image") {
       const focus = (demo.focus as string) || "overall";
-      const presentation = Math.random() < 0.85 ? "woman" : "man";
+      const presentation: "woman" | "man" = Math.random() < 0.6 ? "woman" : "man";
       const ageBand = pick([
         "early 20s",
         "mid 20s",
@@ -245,14 +258,22 @@ export async function POST(
         "early 40s",
       ]);
       const setting = pick(SETTINGS);
-      const outfit = pick(OUTFITS);
+      const outfit = presentation === "man" ? pick(OUTFITS_MAN) : pick(OUTFITS_WOMAN);
+      const uniq = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+
+      const genderLock =
+        presentation === "woman"
+          ? "adult woman, clearly female presentation"
+          : "adult man, clearly male presentation";
 
       const prompt = [
         "Photorealistic amateur phone selfie photo,",
-        `adult ${presentation} looking ${ageBand},`,
+        `${genderLock} looking ${ageBand},`,
         `wearing ${outfit},`,
         setting + ",",
         (FOCUS_SHOT[focus] || FOCUS_SHOT.overall) + ",",
+        "unique face, distinct individual features, not a stock model,",
+        `variation seed ${uniq},`,
         "shot on a real smartphone, natural skin texture, realistic pores,",
         "slightly imperfect framing like a real selfie, natural lighting,",
         "no makeup perfection, no studio lighting, no fashion catalog look,",

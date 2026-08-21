@@ -121,18 +121,16 @@ export function GameCard({
       }`}
     >
       <Link href={href} className="group block">
-        <CoverImage
-          src={item.cover}
-          className={coverAspect}
-          imgClassName="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-500"
-        />
-        <div className="absolute inset-0 pointer-events-none">
-          <div className={`relative ${coverAspect}`}>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/20 to-transparent" />
-          </div>
+        <div className={`relative ${coverAspect}`}>
+          <CoverImage
+            src={item.cover}
+            className="absolute inset-0"
+            imgClassName="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-500"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/20 to-transparent pointer-events-none" />
         </div>
 
-        <div className="p-5 relative">
+        <div className="p-5">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span
               className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${style.className}`}

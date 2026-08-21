@@ -19,8 +19,9 @@ type Props = {
 };
 
 /**
- * Gallery stack — swipe left/right only navigates.
+ * Gallery stack — swipe left/right only navigates (no silent vote).
  * Explicit Pass / Like buttons handle votes with clear labels.
+ * Mobile-first: large touch targets, clear feedback.
  */
 export function GalleryStack({ compact = false }: Props) {
   const [cards, setCards] = useState<GalleryJudgment[]>([]);
@@ -111,7 +112,7 @@ export function GalleryStack({ compact = false }: Props) {
     [current, busy, userId, advance]
   );
 
-  /** Swipe only skips — no silent vote */
+  /** Swipe only skips — never votes */
   const skip = useCallback(
     (dir: "left" | "right" = "left") => {
       if (busy || !current) return;
@@ -145,8 +146,9 @@ export function GalleryStack({ compact = false }: Props) {
     const dy = e.clientY - startY.current;
 
     if (!locked.current) {
-      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
-      if (Math.abs(dy) > Math.abs(dx) * 1.15) {
+      if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
+      // Prefer horizontal — if clearly vertical, abort swipe so page can scroll
+      if (Math.abs(dy) > Math.abs(dx) * 1.25) {
         setDragging(false);
         setDragX(0);
         return;
@@ -163,7 +165,7 @@ export function GalleryStack({ compact = false }: Props) {
     if (!dragging) return;
     setDragging(false);
     const dx = dragXRef.current;
-    const threshold = 72;
+    const threshold = 64;
 
     if (dx > threshold) {
       skip("right");
@@ -175,8 +177,8 @@ export function GalleryStack({ compact = false }: Props) {
     dragXRef.current = 0;
   };
 
-  const dragRotate = dragging ? dragX * 0.035 : 0;
-  const dragOpacity = dragging ? Math.max(0.6, 1 - Math.abs(dragX) / 360) : 1;
+  const dragRotate = dragging ? dragX * 0.03 : 0;
+  const dragOpacity = dragging ? Math.max(0.55, 1 - Math.abs(dragX) / 380) : 1;
 
   return (
     <div className={compact ? "" : "relative min-h-[calc(100vh-8rem)] overflow-hidden"}>
@@ -194,13 +196,13 @@ export function GalleryStack({ compact = false }: Props) {
               Face The Den
             </p>
             <h1 className="text-2xl font-semibold text-neutral-50 tracking-tight">Gallery</h1>
-            <p className="text-neutral-500 text-sm mt-1">Swipe to browse. Tap Pass or Like to vote.</p>
+            <p className="text-neutral-500 text-sm mt-1">Swipe to browse · Pass or Like to vote</p>
           </div>
         )}
 
         {compact && (
-          <p className="text-center text-xs text-neutral-500 mb-4">
-            Swipe to browse · use buttons to vote
+          <p className="text-center text-xs text-neutral-500 mb-3">
+            Swipe left/right to browse · buttons vote
           </p>
         )}
 
@@ -228,15 +230,18 @@ export function GalleryStack({ compact = false }: Props) {
         )}
 
         {!loading && current && rarity && (
-          <div className="relative h-[500px] sm:h-[540px] touch-pan-y">
+          <div className="relative h-[480px] sm:h-[520px] touch-pan-y">
             {nextCard && (
               <div className="absolute inset-x-3 top-2 bottom-0 rounded-2xl border border-neutral-800/60 bg-[#0d0d0d] scale-[0.96] opacity-50" />
             )}
 
-            {dragging && Math.abs(dragX) > 28 && (
+            {/* Clear drag feedback — never says Like/Pass */}
+            {dragging && Math.abs(dragX) > 24 && (
               <div
-                className={`pointer-events-none absolute top-[28%] z-10 text-xs font-semibold tracking-widest uppercase ${
-                  dragX > 0 ? "right-5 text-neutral-400" : "left-5 text-neutral-400"
+                className={`pointer-events-none absolute top-[26%] z-10 px-3 py-1.5 rounded-full border text-[11px] font-semibold tracking-widest uppercase backdrop-blur-sm ${
+                  dragX > 0
+                    ? "right-4 border-neutral-600/60 bg-black/50 text-neutral-300"
+                    : "left-4 border-neutral-600/60 bg-black/50 text-neutral-300"
                 }`}
               >
                 Next
@@ -273,9 +278,14 @@ export function GalleryStack({ compact = false }: Props) {
                   <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${rarity.text}`}>
                     {current.rarity}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-neutral-500">
-                      ↑ {current.likes || 0} · ↓ {current.dislikes || 0}
+                  <div className="flex items-center gap-2.5">
+                    {/* No up/down arrows — clear labels only */}
+                    <span className="text-[10px] text-neutral-500 tabular-nums">
+                      <span className="text-purple-400/90">{current.likes || 0}</span>
+                      <span className="text-neutral-600 mx-1">likes</span>
+                      <span className="text-neutral-600">·</span>
+                      <span className="text-red-400/80 ml-1">{current.dislikes || 0}</span>
+                      <span className="text-neutral-600 ml-1">passes</span>
                     </span>
                     <div
                       className={`flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/40 border ${rarity.border}`}
@@ -296,7 +306,7 @@ export function GalleryStack({ compact = false }: Props) {
                       e.stopPropagation();
                       if (current.image_url) setExpanded(true);
                     }}
-                    className={`relative w-full aspect-[3/4] max-h-[300px] rounded-xl overflow-hidden border ${rarity.border} bg-black block`}
+                    className={`relative w-full aspect-[3/4] max-h-[280px] sm:max-h-[300px] rounded-xl overflow-hidden border ${rarity.border} bg-black block`}
                   >
                     {current.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -337,21 +347,21 @@ export function GalleryStack({ compact = false }: Props) {
         )}
 
         {current && (
-          <div className="mt-6 space-y-3">
-            <div className="flex items-center justify-center gap-3">
+          <div className="mt-5 space-y-3">
+            <div className="flex items-stretch justify-center gap-3">
               <button
                 onClick={() => vote(-1)}
                 disabled={busy}
-                className="flex-1 max-w-[140px] h-14 rounded-2xl border-2 border-red-900/50 bg-gradient-to-b from-[#1a0a0a] to-[#0c0c0c] text-red-300 shadow-[0_0_18px_-6px_rgba(220,38,38,0.35)] active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center gap-0.5"
+                className="flex-1 max-w-[150px] min-h-[56px] rounded-2xl border-2 border-red-900/50 bg-gradient-to-b from-[#1a0a0a] to-[#0c0c0c] text-red-300 shadow-[0_0_18px_-6px_rgba(220,38,38,0.35)] active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center gap-0.5"
               >
-                <span className="text-lg leading-none">←</span>
-                <span className="text-[11px] font-semibold tracking-wide uppercase">Pass</span>
+                <span className="text-[13px] font-semibold tracking-wide uppercase">Pass</span>
+                <span className="text-[10px] text-red-400/70">records vote</span>
               </button>
 
               <button
                 onClick={() => skip("right")}
                 disabled={busy}
-                className="px-4 h-11 rounded-full border border-neutral-800 text-[11px] text-neutral-500 hover:text-neutral-300 disabled:opacity-40"
+                className="px-4 min-h-[44px] self-center rounded-full border border-neutral-800 text-[11px] text-neutral-500 hover:text-neutral-300 disabled:opacity-40"
               >
                 Skip
               </button>
@@ -359,14 +369,14 @@ export function GalleryStack({ compact = false }: Props) {
               <button
                 onClick={() => vote(1)}
                 disabled={busy}
-                className="flex-1 max-w-[140px] h-14 rounded-2xl border-2 border-purple-800/50 bg-gradient-to-b from-[#120a1a] to-[#0c0c0c] text-purple-200 shadow-[0_0_18px_-6px_rgba(147,51,234,0.4)] active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center gap-0.5"
+                className="flex-1 max-w-[150px] min-h-[56px] rounded-2xl border-2 border-purple-800/50 bg-gradient-to-b from-[#120a1a] to-[#0c0c0c] text-purple-200 shadow-[0_0_18px_-6px_rgba(147,51,234,0.4)] active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center gap-0.5"
               >
-                <span className="text-lg leading-none">→</span>
-                <span className="text-[11px] font-semibold tracking-wide uppercase">Like</span>
+                <span className="text-[13px] font-semibold tracking-wide uppercase">Like</span>
+                <span className="text-[10px] text-purple-400/70">records vote</span>
               </button>
             </div>
-            <p className="text-center text-[10px] text-neutral-600">
-              Swipe browses only · Pass / Like records a vote
+            <p className="text-center text-[10px] text-neutral-600 leading-relaxed">
+              Swipe only browses · Pass / Like are the only votes
             </p>
           </div>
         )}

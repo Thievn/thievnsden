@@ -21,6 +21,16 @@ type Combo = {
   filthyMode: FilthyMode | null;
 };
 
+type CustomOpts = {
+  gender?: "woman" | "man";
+  setting?: string;
+  outfit?: string;
+  style?: string;
+  focus?: string;
+  filthyMode?: string | null;
+  ageBand?: string;
+};
+
 function buildAllCombos(): Combo[] {
   const out: Combo[] = [];
   for (const style of STYLES) {
@@ -75,17 +85,44 @@ const SETTINGS = [
   "going-out outfit full-length mirror shot",
   "casual indoor selfie near a window",
   "balcony evening selfie, city lights soft",
+  "gym locker mirror selfie",
+  "coffee shop selfie, soft daylight",
+  "hotel room mirror selfie, warm ambient light",
+  "rooftop golden hour selfie",
 ];
 
-const OUTFITS = [
+const OUTFITS_WOMAN = [
   "casual fitted t-shirt",
   "simple tank top",
   "bikini",
   "lingerie set",
   "oversized hoodie",
-  "crop top",
-  "button-up shirt partially open",
+  "crop top and jeans",
   "sundress",
+  "workout leggings and sports bra",
+  "satin camisole",
+  "off-shoulder top",
+];
+
+const OUTFITS_MAN = [
+  "casual fitted t-shirt",
+  "hoodie",
+  "button-up shirt",
+  "tank top",
+  "gym shirt",
+  "open jacket over plain tee",
+  "swim trunks (beach selfie)",
+  "henley shirt",
+  "simple black tee",
+];
+
+const AGE_BANDS = [
+  "early 20s",
+  "mid 20s",
+  "late 20s",
+  "early 30s",
+  "mid 30s",
+  "early 40s",
 ];
 
 const STYLE_PROMPTS: Record<string, string> = {
@@ -140,19 +177,28 @@ function randomUsername() {
   return `${pick(FIRST)}${90 + Math.floor(Math.random() * 15)}`;
 }
 
+/** Strong uniqueness + gender lock so faces don't clone and clothing stays coherent */
 function buildImagePrompt(opts: {
   ageBand: string;
   setting: string;
   outfit: string;
-  presentation: string;
+  presentation: "woman" | "man";
   focus: Focus;
+  uniq: string;
 }) {
+  const genderLock =
+    opts.presentation === "woman"
+      ? "adult woman, clearly female presentation"
+      : "adult man, clearly male presentation";
+
   return [
     "Photorealistic amateur phone selfie photo,",
-    `adult ${opts.presentation} looking ${opts.ageBand},`,
+    `${genderLock} looking ${opts.ageBand},`,
     `wearing ${opts.outfit},`,
     opts.setting + ",",
     FOCUS_SHOT[opts.focus] + ",",
+    "unique face, distinct individual features, not a stock model,",
+    `variation seed ${opts.uniq},`,
     "shot on a real smartphone, natural skin texture, realistic pores,",
     "slightly imperfect framing like a real selfie, natural lighting,",
     "no makeup perfection, no studio lighting, no fashion catalog look,",
@@ -317,7 +363,11 @@ async function ensureProfile(
   return data;
 }
 
-async function createOneDemo(makePublic: boolean, combo: Combo) {
+async function createOneDemo(
+  makePublic: boolean,
+  combo: Combo,
+  custom?: CustomOpts
+) {
   const supabase = createServiceClient();
   let username = randomUsername();
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -333,18 +383,42 @@ async function createOneDemo(makePublic: boolean, combo: Combo) {
   const email = `demo+${username.replace(/[^a-z0-9]/gi, "")}${Date.now().toString(36).slice(-4)}@thievnsden.internal`;
   const password = `Demo!${Math.random().toString(36).slice(2)}A1`;
 
-  const { style, focus, filthyMode } = combo;
-  const setting = pick(SETTINGS);
-  const outfit = pick(OUTFITS);
-  const ageBand = pick([
-    "early 20s",
-    "mid 20s",
-    "late 20s",
-    "early 30s",
-    "mid 30s",
-    "early 40s",
-  ]);
-  const presentation = Math.random() < 0.85 ? "woman" : "man";
+  // Resolve style/focus/filthy from custom or combo
+  const style = (custom?.style && STYLES.includes(custom.style as Style)
+    ? custom.style
+    : combo.style) as Style;
+  const focus = (custom?.focus && FOCUSES.includes(custom.focus as Focus)
+    ? custom.focus
+    : combo.focus) as Focus;
+  const filthyMode =
+    style === "filthy"
+      ? (custom?.filthyMode && FILTHY.includes(custom.filthyMode as FilthyMode)
+          ? (custom.filthyMode as FilthyMode)
+          : combo.filthyMode)
+      : null;
+
+  // Gender + clothing coherence
+  let presentation: "woman" | "man";
+  if (custom?.gender === "woman" || custom?.gender === "man") {
+    presentation = custom.gender;
+  } else {
+    // Random path: ~60% woman so gallery stays mixed but not extreme
+    presentation = Math.random() < 0.6 ? "woman" : "man";
+  }
+
+  const outfitList = presentation === "man" ? OUTFITS_MAN : OUTFITS_WOMAN;
+  let outfit = custom?.outfit?.trim() || pick(outfitList);
+  // Safety: if someone passes a woman-only outfit on a man (or vice versa), fall back
+  if (presentation === "man" && !OUTFITS_MAN.includes(outfit) && !outfitList.includes(outfit)) {
+    outfit = pick(OUTFITS_MAN);
+  }
+  if (presentation === "woman" && !OUTFITS_WOMAN.includes(outfit) && !outfitList.includes(outfit)) {
+    outfit = pick(OUTFITS_WOMAN);
+  }
+
+  const setting = custom?.setting?.trim() || pick(SETTINGS);
+  const ageBand = custom?.ageBand?.trim() || pick(AGE_BANDS);
+  const uniq = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
   const { data: created, error: createErr } = await supabase.auth.admin.createUser({
     email,
@@ -368,6 +442,7 @@ async function createOneDemo(makePublic: boolean, combo: Combo) {
       outfit,
       presentation,
       focus,
+      uniq,
     });
     const { b64, dataUrl } = await generateSelfieImage(prompt);
     const imageUrl = await uploadImage(userId, b64);
@@ -422,6 +497,7 @@ async function createOneDemo(makePublic: boolean, combo: Combo) {
         outfit,
         ageBand,
         presentation,
+        uniq,
       },
     };
   } catch (err: any) {
@@ -455,9 +531,51 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const count = Math.min(Math.max(Number(body.count) || 1, 1), 3);
+    // Prefer single demos — bulk of 3 often hits Vercel timeout
+    const count = Math.min(Math.max(Number(body.count) || 1, 1), 2);
     const makePublic = body.makePublic !== false;
+    const custom: CustomOpts | undefined = body.custom || undefined;
 
+    // If custom is provided, run exactly once with those overrides
+    if (custom) {
+      const combo: Combo = {
+        style: (STYLES.includes(custom.style as Style) ? custom.style : "unhinged") as Style,
+        focus: (FOCUSES.includes(custom.focus as Focus) ? custom.focus : "overall") as Focus,
+        filthyMode:
+          custom.style === "filthy" && custom.filthyMode && FILTHY.includes(custom.filthyMode as FilthyMode)
+            ? (custom.filthyMode as FilthyMode)
+            : null,
+      };
+
+      try {
+        const result = await createOneDemo(makePublic, combo, custom);
+        await writeAudit({
+          action: "seed_demos",
+          details: `custom 1, public=${makePublic}, gender=${custom.gender || "auto"}, style=${combo.style}+${combo.focus}`,
+        });
+        return NextResponse.json({
+          success: true,
+          created: 1,
+          results: [result],
+          errors: [],
+          custom: true,
+        });
+      } catch (err: any) {
+        console.error("custom seed error", err);
+        return NextResponse.json(
+          {
+            success: false,
+            created: 0,
+            results: [],
+            errors: [err.message || "failed"],
+            error: err.message || "Custom seed failed",
+          },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Random path
     const deck = shuffle(buildAllCombos());
     const picks = deck.slice(0, count);
 

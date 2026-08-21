@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
         )
         .eq("is_public", true)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(500);
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -145,7 +145,6 @@ export async function PATCH(req: NextRequest) {
 
     const supabase = createServiceClient();
 
-    // Only owner can toggle
     const { data: existing, error: findError } = await supabase
       .from("judgments")
       .select("id, user_id")

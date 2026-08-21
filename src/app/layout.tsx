@@ -8,6 +8,7 @@ import { AgeGate } from "@/components/AgeGate";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { SiteChrome } from "@/components/SiteChrome";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { JsonLd } from "@/components/JsonLd";
 import { PwaRegister } from "@/components/PwaRegister";
@@ -114,6 +115,7 @@ export default function RootLayout({
         <JsonLd />
         <DenBoot />
         <AgeGate />
+        <AnnouncementBanner />
         <Navbar />
         <SiteChrome>
           <main className="flex-1 w-full">{children}</main>

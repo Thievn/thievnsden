@@ -19,44 +19,189 @@ type Entry = {
 };
 
 type Props = {
-  /** Limit rows (default 25) */
+  /** Limit rows per column (default 10) */
   limit?: number;
   /** Compact mode for embedding in playground */
   compact?: boolean;
-  /** Show header + tabs */
+  /** Show header */
   showHeader?: boolean;
 };
 
-function rankBadge(i: number) {
-  if (i === 0)
+type BoardKind = "fire" | "nope";
+
+/** Top 10 badges — gold/silver/bronze then fading heat or cold */
+function rankBadge(i: number, kind: BoardKind) {
+  if (i === 0) {
     return {
       label: "1",
       className:
-        "bg-gradient-to-br from-amber-400 to-amber-600 text-black shadow-[0_0_14px_-2px_rgba(251,191,36,0.7)] border-amber-300/80",
+        kind === "fire"
+          ? "bg-gradient-to-br from-amber-400 to-orange-600 text-black shadow-[0_0_14px_-2px_rgba(251,191,36,0.7)] border-amber-300/80"
+          : "bg-gradient-to-br from-red-400 to-red-700 text-white shadow-[0_0_14px_-2px_rgba(239,68,68,0.65)] border-red-300/70",
     };
-  if (i === 1)
+  }
+  if (i === 1) {
     return {
       label: "2",
       className:
-        "bg-gradient-to-br from-neutral-200 to-neutral-400 text-black shadow-[0_0_12px_-2px_rgba(212,212,212,0.5)] border-neutral-300/70",
+        kind === "fire"
+          ? "bg-gradient-to-br from-neutral-200 to-neutral-400 text-black shadow-[0_0_12px_-2px_rgba(212,212,212,0.5)] border-neutral-300/70"
+          : "bg-gradient-to-br from-neutral-300 to-neutral-500 text-black shadow-[0_0_12px_-2px_rgba(163,163,163,0.45)] border-neutral-400/60",
     };
-  if (i === 2)
+  }
+  if (i === 2) {
     return {
       label: "3",
       className:
-        "bg-gradient-to-br from-orange-600 to-amber-800 text-amber-50 shadow-[0_0_12px_-2px_rgba(194,65,12,0.5)] border-orange-500/60",
+        kind === "fire"
+          ? "bg-gradient-to-br from-orange-600 to-amber-800 text-amber-50 shadow-[0_0_12px_-2px_rgba(194,65,12,0.5)] border-orange-500/60"
+          : "bg-gradient-to-br from-rose-700 to-red-900 text-rose-50 shadow-[0_0_12px_-2px_rgba(190,18,60,0.5)] border-rose-600/50",
     };
+  }
+  if (i < 10) {
+    return {
+      label: String(i + 1),
+      className:
+        kind === "fire"
+          ? "bg-orange-950/50 text-orange-300/90 border-orange-900/40"
+          : "bg-red-950/50 text-red-300/90 border-red-900/40",
+    };
+  }
   return {
     label: String(i + 1),
     className: "bg-[#0a0a0a] text-neutral-500 border-neutral-800",
   };
 }
 
-export function RanksList({ limit = 25, compact = false, showHeader = true }: Props) {
-  const [byScore, setByScore] = useState<Entry[]>([]);
-  const [byLikes, setByLikes] = useState<Entry[]>([]);
+function rowShell(i: number, kind: BoardKind) {
+  if (i >= 10) return "border-neutral-800/80 bg-[#111] hover:border-neutral-700";
+  if (kind === "fire") {
+    if (i === 0) return "border-amber-500/50 bg-gradient-to-r from-amber-950/40 via-[#111] to-[#111] hover:brightness-110";
+    if (i === 1) return "border-neutral-400/40 bg-gradient-to-r from-neutral-800/40 via-[#111] to-[#111] hover:brightness-110";
+    if (i === 2) return "border-orange-600/40 bg-gradient-to-r from-orange-950/35 via-[#111] to-[#111] hover:brightness-110";
+    return "border-orange-900/30 bg-gradient-to-r from-orange-950/20 via-[#111] to-[#111] hover:border-orange-800/40";
+  }
+  // nope
+  if (i === 0) return "border-red-500/50 bg-gradient-to-r from-red-950/45 via-[#111] to-[#111] hover:brightness-110";
+  if (i === 1) return "border-neutral-400/40 bg-gradient-to-r from-neutral-800/40 via-[#111] to-[#111] hover:brightness-110";
+  if (i === 2) return "border-rose-700/40 bg-gradient-to-r from-rose-950/35 via-[#111] to-[#111] hover:brightness-110";
+  return "border-red-900/30 bg-gradient-to-r from-red-950/20 via-[#111] to-[#111] hover:border-red-800/40";
+}
+
+function BoardColumn({
+  title,
+  subtitle,
+  kind,
+  rows,
+  emptyHint,
+}: {
+  title: string;
+  subtitle: string;
+  kind: BoardKind;
+  rows: Entry[];
+  emptyHint: string;
+}) {
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="mb-3 text-center sm:text-left">
+        <h3
+          className={`text-sm sm:text-base font-semibold tracking-tight ${
+            kind === "fire" ? "text-orange-200" : "text-red-200"
+          }`}
+        >
+          {title}
+        </h3>
+        <p className="text-[11px] text-neutral-500 mt-0.5">{subtitle}</p>
+      </div>
+
+      {rows.length === 0 ? (
+        <div className="rounded-xl border border-neutral-800/80 bg-[#111] p-6 text-center">
+          <p className="text-xs text-neutral-500">{emptyHint}</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {rows.map((e, i) => {
+            const rarity = getRarity(Number(e.score));
+            const badge = rankBadge(i, kind);
+            const isTop10 = i < 10;
+            const metric = kind === "fire" ? e.likes || 0 : e.dislikes || 0;
+            const metricLabel = kind === "fire" ? "fire" : "nope";
+
+            return (
+              <Link
+                key={`${kind}-${e.id}`}
+                href={`/g/${e.id}`}
+                className={`group flex items-center gap-2.5 sm:gap-3 rounded-xl border p-2 sm:p-2.5 transition-all ${rowShell(i, kind)}`}
+              >
+                <div
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg border flex items-center justify-center text-[11px] sm:text-xs font-bold tabular-nums shrink-0 ${badge.className}`}
+                >
+                  {badge.label}
+                </div>
+
+                <div
+                  className={`w-10 h-12 sm:w-11 sm:h-[52px] rounded-lg overflow-hidden border shrink-0 bg-black ${
+                    isTop10
+                      ? kind === "fire"
+                        ? "border-orange-800/40"
+                        : "border-red-800/40"
+                      : "border-neutral-800"
+                  }`}
+                >
+                  {e.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={e.image_url}
+                      alt=""
+                      className="w-full h-full object-cover object-[center_20%]"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-50" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                    <span className="text-xs sm:text-sm text-neutral-100 font-medium truncate group-hover:text-white">
+                      {e.username}
+                    </span>
+                    <span className={`text-[9px] uppercase tracking-wide ${rarity.text}`}>
+                      {e.rarity}
+                    </span>
+                  </div>
+                  <p className="text-[10px] sm:text-[11px] text-neutral-500 truncate">{e.verdict}</p>
+                </div>
+
+                <div className="text-right shrink-0 pl-1">
+                  <p
+                    className={`text-sm sm:text-base font-bold tabular-nums leading-none ${
+                      kind === "fire" ? "text-orange-300" : "text-red-300"
+                    }`}
+                  >
+                    {metric}
+                  </p>
+                  <p className="text-[9px] text-neutral-500 mt-0.5 uppercase tracking-wide">
+                    {metricLabel}
+                  </p>
+                  <p className="text-[9px] text-neutral-600 mt-0.5 tabular-nums">
+                    {Number(e.score).toFixed(1)}/10
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function RanksList({ limit = 10, compact = false, showHeader = true }: Props) {
+  const [byFire, setByFire] = useState<Entry[]>([]);
+  const [byNope, setByNope] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"score" | "likes">("score");
 
   useEffect(() => {
     (async () => {
@@ -64,22 +209,28 @@ export function RanksList({ limit = 25, compact = false, showHeader = true }: Pr
         const res = await fetch("/api/judgments?public=1");
         const data = await res.json();
         const list: Entry[] = data.judgments || [];
-        setByScore(
-          [...list].sort((a, b) => Number(b.score) - Number(a.score)).slice(0, limit)
+
+        setByFire(
+          [...list]
+            .sort((a, b) => (b.likes || 0) - (a.likes || 0) || Number(b.score) - Number(a.score))
+            .slice(0, limit)
         );
-        setByLikes(
-          [...list].sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, limit)
+        setByNope(
+          [...list]
+            .sort(
+              (a, b) =>
+                (b.dislikes || 0) - (a.dislikes || 0) || Number(a.score) - Number(b.score)
+            )
+            .slice(0, limit)
         );
       } catch {
-        setByScore([]);
-        setByLikes([]);
+        setByFire([]);
+        setByNope([]);
       } finally {
         setLoading(false);
       }
     })();
   }, [limit]);
-
-  const rows = tab === "score" ? byScore : byLikes;
 
   return (
     <div className={compact ? "" : "relative"}>
@@ -87,7 +238,7 @@ export function RanksList({ limit = 25, compact = false, showHeader = true }: Pr
         <div className={`text-center ${compact ? "mb-5" : "mb-8"}`}>
           {!compact && (
             <p className="text-[11px] uppercase tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 mb-2 font-medium">
-              Public only
+              Public votes
             </p>
           )}
           <h2
@@ -96,37 +247,14 @@ export function RanksList({ limit = 25, compact = false, showHeader = true }: Pr
             {compact ? "Ranks" : "Leaderboard"}
           </h2>
           <p className="text-neutral-500 text-sm mt-1">
-            {compact ? "Climb the Den." : "Who survived the Den."}
+            Most Fire · Most Nope — top 10 each
           </p>
         </div>
       )}
 
-      <div className="flex justify-center gap-1 mb-5 p-1 rounded-xl bg-[#111] border border-neutral-800/80 w-fit mx-auto">
-        <button
-          onClick={() => setTab("score")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            tab === "score"
-              ? "bg-gradient-to-r from-red-900/40 to-purple-900/40 text-neutral-100"
-              : "text-neutral-500 hover:text-neutral-300"
-          }`}
-        >
-          Top scores
-        </button>
-        <button
-          onClick={() => setTab("likes")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            tab === "likes"
-              ? "bg-gradient-to-r from-red-900/40 to-purple-900/40 text-neutral-100"
-              : "text-neutral-500 hover:text-neutral-300"
-          }`}
-        >
-          Most claimed
-        </button>
-      </div>
-
       {loading && <p className="text-center text-sm text-neutral-500 py-8">Loading ranks…</p>}
 
-      {!loading && rows.length === 0 && (
+      {!loading && byFire.length === 0 && byNope.length === 0 && (
         <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-10 text-center">
           <p className="text-sm text-neutral-500 mb-3">No public cards yet.</p>
           <Link
@@ -138,78 +266,25 @@ export function RanksList({ limit = 25, compact = false, showHeader = true }: Pr
         </div>
       )}
 
-      <div className="space-y-2.5">
-        {rows.map((e, i) => {
-          const rarity = getRarity(Number(e.score));
-          const badge = rankBadge(i);
-          const isTop3 = i < 3;
-
-          return (
-            <Link
-              key={e.id}
-              href={`/g/${e.id}`}
-              className={`group flex items-center gap-3 rounded-xl border p-2.5 sm:p-3 transition-all ${
-                isTop3
-                  ? `${rarity.border} bg-gradient-to-r ${rarity.bg} hover:brightness-110`
-                  : "border-neutral-800/80 bg-[#111] hover:border-neutral-700"
-              }`}
-            >
-              {/* Rank number */}
-              <div
-                className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg border flex items-center justify-center text-xs sm:text-sm font-bold tabular-nums shrink-0 ${badge.className}`}
-              >
-                {badge.label}
-              </div>
-
-              {/* Thumbnail */}
-              <div
-                className={`w-12 h-14 sm:w-14 sm:h-16 rounded-lg overflow-hidden border shrink-0 bg-black ${
-                  isTop3 ? rarity.border : "border-neutral-800"
-                }`}
-              >
-                {e.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={e.image_url}
-                    alt=""
-                    className="w-full h-full object-cover object-[center_20%]"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-50" />
-                  </div>
-                )}
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-0.5">
-                  <span className="text-sm text-neutral-100 font-medium truncate group-hover:text-white">
-                    {e.username}
-                  </span>
-                  <span className={`text-[9px] sm:text-[10px] uppercase tracking-wide ${rarity.text}`}>
-                    {e.rarity}
-                  </span>
-                </div>
-                <p className="text-[11px] sm:text-xs text-neutral-500 truncate">{e.verdict}</p>
-                <p className="text-[10px] text-neutral-600 mt-0.5 uppercase tracking-wide">
-                  {e.style} · {e.focus}
-                </p>
-              </div>
-
-              {/* Score / claims */}
-              <div className="text-right shrink-0 pl-1">
-                <p className={`text-base sm:text-lg font-bold tabular-nums leading-none ${rarity.text}`}>
-                  {Number(e.score).toFixed(1)}
-                </p>
-                <p className="text-[10px] text-neutral-500 mt-1 tabular-nums">
-                  {e.likes || 0} claimed
-                </p>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+      {!loading && (byFire.length > 0 || byNope.length > 0) && (
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-5">
+          <BoardColumn
+            title="Most Fire"
+            subtitle="Highest likes from the gallery"
+            kind="fire"
+            rows={byFire}
+            emptyHint="No fires yet."
+          />
+          <div className="hidden lg:block w-px self-stretch bg-neutral-800/80" />
+          <BoardColumn
+            title="Most Nope"
+            subtitle="Highest passes from the gallery"
+            kind="nope"
+            rows={byNope}
+            emptyHint="No nopes yet."
+          />
+        </div>
+      )}
     </div>
   );
 }

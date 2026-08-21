@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { AccountMenu } from "@/components/AccountMenu";
+import { DenMark } from "@/components/DenMark";
 import type { User } from "@supabase/supabase-js";
 
 const links = [
@@ -61,10 +62,10 @@ export function Navbar() {
     <header className="sticky top-0 z-50 border-b border-neutral-900/80 bg-[#070707]/80 backdrop-blur-xl">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-14 sm:h-16">
-          <Link href="/" className="flex items-center gap-2 group" onClick={() => setOpen(false)}>
-            <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 group-hover:from-red-400 group-hover:to-purple-400 transition-all shadow-[0_0_10px_rgba(185,28,92,0.5)]" />
+          <Link href="/" className="flex items-center gap-2.5 group" onClick={() => setOpen(false)}>
+            <DenMark className="w-[18px] h-6 shrink-0 group-hover:opacity-90 transition-opacity" />
             <span className="text-base sm:text-[17px] font-semibold tracking-tight text-neutral-100 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-red-300 group-hover:to-purple-300 transition-all duration-200">
-              Thievn&apos;s Den
+              Thievn's Den
             </span>
           </Link>
 

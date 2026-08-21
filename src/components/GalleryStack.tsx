@@ -20,8 +20,7 @@ type Props = {
 
 /**
  * Gallery stack — swipe left/right only navigates (no silent vote).
- * Explicit Pass / Like buttons handle votes with clear labels.
- * Mobile-first: large touch targets, clear feedback.
+ * Explicit Void / Claim buttons handle votes.
  */
 export function GalleryStack({ compact = false }: Props) {
   const [cards, setCards] = useState<GalleryJudgment[]>([]);
@@ -147,7 +146,6 @@ export function GalleryStack({ compact = false }: Props) {
 
     if (!locked.current) {
       if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
-      // Prefer horizontal — if clearly vertical, abort swipe so page can scroll
       if (Math.abs(dy) > Math.abs(dx) * 1.25) {
         setDragging(false);
         setDragX(0);
@@ -196,13 +194,13 @@ export function GalleryStack({ compact = false }: Props) {
               Face The Den
             </p>
             <h1 className="text-2xl font-semibold text-neutral-50 tracking-tight">Gallery</h1>
-            <p className="text-neutral-500 text-sm mt-1">Swipe to browse · Pass or Like to vote</p>
+            <p className="text-neutral-500 text-sm mt-1">Swipe to browse · Void or Claim to vote</p>
           </div>
         )}
 
         {compact && (
           <p className="text-center text-xs text-neutral-500 mb-3">
-            Swipe left/right to browse · buttons vote
+            Swipe to browse · buttons vote
           </p>
         )}
 
@@ -230,15 +228,14 @@ export function GalleryStack({ compact = false }: Props) {
         )}
 
         {!loading && current && rarity && (
-          <div className="relative h-[480px] sm:h-[520px] touch-pan-y">
+          <div className="relative h-[560px] sm:h-[600px] touch-pan-y">
             {nextCard && (
-              <div className="absolute inset-x-3 top-2 bottom-0 rounded-2xl border border-neutral-800/60 bg-[#0d0d0d] scale-[0.96] opacity-50" />
+              <div className="absolute inset-x-2 top-3 bottom-0 rounded-2xl border border-neutral-800/60 bg-[#0d0d0d] scale-[0.97] opacity-50" />
             )}
 
-            {/* Clear drag feedback — never says Like/Pass */}
             {dragging && Math.abs(dragX) > 24 && (
               <div
-                className={`pointer-events-none absolute top-[26%] z-10 px-3 py-1.5 rounded-full border text-[11px] font-semibold tracking-widest uppercase backdrop-blur-sm ${
+                className={`pointer-events-none absolute top-[30%] z-10 px-3 py-1.5 rounded-full border text-[11px] font-semibold tracking-widest uppercase backdrop-blur-sm ${
                   dragX > 0
                     ? "right-4 border-neutral-600/60 bg-black/50 text-neutral-300"
                     : "left-4 border-neutral-600/60 bg-black/50 text-neutral-300"
@@ -274,18 +271,18 @@ export function GalleryStack({ compact = false }: Props) {
               <div
                 className={`h-full rounded-2xl border-2 ${rarity.border} ${rarity.glow} bg-gradient-to-b ${rarity.bg} overflow-hidden flex flex-col select-none`}
               >
-                <div className="flex items-center justify-between px-3 pt-3 pb-2 shrink-0">
+                {/* Header strip */}
+                <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5 shrink-0">
                   <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] ${rarity.text}`}>
                     {current.rarity}
                   </span>
                   <div className="flex items-center gap-2.5">
-                    {/* No up/down arrows — clear labels only */}
                     <span className="text-[10px] text-neutral-500 tabular-nums">
                       <span className="text-purple-400/90">{current.likes || 0}</span>
-                      <span className="text-neutral-600 mx-1">likes</span>
+                      <span className="text-neutral-600 mx-1">claimed</span>
                       <span className="text-neutral-600">·</span>
                       <span className="text-red-400/80 ml-1">{current.dislikes || 0}</span>
-                      <span className="text-neutral-600 ml-1">passes</span>
+                      <span className="text-neutral-600 ml-1">voided</span>
                     </span>
                     <div
                       className={`flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/40 border ${rarity.border}`}
@@ -298,7 +295,8 @@ export function GalleryStack({ compact = false }: Props) {
                   </div>
                 </div>
 
-                <div className="px-3 shrink-0">
+                {/* Image — taller frame, face-safe crop (object-top) */}
+                <div className="px-2.5 shrink-0 flex-1 min-h-0 flex">
                   <button
                     type="button"
                     data-no-swipe
@@ -306,7 +304,7 @@ export function GalleryStack({ compact = false }: Props) {
                       e.stopPropagation();
                       if (current.image_url) setExpanded(true);
                     }}
-                    className={`relative w-full aspect-[3/4] max-h-[280px] sm:max-h-[300px] rounded-xl overflow-hidden border ${rarity.border} bg-black block`}
+                    className={`relative w-full flex-1 min-h-[340px] sm:min-h-[380px] rounded-xl overflow-hidden border ${rarity.border} bg-black block`}
                   >
                     {current.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -314,19 +312,19 @@ export function GalleryStack({ compact = false }: Props) {
                         src={current.image_url}
                         alt=""
                         draggable={false}
-                        className="absolute inset-0 w-full h-full object-cover object-center"
+                        className="absolute inset-0 w-full h-full object-cover object-[center_15%]"
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0a]">
                         <div className="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-60" />
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/15 pointer-events-none" />
-                    <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end pointer-events-none">
-                      <span className="text-xs text-neutral-100 font-medium drop-shadow">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 pointer-events-none" />
+                    <div className="absolute bottom-2.5 left-2.5 right-2.5 flex justify-between items-end pointer-events-none">
+                      <span className="text-sm text-neutral-100 font-medium drop-shadow-md">
                         {current.username || "Anonymous"}
                       </span>
-                      <span className="text-[10px] uppercase tracking-wide text-neutral-300/90">
+                      <span className="text-[10px] uppercase tracking-wide text-neutral-300/90 drop-shadow">
                         {current.style}
                         {current.filthy_mode ? ` · ${current.filthy_mode}` : ""} · {current.focus}
                       </span>
@@ -334,8 +332,9 @@ export function GalleryStack({ compact = false }: Props) {
                   </button>
                 </div>
 
-                <div className="px-3 pt-3 pb-4 flex-1 min-h-0">
-                  <p className="text-[13px] text-neutral-200 leading-relaxed line-clamp-4">
+                {/* Verdict */}
+                <div className="px-3 pt-2.5 pb-3 shrink-0">
+                  <p className="text-[13px] text-neutral-200 leading-relaxed line-clamp-3">
                     {current.verdict}
                   </p>
                 </div>
@@ -352,16 +351,15 @@ export function GalleryStack({ compact = false }: Props) {
               <button
                 onClick={() => vote(-1)}
                 disabled={busy}
-                className="flex-1 max-w-[150px] min-h-[56px] rounded-2xl border-2 border-red-900/50 bg-gradient-to-b from-[#1a0a0a] to-[#0c0c0c] text-red-300 shadow-[0_0_18px_-6px_rgba(220,38,38,0.35)] active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center gap-0.5"
+                className="group flex-1 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-red-900/60 bg-gradient-to-b from-[#2a0a0a] via-[#1a0808] to-[#0c0c0c] text-red-200 shadow-[0_0_24px_-4px_rgba(220,38,38,0.45)] hover:shadow-[0_0_28px_-2px_rgba(220,38,38,0.55)] hover:border-red-700/70 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
               >
-                <span className="text-[13px] font-semibold tracking-wide uppercase">Pass</span>
-                <span className="text-[10px] text-red-400/70">records vote</span>
+                <span className="text-[14px] font-bold tracking-[0.12em] uppercase">Void</span>
               </button>
 
               <button
                 onClick={() => skip("right")}
                 disabled={busy}
-                className="px-4 min-h-[44px] self-center rounded-full border border-neutral-800 text-[11px] text-neutral-500 hover:text-neutral-300 disabled:opacity-40"
+                className="px-4 min-h-[44px] self-center rounded-full border border-neutral-800 text-[11px] text-neutral-500 hover:text-neutral-300 hover:border-neutral-600 disabled:opacity-40 transition-all"
               >
                 Skip
               </button>
@@ -369,14 +367,13 @@ export function GalleryStack({ compact = false }: Props) {
               <button
                 onClick={() => vote(1)}
                 disabled={busy}
-                className="flex-1 max-w-[150px] min-h-[56px] rounded-2xl border-2 border-purple-800/50 bg-gradient-to-b from-[#120a1a] to-[#0c0c0c] text-purple-200 shadow-[0_0_18px_-6px_rgba(147,51,234,0.4)] active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center gap-0.5"
+                className="group flex-1 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-purple-700/60 bg-gradient-to-b from-[#1a0a2a] via-[#12081a] to-[#0c0c0c] text-purple-100 shadow-[0_0_24px_-4px_rgba(147,51,234,0.5)] hover:shadow-[0_0_28px_-2px_rgba(147,51,234,0.6)] hover:border-purple-500/70 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
               >
-                <span className="text-[13px] font-semibold tracking-wide uppercase">Like</span>
-                <span className="text-[10px] text-purple-400/70">records vote</span>
+                <span className="text-[14px] font-bold tracking-[0.12em] uppercase">Claim</span>
               </button>
             </div>
             <p className="text-center text-[10px] text-neutral-600 leading-relaxed">
-              Swipe only browses · Pass / Like are the only votes
+              Swipe browses only · Void / Claim vote
             </p>
           </div>
         )}

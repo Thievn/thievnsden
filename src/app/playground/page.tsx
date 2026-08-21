@@ -15,7 +15,6 @@ export default function PlaygroundPage() {
     <div className="relative overflow-hidden min-h-[calc(100vh-8rem)]">
       {/* Ember + grain — playground only, no void orbs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Low ember pool — slow breathe */}
         <div
           className="den-ember absolute bottom-[-20%] left-1/2 h-[55%] w-[120%] max-w-none"
           style={{
@@ -23,7 +22,6 @@ export default function PlaygroundPage() {
               "radial-gradient(ellipse 70% 55% at 50% 100%, rgba(185,28,92,0.22) 0%, rgba(124,20,50,0.08) 35%, transparent 70%)",
           }}
         />
-        {/* Soft heat under the title area */}
         <div
           className="absolute top-[8%] left-1/2 -translate-x-1/2 h-[280px] w-[90%] max-w-xl"
           style={{
@@ -31,9 +29,7 @@ export default function PlaygroundPage() {
               "radial-gradient(ellipse at center, rgba(185,28,92,0.12) 0%, transparent 65%)",
           }}
         />
-        {/* Vignette so edges stay dense */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_#070707_78%)]" />
-        {/* Film grain */}
         <div className="den-grain" />
       </div>
 
@@ -79,8 +75,8 @@ export default function PlaygroundPage() {
                 <span className="text-orange-300">Fire</span>.
               </p>
               <p>
-                Top scores and most-fired cards show up on{" "}
-                <span className="text-neutral-200">Ranks</span>. Climb if you can take the heat.
+                Ranks track <span className="text-orange-300">Most Fire</span> and{" "}
+                <span className="text-red-300">Most Nope</span> from gallery votes. Climb either board.
               </p>
               <button
                 type="button"
@@ -124,8 +120,8 @@ export default function PlaygroundPage() {
         </div>
       )}
       {tab === "ranks" && (
-        <div className="relative max-w-2xl mx-auto px-4 pb-16">
-          <RanksList compact limit={20} showHeader />
+        <div className="relative max-w-4xl mx-auto px-4 pb-16">
+          <RanksList compact limit={10} showHeader />
         </div>
       )}
     </div>

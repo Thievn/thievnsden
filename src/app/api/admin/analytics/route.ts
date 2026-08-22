@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { hostFromReferrer } from "@/lib/referrers";
 
 function dayKey(d: Date) {
   return d.toISOString().slice(0, 10);
@@ -14,16 +15,6 @@ function lastNDays(n: number) {
     days.push(dayKey(d));
   }
   return days;
-}
-
-function hostFromReferrer(ref: string | null) {
-  if (!ref) return "Direct";
-  try {
-    const u = new URL(ref);
-    return u.hostname.replace(/^www\./, "") || "Direct";
-  } catch {
-    return "Other";
-  }
 }
 
 export async function GET(req: NextRequest) {
@@ -97,7 +88,6 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
 
-    // Events (optional)
     const { data: events } = await supabase
       .from("analytics_events")
       .select("name")

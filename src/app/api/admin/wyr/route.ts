@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { WYR_PAIRS } from "@/lib/wyr-data";
+import { WYR_BANK } from "@/lib/wyr-bank";
 import { pairToRow, rowToPair, DEFAULT_LEAN } from "@/lib/wyr-map";
 import { writeAudit } from "@/lib/audit";
 
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const supabase = createServiceClient();
 
     if (body.action === "seed") {
-      const rows = WYR_PAIRS.map(pairToRow);
+      const rows = WYR_BANK.map(pairToRow);
       const { error } = await supabase.from("wyr_pairs").upsert(rows, { onConflict: "id" });
       if (error) {
         return NextResponse.json(

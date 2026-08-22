@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { isAdmin } from "@/lib/admin";
 import { BarList, ActivityBars, RarityRing, ScoreBars } from "@/components/admin/Charts";
@@ -9,6 +9,7 @@ import { AnalyticsTab } from "@/app/admin/AnalyticsTab";
 import { GalleryTab } from "@/app/admin/GalleryTab";
 import { SeedsTab } from "@/app/admin/SeedsTab";
 import { GamingTab } from "@/app/admin/GamingTab";
+import { WyrTab } from "@/app/admin/WyrTab";
 import type { User } from "@supabase/supabase-js";
 
 type Tab =
@@ -17,6 +18,7 @@ type Tab =
   | "gallery"
   | "seeds"
   | "gaming"
+  | "wyr"
   | "users"
   | "judgments"
   | "controls"
@@ -95,6 +97,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("overview");
@@ -123,6 +126,11 @@ export default function AdminDashboard() {
   const [reports, setReports] = useState<Report[]>([]);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t === "wyr") setTab("wyr");
+  }, [searchParams]);
 
   useEffect(() => {
     (async () => {
@@ -398,6 +406,7 @@ export default function AdminDashboard() {
     { id: "gallery" as const, label: "Gallery" },
     { id: "seeds" as const, label: "Seeds" },
     { id: "gaming" as const, label: "Gaming" },
+    { id: "wyr" as const, label: "WYR" },
     { id: "users" as const, label: "Users" },
     { id: "judgments" as const, label: "Judgments" },
     { id: "controls" as const, label: "Controls" },
@@ -490,6 +499,7 @@ export default function AdminDashboard() {
       {tab === "gallery" && <GalleryTab />}
       {tab === "seeds" && <SeedsTab />}
       {tab === "gaming" && <GamingTab />}
+      {tab === "wyr" && <WyrTab />}
 
       {tab === "users" && (
         <div className="space-y-4">

@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { WYR_PAIRS } from "@/lib/wyr-data";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const pairId = String(body.pairId || "");
+    const pairId = String(body.pairId || "").slice(0, 80);
     const side = body.side === "b" ? "b" : "a";
-    if (!WYR_PAIRS.some((p) => p.id === pairId)) {
-      return NextResponse.json({ error: "Unknown pair" }, { status: 400 });
+    if (!pairId) {
+      return NextResponse.json({ error: "Missing pair" }, { status: 400 });
     }
 
     const supabase = createServiceClient();

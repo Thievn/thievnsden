@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { WYR_PAIRS } from "@/lib/wyr-data";
+import { WYR_BANK } from "@/lib/wyr-bank";
 import { rowToPair } from "@/lib/wyr-map";
 
 export async function GET() {
@@ -14,11 +14,9 @@ export async function GET() {
 
     if (error || !data?.length) {
       return NextResponse.json({
-        pairs: WYR_PAIRS,
-        source: error ? "code" : "code",
-        hint: error?.message
-          ? "Run docs/wyr-sql.md then Admin → WYR → Seed bank"
-          : undefined,
+        pairs: WYR_BANK,
+        source: "code",
+        count: WYR_BANK.length,
       });
     }
 
@@ -26,8 +24,9 @@ export async function GET() {
     return NextResponse.json({ pairs, source: "db", count: pairs.length });
   } catch (err: any) {
     return NextResponse.json({
-      pairs: WYR_PAIRS,
+      pairs: WYR_BANK,
       source: "code",
+      count: WYR_BANK.length,
       error: err.message,
     });
   }

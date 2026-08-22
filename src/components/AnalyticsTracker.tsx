@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { referrerFromQuery } from "@/lib/referrers";
 
 export function AnalyticsTracker() {
   const pathname = usePathname();
@@ -10,23 +11,23 @@ export function AnalyticsTracker() {
 
   useEffect(() => {
     if (!pathname) return;
-
-    // Don't track admin
     if (pathname.startsWith("/admin")) return;
 
-    const key = pathname + (searchParams?.toString() || "");
+    const qs = searchParams?.toString() || "";
+    const key = pathname + qs;
     if (key === lastKey.current) return;
     lastKey.current = key;
 
-    const referrer = typeof document !== "undefined" ? document.referrer : "";
+    const rawRef = typeof document !== "undefined" ? document.referrer : "";
+    const fromQuery = referrerFromQuery(qs);
+    const referrer = rawRef || fromQuery || "";
 
-    // Fire and forget
     fetch("/api/analytics/view", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         path: pathname,
-        referrer: referrer || "",
+        referrer,
       }),
       keepalive: true,
     }).catch(() => {});

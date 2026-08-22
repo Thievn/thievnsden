@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  filterPairs,
   pickNext,
   scorePicks,
+  WYR_PAIRS,
   type WyrHeat,
   type WyrLean,
   type WyrPack,
@@ -13,7 +13,21 @@ import {
 
 type Phase = "setup" | "play" | "result" | "card";
 
+function filterBank(
+  bank: WyrPair[],
+  opts: { heat?: WyrHeat | "mixed"; pack?: WyrPack | "all"; exclude?: string[] }
+) {
+  const exclude = new Set(opts.exclude || []);
+  return bank.filter((p) => {
+    if (exclude.has(p.id)) return false;
+    if (opts.heat && opts.heat !== "mixed" && p.heat !== opts.heat) return false;
+    if (opts.pack && opts.pack !== "all" && !p.packs.includes(opts.pack)) return false;
+    return true;
+  });
+}
+
 export function WyrGame() {
+  const [bank, setBank] = useState<WyrPair[]>(WYR_PAIRS);
   const [heat, setHeat] = useState<WyrHeat | "mixed">("mixed");
   const [pack, setPack] = useState<WyrPack | "all">("all");
   const [goal, setGoal] = useState<10 | 25 | 0>(10);
@@ -28,13 +42,22 @@ export function WyrGame() {
   const [leaving, setLeaving] = useState<"a" | "b" | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
 
+  useEffect(() => {
+    fetch("/api/wyr/pairs")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data.pairs) && data.pairs.length) setBank(data.pairs);
+      })
+      .catch(() => {});
+  }, []);
+
   const pool = useMemo(
-    () => filterPairs({ heat, pack, exclude: seen }),
-    [heat, pack, seen]
+    () => filterBank(bank, { heat, pack, exclude: seen }),
+    [bank, heat, pack, seen]
   );
 
   const start = () => {
-    const next = pickNext(filterPairs({ heat, pack, exclude: [] }));
+    const next = pickNext(filterBank(bank, { heat, pack, exclude: [] }));
     if (!next) return;
     setSeen([next.id]);
     setPair(next);
@@ -130,16 +153,9 @@ export function WyrGame() {
         </p>
         {infoOpen && (
           <div className="mt-4 text-left mx-auto max-w-md rounded-xl border border-red-900/25 bg-[#0a0a0a]/95 p-4 text-xs text-neutral-400 leading-relaxed space-y-2">
-            <p>
-              Human dilemmas only. Nasty ones included. 18+. Nothing repeats in a
-              single run.
-            </p>
-            <p>After a set you get a scorecard from the pattern of your picks.</p>
-            <button
-              type="button"
-              onClick={() => setInfoOpen(false)}
-              className="text-neutral-500 hover:text-neutral-300"
-            >
+            <p>Human dilemmas. Nasty included. 18+. No repeats in a run.</p>
+            <p>Scorecard comes from the pattern of your picks.</p>
+            <button type="button" onClick={() => setInfoOpen(false)} className="text-neutral-500">
               Close
             </button>
           </div>
@@ -148,6 +164,7 @@ export function WyrGame() {
 
       {phase === "setup" && (
         <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-4">
+          <p className="text-[11px] text-neutral-600">{bank.length} questions loaded</p>
           <label className="block text-xs text-neutral-500 space-y-1">
             <span>Heat</span>
             <select
@@ -203,7 +220,7 @@ export function WyrGame() {
       {(phase === "play" || phase === "result") && pair && (
         <div className="space-y-4">
           <p className="text-center text-[11px] uppercase tracking-wide text-neutral-600">
-            {leans.length + (picked ? 0 : 0)}/{goal || "∞"} · {pair.heat}
+            {leans.length}/{goal || "∞"} · {pair.heat}
           </p>
           <div className="space-y-3">
             {(
@@ -220,7 +237,7 @@ export function WyrGame() {
                   type="button"
                   disabled={!!picked}
                   onClick={() => choose(side)}
-                  className={`wyr-card w-full text-left px-5 py-6 rounded-2xl border text-[15px] sm:text-base leading-snug transition-transform ${
+                  className={`wyr-card w-full text-left px-5 py-6 rounded-2xl border text-[15px] sm:text-base leading-snug ${
                     idx === 0 ? "wyr-tilt-l" : "wyr-tilt-r"
                   } ${
                     chosen
@@ -261,7 +278,7 @@ export function WyrGame() {
                   type="button"
                   onClick={denLine}
                   disabled={lineBusy}
-                  className="block mx-auto text-xs text-purple-300/90 hover:text-purple-200 disabled:opacity-40"
+                  className="block mx-auto text-xs text-purple-300/90"
                 >
                   {lineBusy ? "…" : "Den line"}
                 </button>
@@ -269,7 +286,7 @@ export function WyrGame() {
               <button
                 type="button"
                 onClick={nextPair}
-                className="w-full py-3 rounded-xl border border-neutral-700 text-sm text-neutral-200 hover:bg-neutral-900"
+                className="w-full py-3 rounded-xl border border-neutral-700 text-sm text-neutral-200"
               >
                 {goal && leans.length >= goal ? "Scorecard" : "Next"}
               </button>

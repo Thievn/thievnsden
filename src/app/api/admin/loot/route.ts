@@ -43,6 +43,18 @@ async function generateProduct(prompt: string) {
   throw new Error(errors.join(" | ") || "gen failed");
 }
 
+function parseJson(raw: string) {
+  const cleaned = raw.replace(/^```json\s*|\s*```$/g, "").trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start >= 0 && end > start) return JSON.parse(cleaned.slice(start, end + 1));
+    throw new Error("Bad JSON from model");
+  }
+}
+
 export async function GET() {
   const supabase = createServiceClient();
   const { data: picks } = await supabase.from("loot_picks").select("*").order("sort_order").order("created_at");
@@ -115,6 +127,69 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    if (action === "research" || action === "fill") {
+      const apiKey = process.env.XAI_API_KEY;
+      if (!apiKey) throw new Error("XAI_API_KEY missing");
+      const section = String(body.section || "desk");
+      const hint = String(body.hint || "");
+      const count = Math.min(8, Math.max(3, Number(body.count) || 5));
+      const avoid = Array.isArray(body.avoid) ? body.avoid.join(", ") : String(body.avoid || "");
+      const guide =
+        section === "shelf"
+          ? "figures, stands, frames, LED, shelf presence. Not random toys."
+          : section === "phone"
+            ? "cases, grips, cables, bricks, stands. Afterimage-adjacent."
+            : section === "house"
+              ? "den-adjacent house stuff only: cable raceways, monitor arms, mini vac, air filter, lamp. No air fryers."
+              : "PC case, GPU-class parts, keyboards, headsets, desks, arms, cable gear.";
+      const res = await fetch("https://api.x.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "grok-4.3",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You pick Amazon SEARCH pages for Thievn's Den loot. Not one SKU. search_query must return a results list of comparable products. No ASINs. Dry honest copy. JSON only.",
+            },
+            {
+              role: "user",
+              content: `Section: ${section}. ${guide}\nHint: ${hint || "best stuff that fits this site"}\nAvoid repeating: ${avoid || "none"}\nReturn JSON {\"picks\":[{\"name\":\"\",\"snippet\":\"one line\",\"body\":\"two short paragraphs\",\"search_query\":\"amazon keywords\"}]} with ${count} picks.`,
+            },
+          ],
+          temperature: 0.7,
+          max_tokens: 1400,
+        }),
+      });
+      const text = await res.text();
+      if (!res.ok) throw new Error(text.slice(0, 200));
+      const data = JSON.parse(text);
+      const parsed = parseJson(data.choices?.[0]?.message?.content || "{}");
+      const ideas = (parsed.picks || []).map((p: any, i: number) => ({
+        id: slugify(p.name || `pick-${i}`),
+        section,
+        name: String(p.name || "Untitled"),
+        snippet: String(p.snippet || ""),
+        body: String(p.body || ""),
+        search_query: String(p.search_query || p.name || ""),
+        asin: "",
+        status: "In the Den",
+        active: true,
+        sort_order: i,
+      }));
+      if (action === "fill") {
+        for (const pick of ideas) {
+          await supabase.from("loot_picks").upsert(pick);
+        }
+        await writeAudit({ action: "loot_fill", details: `${section}:${ideas.length}` });
+      }
+      return NextResponse.json({ success: true, picks: ideas });
+    }
+
     if (action === "copy") {
       const apiKey = process.env.XAI_API_KEY;
       if (!apiKey) throw new Error("XAI_API_KEY missing");
@@ -130,12 +205,12 @@ export async function POST(req: NextRequest) {
             : "Dry, honest, human. Not a review blog. Not hype.";
       const want =
         field === "title"
-          ? "Return JSON {\"name\": \"short product title\"} only."
+          ? 'Return JSON {"name": "short product title"} only.'
           : field === "snippet"
-            ? "Return JSON {\"snippet\": \"one sharp line\"} only."
+            ? 'Return JSON {"snippet": "one sharp line"} only.'
             : field === "body"
-              ? "Return JSON {\"body\": \"two short paragraphs separated by a blank line\"} only."
-              : "Return JSON {\"name\": \"\", \"snippet\": \"\", \"body\": \"two short paragraphs\"} only.";
+              ? 'Return JSON {"body": "two short paragraphs separated by a blank line"} only.'
+              : 'Return JSON {"name": "", "snippet": "", "body": "two short paragraphs"} only.';
       const res = await fetch("https://api.x.ai/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -161,13 +236,11 @@ export async function POST(req: NextRequest) {
       const text = await res.text();
       if (!res.ok) throw new Error(text.slice(0, 180));
       const data = JSON.parse(text);
-      let raw = data.choices?.[0]?.message?.content?.trim() || "{}";
-      raw = raw.replace(/^```json\s*|\s*```$/g, "");
       let parsed: any = {};
       try {
-        parsed = JSON.parse(raw);
+        parsed = parseJson(data.choices?.[0]?.message?.content || "{}");
       } catch {
-        parsed = { snippet: raw };
+        parsed = { snippet: data.choices?.[0]?.message?.content || "" };
       }
       return NextResponse.json({ success: true, ...parsed });
     }
@@ -190,8 +263,11 @@ export async function POST(req: NextRequest) {
       const { data: pub } = supabase.storage.from("loot").getPublicUrl(path);
       const image_url = `${pub.publicUrl}?v=${Date.now()}`;
       await supabase.from("loot_covers").upsert({ id, image_url, prompt, updated_at: new Date().toISOString() });
-      await supabase.from("loot_picks").upsert(
-        {
+      const { data: existing } = await supabase.from("loot_picks").select("id").eq("id", id).maybeSingle();
+      if (existing) {
+        await supabase.from("loot_picks").update({ image_url }).eq("id", id);
+      } else {
+        await supabase.from("loot_picks").insert({
           id,
           section,
           name,
@@ -199,9 +275,8 @@ export async function POST(req: NextRequest) {
           body: body.body || "",
           search_query,
           image_url,
-        },
-        { onConflict: "id" }
-      );
+        });
+      }
       await writeAudit({ action: "loot_cover", details: id });
       return NextResponse.json({ success: true, image_url, id, prompt });
     }

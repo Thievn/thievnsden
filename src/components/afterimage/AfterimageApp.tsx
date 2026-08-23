@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { HEATS, LIGHTS, LOOKS, PHONES, PLACES, POSES, SERIES, phoneById } from "@/lib/afterimage";
+import { HEATS, LIGHTS, LOOKS, PHONES, PLACES, POSES } from "@/lib/afterimage";
 import { runPrintJob } from "@/lib/afterimage-print";
 import { AfterimageBoard } from "@/components/afterimage/AfterimageBoard";
 import { AfterimagePeek, PeekThumb } from "@/components/afterimage/AfterimagePeek";
+import { CatalogPick } from "@/components/afterimage/CatalogPick";
 import { isAdmin } from "@/lib/admin";
 
 type Print = {
@@ -24,6 +24,7 @@ export function AfterimageApp() {
   const [styleId, setStyleId] = useState("anime");
   const [styleSearch, setStyleSearch] = useState("");
   const [series, setSeries] = useState("One Piece");
+  const [seriesSlug, setSeriesSlug] = useState("one-piece");
   const [pose, setPose] = useState(POSES[0]);
   const [heat, setHeat] = useState("flirty");
   const [phoneId, setPhoneId] = useState("classic");
@@ -40,7 +41,6 @@ export function AfterimageApp() {
   const [peek, setPeek] = useState<string | null>(null);
   const [saveAs, setSaveAs] = useState("");
 
-  const phone = useMemo(() => phoneById(phoneId), [phoneId]);
   const animeLook = ["anime", "90s-cel", "manhwa", "manga"].includes(styleId);
 
   useEffect(() => {
@@ -154,12 +154,30 @@ export function AfterimageApp() {
                 </div>
               </div>
               {animeLook && (
-                <div className="flex flex-wrap gap-2">
-                  {SERIES.map((s) => (
-                    <button key={s} type="button" onClick={() => setSeries(s)} className={`px-3 py-1.5 rounded-full border text-xs ${
-                      series === s ? "border-fuchsia-400/50 text-white" : "border-neutral-800 text-neutral-500"
-                    }`}>{s}</button>
-                  ))}
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-2">Series</p>
+                    <CatalogPick
+                      kind="series"
+                      value={series}
+                      placeholder="Type an anime"
+                      onPick={(r) => {
+                        setSeries(r.label);
+                        setSeriesSlug(r.slug);
+                        setSubject("");
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-2">Character</p>
+                    <CatalogPick
+                      kind="character"
+                      parent={seriesSlug}
+                      value={subject}
+                      placeholder="Type a name"
+                      onPick={(r) => setSubject(r.label)}
+                    />
+                  </div>
                 </div>
               )}
               <div className="flex flex-wrap gap-2">
@@ -176,14 +194,13 @@ export function AfterimageApp() {
                   }`}>{h.label}</button>
                 ))}
               </div>
-              <textarea value={want} onChange={(e) => setWant(e.target.value)} rows={3} placeholder="Nami on a rainy rooftop…" className="w-full px-4 py-3 rounded-2xl bg-[#0b0b0b] border border-neutral-800 text-sm" />
+              <textarea value={want} onChange={(e) => setWant(e.target.value)} rows={3} placeholder="On a rainy rooftop…" className="w-full px-4 py-3 rounded-2xl bg-[#0b0b0b] border border-neutral-800 text-sm" />
               <button type="button" onClick={() => setMore((v) => !v)} className="text-xs text-neutral-500">{more ? "Hide extras" : "More options"}</button>
               {more && (
                 <div className="grid sm:grid-cols-2 gap-3">
-                  <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Subject" className="px-3 py-2 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm" />
                   <input value={clothes} onChange={(e) => setClothes(e.target.value)} placeholder="Clothes" className="px-3 py-2 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm" />
                   <select value={lighting} onChange={(e) => setLighting(e.target.value)} className="px-3 py-2 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm">{LIGHTS.map((l) => <option key={l}>{l}</option>)}</select>
-                  <select value={place} onChange={(e) => setPlace(e.target.value)} className="px-3 py-2 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm">{PLACES.map((p) => <option key={p}>{p}</option>)}</select>
+                  <select value={place} onChange={(e) => setPlace(e.target.value)} className="sm:col-span-2 px-3 py-2 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm">{PLACES.map((p) => <option key={p}>{p}</option>)}</select>
                 </div>
               )}
               <button type="button" disabled={busy || !admin} onClick={print} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-400 text-black font-semibold disabled:opacity-50 ai-print">

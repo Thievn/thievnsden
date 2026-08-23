@@ -8,15 +8,30 @@ export type Phone = {
 };
 
 export const PHONES: Phone[] = [
-  { id: "iphone-16-pro-max", brand: "iPhone", name: "16 Pro Max", w: 1320, h: 2868, aspect: "9:19.5" },
-  { id: "iphone-16-pro", brand: "iPhone", name: "16 Pro", w: 1206, h: 2622, aspect: "9:19.5" },
-  { id: "iphone-16", brand: "iPhone", name: "16", w: 1179, h: 2556, aspect: "9:19.5" },
-  { id: "iphone-15", brand: "iPhone", name: "15 / 14", w: 1179, h: 2556, aspect: "9:19.5" },
-  { id: "pixel-9-pro", brand: "Pixel", name: "9 Pro / XL", w: 1280, h: 2856, aspect: "9:20" },
-  { id: "pixel-8", brand: "Pixel", name: "8 / 8a", w: 1080, h: 2400, aspect: "9:20" },
-  { id: "galaxy-s25", brand: "Galaxy", name: "S25 / S24", w: 1440, h: 3120, aspect: "9:19.5" },
-  { id: "galaxy-a", brand: "Galaxy", name: "A series", w: 1080, h: 2400, aspect: "9:20" },
-  { id: "tall", brand: "Other", name: "Tall phone", w: 1080, h: 2400, aspect: "9:20" },
+  { id: "iphone-16-pro-max", brand: "iPhone", name: "16 Pro Max", w: 1320, h: 2868, aspect: "9:16" },
+  { id: "iphone-16-pro", brand: "iPhone", name: "16 Pro", w: 1206, h: 2622, aspect: "9:16" },
+  { id: "iphone-16-plus", brand: "iPhone", name: "16 Plus", w: 1290, h: 2796, aspect: "9:16" },
+  { id: "iphone-16", brand: "iPhone", name: "16", w: 1179, h: 2556, aspect: "9:16" },
+  { id: "iphone-15-pro-max", brand: "iPhone", name: "15 Pro Max", w: 1290, h: 2796, aspect: "9:16" },
+  { id: "iphone-15", brand: "iPhone", name: "15 / 14", w: 1179, h: 2556, aspect: "9:16" },
+  { id: "iphone-13", brand: "iPhone", name: "13 / 12", w: 1170, h: 2532, aspect: "9:16" },
+  { id: "iphone-se", brand: "iPhone", name: "SE", w: 750, h: 1334, aspect: "9:16" },
+  { id: "pixel-9-pro-xl", brand: "Pixel", name: "9 Pro XL", w: 1344, h: 2992, aspect: "9:16" },
+  { id: "pixel-9-pro", brand: "Pixel", name: "9 Pro", w: 1280, h: 2856, aspect: "9:16" },
+  { id: "pixel-9", brand: "Pixel", name: "9", w: 1080, h: 2424, aspect: "9:16" },
+  { id: "pixel-8-pro", brand: "Pixel", name: "8 Pro", w: 1344, h: 2992, aspect: "9:16" },
+  { id: "pixel-8", brand: "Pixel", name: "8 / 8a", w: 1080, h: 2400, aspect: "9:16" },
+  { id: "pixel-7", brand: "Pixel", name: "7 / 7a", w: 1080, h: 2400, aspect: "9:16" },
+  { id: "galaxy-s25-ultra", brand: "Galaxy", name: "S25 Ultra", w: 1440, h: 3120, aspect: "9:16" },
+  { id: "galaxy-s25", brand: "Galaxy", name: "S25 / S24", w: 1440, h: 3120, aspect: "9:16" },
+  { id: "galaxy-s23", brand: "Galaxy", name: "S23 / S22", w: 1080, h: 2340, aspect: "9:16" },
+  { id: "galaxy-zflip", brand: "Galaxy", name: "Z Flip", w: 1080, h: 2640, aspect: "9:16" },
+  { id: "galaxy-a", brand: "Galaxy", name: "A series", w: 1080, h: 2400, aspect: "9:16" },
+  { id: "oneplus-13", brand: "OnePlus", name: "13 / 12", w: 1440, h: 3168, aspect: "9:16" },
+  { id: "xiaomi-14", brand: "Xiaomi", name: "14 / 13", w: 1440, h: 3200, aspect: "9:16" },
+  { id: "nothing-2", brand: "Nothing", name: "Phone (2)", w: 1080, h: 2412, aspect: "9:16" },
+  { id: "moto-razr", brand: "Motorola", name: "Razr / Edge", w: 1080, h: 2400, aspect: "9:16" },
+  { id: "tall", brand: "Other", name: "Tall 20:9", w: 1080, h: 2400, aspect: "9:16" },
   { id: "classic", brand: "Other", name: "Classic 9:16", w: 1080, h: 1920, aspect: "9:16" },
 ];
 
@@ -79,8 +94,12 @@ export const LOOK_PROMPT: Record<string, string> = {
 export const HEAT_PROMPT: Record<string, string> = {
   clean: "tasteful, fully clothed, no nudity",
   flirty: "suggestive and sexy, lingerie or wet clothes ok, adult, not explicit sex",
-  topless: "adult topless allowed, bare chest or implied nude, sensual, not pornographic sex act, not a studio porn set",
+  topless:
+    "fine-art adult figure study, tasteful topless, bare chest treated like a gallery portrait or painted nude, sensual lighting, elegant pose, not a porn set",
 };
+
+export const NEGATIVE =
+  "no sex act, no intercourse, no genitals in focus, no porn studio, no cam-site look, no underage, no child, no loli, no school uniform fetish, no watermark, no UI chrome";
 
 export type PrintDraft = {
   want: string;
@@ -108,19 +127,20 @@ export function compilePrompt(d: PrintDraft) {
   const heat = HEAT_PROMPT[d.heat] || HEAT_PROMPT.flirty;
   const phone = phoneById(d.phoneId);
   const bits = [
-    "Vertical phone wallpaper composition,",
-    `aspect roughly ${phone.aspect}, subject fits a tall lock screen,`,
-    d.safeZone ? "keep the top fifth and center-top clear of faces for a clock overlay," : "",
+    "Vertical phone wallpaper, tall lock-screen and home-screen crop,",
+    `fit a ${phone.brand} ${phone.name} (${phone.w}x${phone.h}),`,
+    d.safeZone ? "keep the top fifth clear for a clock," : "",
     d.styleSearch ? `in the visual language of ${d.styleSearch},` : look + ",",
     d.subject ? `subject: ${d.subject},` : "",
-    d.clothes ? `wardrobe: ${d.clothes},` : "",
+    d.heat === "topless" && !d.clothes ? "wardrobe: none on top, implied or painted nude torso," : d.clothes ? `wardrobe: ${d.clothes},` : "",
     d.place ? `setting: ${d.place},` : "",
     d.lighting ? `lighting: ${d.lighting},` : "",
     d.want?.trim() ? d.want.trim() + "," : "a striking single subject,",
     heat + ",",
+    `avoid: ${NEGATIVE},`,
     d.overlay?.trim() ? `optional small tasteful text reading \"${d.overlay.trim()}\" integrated in the art,` : "no watermark,",
     d.extra || "",
-    "adults only, no minors, wallpaper-ready, rich color, sharp, no UI chrome, no extra captions",
+    "adults only, wallpaper-ready, rich color, sharp",
   ];
   return bits.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 }

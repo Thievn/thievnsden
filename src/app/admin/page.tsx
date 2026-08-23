@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import AdminDashboard from "@/app/admin/AdminDashboard";
 import { AfterimageTab } from "@/app/admin/AfterimageTab";
 import { LootTab } from "@/app/admin/LootTab";
 
-export default function AdminPage() {
+function AdminShell() {
   const [mode, setMode] = useState<"main" | "afterimage" | "loot">("main");
   return (
     <div>
@@ -52,5 +52,13 @@ export default function AdminPage() {
         <AdminDashboard />
       )}
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<div className="max-w-5xl mx-auto px-4 py-20 text-sm text-neutral-500">Opening admin…</div>}>
+      <AdminShell />
+    </Suspense>
   );
 }

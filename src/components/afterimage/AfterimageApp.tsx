@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/client";
 import { HEATS, LIGHTS, LOOKS, PHONES, PLACES, phoneById } from "@/lib/afterimage";
 import { runPrintJob } from "@/lib/afterimage-print";
 import { AfterimageBoard } from "@/components/afterimage/AfterimageBoard";
+import { AfterimagePeek, PeekThumb } from "@/components/afterimage/AfterimagePeek";
 
 type Print = {
   id: string;
@@ -40,6 +41,7 @@ export function AfterimageApp() {
   const [mine, setMine] = useState<Print[]>([]);
   const [credits, setCredits] = useState(0);
   const [picked, setPicked] = useState<Print[]>([]);
+  const [peek, setPeek] = useState<string | null>(null);
 
   const phone = useMemo(() => phoneById(phoneId), [phoneId]);
   const brands = [...new Set(PHONES.map((p) => p.brand))];
@@ -209,8 +211,7 @@ export function AfterimageApp() {
               <div className="grid grid-cols-3 gap-3">
                 {picked.map((p) => (
                   <div key={p.id} className="ai-card rounded-2xl overflow-hidden border border-fuchsia-500/30 bg-black">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.image_url} alt="" className="w-full aspect-[9/16] object-cover" />
+                    <PeekThumb src={p.image_url} onOpen={() => setPeek(p.image_url)} imgClass="w-full aspect-[9/16] object-cover" />
                     <div className="p-2 flex justify-between text-[10px]">
                       <a href={p.image_url} download className="text-amber-200">Save</a>
                       <button type="button" onClick={() => share(p)} className="text-fuchsia-300">Share</button>
@@ -221,7 +222,12 @@ export function AfterimageApp() {
             )}
           </div>
           <div className="hidden lg:block">
-            <div className="ai-phone mx-auto">
+            <button
+              type="button"
+              disabled={!picked[0]}
+              onClick={() => picked[0] && setPeek(picked[0].image_url)}
+              className={`ai-phone mx-auto block ${picked[0] ? "ai-peek" : ""}`}
+            >
               <div className="ai-phone-notch" />
               {picked[0] ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -229,8 +235,9 @@ export function AfterimageApp() {
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-b from-fuchsia-700/40 via-transparent to-amber-700/30" />
               )}
-              <div className="absolute top-10 left-0 right-0 text-center text-white/80 text-xs tracking-[0.3em]">9:41</div>
-            </div>
+              {picked[0] && <span className="ai-peek-glow" />}
+              <div className="absolute top-10 left-0 right-0 text-center text-white/80 text-xs tracking-[0.3em] pointer-events-none">9:41</div>
+            </button>
             <p className="text-center text-[11px] text-neutral-500 mt-3">{phone.brand} {phone.name}</p>
           </div>
         </div>
@@ -241,18 +248,14 @@ export function AfterimageApp() {
             <div className="flex gap-4 overflow-x-auto pb-4">
               {mine.map((p) => (
                 <div key={p.id} className="shrink-0 w-[140px] rounded-2xl overflow-hidden border border-neutral-800">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.image_url} alt="" className="w-full aspect-[9/16] object-cover" />
-                  <div className="p-2 flex justify-between text-[10px] text-neutral-500">
-                    <span>{p.username || "you"}</span>
-                    <a href={p.image_url} download>Save</a>
-                  </div>
+                  <PeekThumb src={p.image_url} onOpen={() => setPeek(p.image_url)} imgClass="w-full aspect-[9/16] object-cover" />
                 </div>
               ))}
             </div>
           </section>
         )}
       </div>
+      <AfterimagePeek src={peek} onClose={() => setPeek(null)} />
     </div>
   );
 }

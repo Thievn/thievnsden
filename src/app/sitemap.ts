@@ -22,6 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "weekly",
       priority: 0.8,
     },
+    { url: `${BASE}/afterimage`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
     { url: `${BASE}/gaming`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${BASE}/join`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
   ];

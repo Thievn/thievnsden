@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { isAdmin } from "@/lib/admin";
 import { compilePrompt, phoneById, type PrintDraft } from "@/lib/afterimage";
 import { generateWallpaper } from "@/lib/afterimage-gen";
+import { cropTo916 } from "@/lib/afterimage-crop";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 async function upload(userId: string, b64: string) {
   const supabase = createServiceClient();
-  const bytes = Buffer.from(b64, "base64");
+  let bytes: Buffer;
+  try {
+    bytes = await cropTo916(b64);
+  } catch {
+    bytes = Buffer.from(b64, "base64");
+  }
   const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.jpg`;
   const { error } = await supabase.storage.from("afterimage").upload(path, bytes, {
     contentType: "image/jpeg",
@@ -79,16 +84,6 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
     if (error) throw new Error(error.message);
-
-    if (!admin) {
-      const { data: wallet } = await supabase.from("afterimage_wallets").select("credits").eq("user_id", job.user_id).maybeSingle();
-      const credits = Math.max(0, (wallet?.credits || 0) - 1);
-      await supabase.from("afterimage_wallets").upsert({
-        user_id: job.user_id,
-        credits,
-        updated_at: new Date().toISOString(),
-      });
-    }
 
     await supabase.from("afterimage_jobs").update({
       status: "done",

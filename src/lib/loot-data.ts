@@ -7,6 +7,16 @@ export const LOOT_SECTIONS = [
 
 export type LootSection = (typeof LOOT_SECTIONS)[number]["id"];
 
+export const PHOTO_SCENES = [
+  { id: "auto", label: "Auto" },
+  { id: "studio", label: "Studio packshot" },
+  { id: "shelf", label: "On a shelf" },
+  { id: "desk", label: "On a desk" },
+  { id: "hand", label: "In hand / worn" },
+  { id: "wall", label: "On a wall" },
+  { id: "floor", label: "On the floor / corner" },
+] as const;
+
 export type LootPick = {
   id: string;
   section: LootSection | string;
@@ -148,31 +158,44 @@ export function affiliateUrl(pick: Partial<LootPick>, defaultTag = "thievnsden-2
   return fallback?.link || `https://www.amazon.com/s?k=${encodeURIComponent(pick.name || "")}&tag=${encodeURIComponent(tag)}`;
 }
 
+const SCENE_TEXT: Record<string, string> = {
+  studio: "seamless dark studio packshot, object floating on a clean void, catalog lighting, no furniture",
+  shelf: "on a dark collector shelf only, spot lit, other objects out of focus",
+  desk: "on a dark desk as the hero, nothing else competing",
+  hand: "worn or held, close crop on the product, no furniture set",
+  wall: "mounted on a dark wall, product is the only subject",
+  floor: "on dark floor or room corner, product fills the frame",
+};
+
+export function inferPhotoScene(item: { name?: string; search_query?: string; section?: string }) {
+  const t = `${item.name || ""} ${item.search_query || ""}`.toLowerCase();
+  if (/(figure|statue|nendoroid|scale|funko|plush)/.test(t)) return "shelf";
+  if (/(headset|headphone|earbuds|watch|ring|wear)/.test(t)) return "hand";
+  if (/(wall mount|monitor arm|pegboard|poster|frame|led strip)/.test(t)) return "wall";
+  if (/(vac|filter|lamp|raceway|bin|stand)/.test(t) && item.section === "house") return "floor";
+  if (/(case|gpu|keyboard|mouse|mic|webcam|pc)/.test(t)) return "studio";
+  if (item.section === "shelf") return "shelf";
+  if (item.section === "phone") return "studio";
+  return "studio";
+}
+
 export function lootCoverPrompt(
   item: { name: string; section?: string; search_query?: string; category?: string },
-  extra = ""
+  extra = "",
+  sceneId = "auto"
 ) {
   const term = item.search_query || item.name;
-  const section = item.section || "desk";
-  const scene =
-    section === "shelf"
-      ? "dark collector shelf, warm spot light, real object product photo"
-      : section === "phone"
-        ? "dark nightstand, phone accessories product photo, moody light"
-        : section === "house"
-          ? "clean apartment corner, useful home object product photo, dark tasteful"
-          : "dark clean desk, dim room, real hardware product photo";
-
+  const scene = sceneId === "auto" ? inferPhotoScene(item) : sceneId;
+  const sceneLine = SCENE_TEXT[scene] || SCENE_TEXT.studio;
   return [
-    "Photorealistic ecommerce product photograph,",
-    `subject: ${item.name}.`,
-    `shopper would search: ${term}.`,
-    scene + ",",
-    "looks like a real Amazon listing photo, sharp, catalog lighting,",
-    "single hero object, tasteful crop, 4:3 frame,",
-    "no text, no logos overlay, no watermark, no collage,",
+    "Photorealistic single-product catalog photo.",
+    `The only subject is: ${item.name}.`,
+    `Search intent: ${term}.`,
+    sceneLine + ".",
+    "Do not default to a nightstand or random furniture if it does not belong to this object.",
+    "No people faces, no text, no watermark, no collage, no extra products.",
+    "Sharp, 4:3, Amazon listing quality.",
     extra,
-    "adult collector aesthetic, premium, not cartoon",
   ]
     .filter(Boolean)
     .join(" ")

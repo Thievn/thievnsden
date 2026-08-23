@@ -1,5 +1,16 @@
 export type GenKind = "preview" | "phone";
 
+function isModeration(status: number, text: string) {
+  const low = text.toLowerCase();
+  return (
+    low.includes("moderat") ||
+    low.includes("violat") ||
+    low.includes("safety") ||
+    low.includes("content policy") ||
+    (status === 400 && low.includes("request was rejected"))
+  );
+}
+
 export async function generateWallpaper(opts: {
   prompt: string;
   aspect: string;
@@ -10,12 +21,12 @@ export async function generateWallpaper(opts: {
   if (!apiKey) throw new Error("XAI_API_KEY missing");
 
   const n = Math.min(Math.max(opts.n || 1, 1), 3);
-  const model = opts.kind === "phone" ? "grok-imagine-image-2.0" : "grok-imagine-image";
   const resolution = opts.kind === "phone" ? "2k" : "1k";
   const fallbacks =
     opts.kind === "phone"
       ? ["grok-imagine-image-2.0", "grok-imagine-image-quality", "grok-imagine-image"]
       : ["grok-imagine-image", "grok-imagine-image-2.0"];
+  const aspect = "9:16";
 
   const errors: string[] = [];
   for (const m of fallbacks) {
@@ -24,7 +35,7 @@ export async function generateWallpaper(opts: {
       prompt: opts.prompt,
       n,
       resolution: m.includes("2.0") || m.includes("quality") ? resolution : opts.kind === "phone" ? "2k" : "1k",
-      aspect_ratio: opts.aspect || "9:16",
+      aspect_ratio: aspect,
       response_format: "b64_json",
     };
     if (m.includes("2.0")) body.quality = "medium";
@@ -41,8 +52,7 @@ export async function generateWallpaper(opts: {
     const text = await res.text();
     if (!res.ok) {
       errors.push(`${m}: ${res.status} ${text.slice(0, 220)}`);
-      const low = text.toLowerCase();
-      if (low.includes("moderat") || low.includes("violat") || low.includes("safety") || res.status === 400) {
+      if (isModeration(res.status, text)) {
         const err = new Error("REJECTED");
         (err as any).rejected = true;
         (err as any).detail = text.slice(0, 240);
@@ -66,5 +76,5 @@ export async function generateWallpaper(opts: {
     return { model: m, resolution: String(body.resolution), images: rows as string[] };
   }
 
-  throw new Error(`PRINT_FAILED: ${errors.join(" | ")}`);
+  throw new Error(errors[0] || "Print failed");
 }

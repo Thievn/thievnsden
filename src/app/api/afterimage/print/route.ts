@@ -36,6 +36,14 @@ export async function POST(req: NextRequest) {
       series: body.series,
       pose: body.pose,
       rawPrompt: body.rawPrompt,
+      who: body.who,
+      age: body.age,
+      ethnicity: body.ethnicity,
+      body: body.body,
+      height: body.height,
+      hair: body.hair,
+      eyes: body.eyes,
+      world: body.world,
     };
 
     const { data: job, error } = await supabase

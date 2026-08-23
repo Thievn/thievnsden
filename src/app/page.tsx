@@ -44,78 +44,43 @@ export default function HomePage() {
               Read Thoughts
             </Link>
             <Link
-              href="/loot"
-              className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-neutral-800 text-neutral-300 font-medium text-center hover:bg-neutral-900/60 hover:border-neutral-700 hover:text-neutral-100 transition-all active:scale-[0.98]"
+              href="/afterimage"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-fuchsia-800/60 text-fuchsia-100 font-medium text-center hover:bg-fuchsia-950/30 hover:border-fuchsia-600 hover:text-white transition-all active:scale-[0.98]"
             >
-              Browse Loot
+              Afterimage
             </Link>
           </div>
         </section>
 
         <section className="pb-16 sm:pb-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          <Link
-            href="/thoughts"
-            className="card group p-5 sm:p-6 rounded-2xl border border-neutral-800/80 bg-[#111]"
-          >
-            <div className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 text-[11px] font-medium tracking-wide uppercase mb-2.5">
-              Thoughts
-            </div>
-            <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-300 transition-colors duration-200">
-              Short rants & observations
-            </h2>
-            <p className="text-neutral-500 text-sm leading-relaxed">
-              Dark humor, AI takes, and the occasional unfiltered opinion from the Den.
-            </p>
+          <Link href="/thoughts" className="card group p-5 sm:p-6 rounded-2xl border border-neutral-800/80 bg-[#111]">
+            <div className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 text-[11px] font-medium tracking-wide uppercase mb-2.5">Thoughts</div>
+            <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-300 transition-colors duration-200">Short rants & observations</h2>
+            <p className="text-neutral-500 text-sm leading-relaxed">Dark humor, AI takes, and the occasional unfiltered opinion from the Den.</p>
           </Link>
 
-          <Link
-            href="/loot"
-            className="card group p-5 sm:p-6 rounded-2xl border border-neutral-800/80 bg-[#111]"
-          >
-            <div className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 text-[11px] font-medium tracking-wide uppercase mb-2.5">
-              Loot
-            </div>
-            <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-300 transition-colors duration-200">
-              Things I actually use
-            </h2>
-            <p className="text-neutral-500 text-sm leading-relaxed">
-              Gaming gear, anime merch, tools, and honest recommendations — no fake lists.
-            </p>
+          <Link href="/loot" className="card group p-5 sm:p-6 rounded-2xl border border-neutral-800/80 bg-[#111]">
+            <div className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 text-[11px] font-medium tracking-wide uppercase mb-2.5">Loot</div>
+            <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-300 transition-colors duration-200">Things I actually use</h2>
+            <p className="text-neutral-500 text-sm leading-relaxed">Gaming gear, anime merch, tools, and honest recommendations — no fake lists.</p>
           </Link>
 
-          <Link
-            href="/gaming"
-            className="card group p-5 sm:p-6 rounded-2xl border border-neutral-800/80 bg-[#111]"
-          >
-            <div className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 text-[11px] font-medium tracking-wide uppercase mb-2.5">
-              Gaming
-            </div>
-            <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-300 transition-colors duration-200">
-              Builds, rants, takes
-            </h2>
-            <p className="text-neutral-500 text-sm leading-relaxed">
-              What I'm playing, what's broken, and what's actually worth the time.
-            </p>
+          <Link href="/gaming" className="card group p-5 sm:p-6 rounded-2xl border border-neutral-800/80 bg-[#111]">
+            <div className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 text-[11px] font-medium tracking-wide uppercase mb-2.5">Gaming</div>
+            <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-300 transition-colors duration-200">Builds, rants, takes</h2>
+            <p className="text-neutral-500 text-sm leading-relaxed">What I'm playing, what's broken, and what's actually worth the time.</p>
           </Link>
 
-          <Link
-            href="/playground"
-            className="card group p-5 sm:p-6 rounded-2xl border border-neutral-800/80 bg-[#111] sm:col-span-2 lg:col-span-3"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <div className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 text-[11px] font-medium tracking-wide uppercase mb-2.5">
-                  Playground
-                </div>
-                <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-300 transition-colors duration-200">
-                  Face The Den
-                </h2>
-                <p className="text-neutral-500 text-sm leading-relaxed max-w-xl">
-                  Upload a photo. Get judged. Browse the gallery. Climb the ranks.
-                </p>
-              </div>
-              <span className="text-sm text-neutral-500 group-hover:text-neutral-300 shrink-0">Open →</span>
-            </div>
+          <Link href="/afterimage" className="card group p-5 sm:p-6 rounded-2xl border border-fuchsia-900/40 bg-[#111] sm:col-span-2">
+            <div className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-amber-200 text-[11px] font-medium tracking-wide uppercase mb-2.5">Afterimage</div>
+            <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-fuchsia-300 transition-colors duration-200">Print a lock screen</h2>
+            <p className="text-neutral-500 text-sm leading-relaxed">Pick a phone, a look, and what you want. Preview once. Phone-ready when you spend a credit.</p>
+          </Link>
+
+          <Link href="/playground" className="card group p-5 sm:p-6 rounded-2xl border border-neutral-800/80 bg-[#111]">
+            <div className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 text-[11px] font-medium tracking-wide uppercase mb-2.5">Playground</div>
+            <h2 className="text-lg sm:text-xl font-medium text-neutral-100 mb-2 group-hover:text-red-300 transition-colors duration-200">Face The Den</h2>
+            <p className="text-neutral-500 text-sm leading-relaxed">Upload a photo. Get judged. Climb the ranks.</p>
           </Link>
         </section>
 

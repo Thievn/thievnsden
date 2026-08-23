@@ -194,23 +194,32 @@ export async function POST(req: NextRequest) {
       const apiKey = process.env.XAI_API_KEY;
       if (!apiKey) throw new Error("XAI_API_KEY missing");
       const field = String(body.field || "all");
-      const hint = String(body.hint || body.name || "");
+      const hint = String(body.hint || body.name || "").trim();
+      const currentName = String(body.name || "");
       const section = String(body.section || "desk");
       const tone = String(body.tone || "dry");
       const toneLine =
         tone === "petty"
-          ? "A little petty and specific. Still useful."
+          ? "A little petty. Still specific about the object."
           : tone === "useful"
-            ? "Straight and useful. Almost no attitude."
-            : "Dry, honest, human. Not a review blog. Not hype.";
+            ? "Useful and plain. No attitude."
+            : "Dry and specific. Sounds like a person who used the thing.";
+      const rules = [
+        "Write about THIS object only. Use the hint as the product, not a generic category speech.",
+        "No marketing adjectives pile (premium, ultimate, game-changer).",
+        "No hashtags, no emoji, no quotes around the whole line.",
+        "Title: 2-6 words, product-shaped. Example: 60% board, sitting figure, wall monitor arm.",
+        "Snippet: one sentence, under 90 characters, sounds spoken.",
+        "Body: exactly two short paragraphs, 2-3 sentences each, why it stayed / what sucks.",
+      ].join(" ");
       const want =
         field === "title"
-          ? 'Return JSON {"name": "short product title"} only.'
+          ? 'JSON {"name":"..."}'
           : field === "snippet"
-            ? 'Return JSON {"snippet": "one sharp line"} only.'
+            ? 'JSON {"snippet":"..."}'
             : field === "body"
-              ? 'Return JSON {"body": "two short paragraphs separated by a blank line"} only.'
-              : 'Return JSON {"name": "", "snippet": "", "body": "two short paragraphs"} only.';
+              ? 'JSON {"body":"para1\\n\\npara2"}'
+              : 'JSON {"name":"...","snippet":"...","body":"para1\\n\\npara2"}';
       const res = await fetch("https://api.x.ai/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -222,15 +231,15 @@ export async function POST(req: NextRequest) {
           messages: [
             {
               role: "system",
-              content: `You write loot cards for Thievn's Den. ${toneLine} No hashtags. No emoji. JSON only.`,
+              content: `Loot cards for Thievn's Den. ${toneLine} ${rules} JSON only.`,
             },
             {
               role: "user",
-              content: `Section: ${section}\nWhat it is: ${hint}\n${want}`,
+              content: `Section: ${section}\nObject / hint: ${hint || currentName}\nExisting title: ${currentName || "none"}\nWrite ${field}. ${want}`,
             },
           ],
-          temperature: 0.8,
-          max_tokens: 400,
+          temperature: 0.55,
+          max_tokens: 420,
         }),
       });
       const text = await res.text();
@@ -251,7 +260,8 @@ export async function POST(req: NextRequest) {
       const section = String(body.section || "desk");
       const search_query = String(body.search_query || "");
       const extra = String(body.extra || "");
-      const prompt = lootCoverPrompt({ name, section, search_query }, extra);
+      const scene = String(body.scene || "auto");
+      const prompt = lootCoverPrompt({ name, section, search_query }, extra, scene);
       const b64 = await generateProduct(prompt);
       const bytes = Buffer.from(b64, "base64");
       const path = `${id}.jpg`;

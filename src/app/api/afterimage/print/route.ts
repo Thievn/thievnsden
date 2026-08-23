@@ -15,6 +15,9 @@ export async function POST(req: NextRequest) {
     const { data: auth } = await supabase.auth.admin.getUserById(userId);
     if (!auth?.user) return NextResponse.json({ error: "Invalid account" }, { status: 401 });
     const admin = isAdmin(auth.user);
+    if (!admin) {
+      return NextResponse.json({ error: "Coming soon." }, { status: 403 });
+    }
     const username =
       auth.user.user_metadata?.username || auth.user.email?.split("@")[0] || "anon";
 
@@ -23,27 +26,17 @@ export async function POST(req: NextRequest) {
       styleId: String(body.styleId || "photo"),
       styleSearch: String(body.styleSearch || ""),
       heat: String(body.heat || "flirty"),
-      phoneId: String(body.phoneId || "iphone-16"),
+      phoneId: String(body.phoneId || "classic"),
       subject: body.subject,
       clothes: body.clothes,
       lighting: body.lighting,
       place: body.place,
       overlay: body.overlay,
-      safeZone: !!body.safeZone,
       extra: body.extra,
-      rawPrompt: admin ? body.rawPrompt : undefined,
+      series: body.series,
+      pose: body.pose,
+      rawPrompt: body.rawPrompt,
     };
-
-    if (!admin) {
-      const { data: wallet } = await supabase
-        .from("afterimage_wallets")
-        .select("credits")
-        .eq("user_id", userId)
-        .maybeSingle();
-      if ((wallet?.credits || 0) < 1) {
-        return NextResponse.json({ error: "Need a credit to print." }, { status: 402 });
-      }
-    }
 
     const { data: job, error } = await supabase
       .from("afterimage_jobs")
@@ -54,7 +47,7 @@ export async function POST(req: NextRequest) {
         payload: {
           draft,
           admin,
-          hq: admin && body.finish === "phone",
+          hq: body.finish === "phone",
           compiled: compilePrompt(draft),
         },
       })

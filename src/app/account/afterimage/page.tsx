@@ -19,7 +19,6 @@ export default function AccountAfterimagePage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [prints, setPrints] = useState<Print[]>([]);
-  const [credits, setCredits] = useState(0);
   const [msg, setMsg] = useState("");
   const [peek, setPeek] = useState<string | null>(null);
   const [saveAs, setSaveAs] = useState("");
@@ -39,7 +38,6 @@ export default function AccountAfterimagePage() {
     const res = await fetch(`/api/afterimage/me?userId=${id}`);
     const data = await res.json();
     setPrints(data.prints || []);
-    setCredits(data.wallet?.credits || 0);
   };
 
   const share = async (p: Print, next: boolean) => {
@@ -50,11 +48,20 @@ export default function AccountAfterimagePage() {
       body: JSON.stringify({ id: p.id, userId, is_public: next }),
     });
     const data = await res.json();
-    if (!res.ok) {
-      setMsg(data.error || "Could not update");
-      return;
-    }
+    if (!res.ok) return setMsg(data.error || "Could not update");
     setPrints((prev) => prev.map((x) => (x.id === p.id ? { ...x, is_public: next } : x)));
+  };
+
+  const remove = async (p: Print) => {
+    if (!userId || !confirm("Delete this print?")) return;
+    const res = await fetch("/api/afterimage/print", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: p.id, userId }),
+    });
+    const data = await res.json();
+    if (!res.ok) return setMsg(data.error || "Could not delete");
+    setPrints((prev) => prev.filter((x) => x.id !== p.id));
   };
 
   const download = (url: string) => {
@@ -69,24 +76,22 @@ export default function AccountAfterimagePage() {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
       <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-300 mb-2">Afterimage</p>
       <h1 className="text-2xl font-semibold text-neutral-50 mb-1">Your prints</h1>
-      <p className="text-sm text-neutral-500 mb-6">Click a picture to open it. Share puts it on the board.</p>
+      <p className="text-sm text-neutral-500 mb-6">Click to open. X removes it from the server.</p>
       <div className="flex gap-3 mb-6 text-sm">
         <Link href="/afterimage" className="text-fuchsia-300">Afterimage</Link>
         <Link href="/account" className="text-neutral-500">Account</Link>
       </div>
-      <input
-        value={saveAs}
-        onChange={(e) => setSaveAs(e.target.value)}
-        placeholder="Name when you save"
-        className="w-full mb-6 px-3 py-2 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm"
-      />
+      <input value={saveAs} onChange={(e) => setSaveAs(e.target.value)} placeholder="Name when you save" className="w-full mb-6 px-3 py-2 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm" />
       {msg && <p className="text-sm text-amber-200 mb-4">{msg}</p>}
       {prints.length === 0 ? (
         <p className="text-sm text-neutral-500">Nothing saved yet.</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {prints.map((p) => (
-            <div key={p.id} className="rounded-2xl overflow-hidden border border-neutral-800 bg-black">
+            <div key={p.id} className="relative rounded-2xl overflow-hidden border border-neutral-800 bg-black">
+              <button type="button" onClick={() => remove(p)} className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/70 text-white text-sm leading-none">
+                ×
+              </button>
               <PeekThumb src={p.image_url} onOpen={() => setPeek(p.image_url)} imgClass="w-full aspect-[9/16] object-cover" />
               <div className="p-2 flex justify-between text-[11px]">
                 <button type="button" onClick={() => share(p, !p.is_public)} className="text-fuchsia-300">

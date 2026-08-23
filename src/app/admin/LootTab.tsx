@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { affiliateUrl, LOOT_SECTIONS, sectionLabel, slugify, type LootPick } from "@/lib/loot-data";
+import { affiliateUrl, LOOT_SECTIONS, slugify, type LootPick } from "@/lib/loot-data";
 
 const blank: LootPick = {
   id: "",
@@ -28,6 +28,10 @@ export function LootTab() {
   const [extra, setExtra] = useState("");
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
+  const [fillSection, setFillSection] = useState("desk");
+  const [fillHint, setFillHint] = useState("");
+  const [fillCount, setFillCount] = useState(5);
+  const [ideas, setIdeas] = useState<LootPick[]>([]);
 
   const load = async () => {
     const res = await fetch("/api/admin/loot");
@@ -72,7 +76,9 @@ export function LootTab() {
     <div className="space-y-8">
       <div className="rounded-2xl border border-amber-900/30 bg-[#111] p-5 space-y-3">
         <p className="text-sm text-neutral-100 font-medium">Loot desk</p>
-        <p className="text-xs text-neutral-500">One screen. Write copy, shoot a photo, hide the tag. Public cards never show the code.</p>
+        <p className="text-xs text-neutral-500">
+          Grok does not scrape live Amazon. It writes search pages so Check it out opens a whole results list with your tag hidden.
+        </p>
         <label className="flex items-center gap-2 text-sm text-neutral-300">
           <input type="checkbox" checked={showCodes} onChange={(e) => setShowCodes(e.target.checked)} />
           Show affiliate codes
@@ -121,6 +127,98 @@ export function LootTab() {
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
+        <p className="text-xs uppercase tracking-wide text-neutral-500">Fill a section</p>
+        <div className="grid sm:grid-cols-3 gap-2">
+          <select value={fillSection} onChange={(e) => setFillSection(e.target.value)} className={field}>
+            {LOOT_SECTIONS.map((s) => (
+              <option key={s.id} value={s.id}>{s.label}</option>
+            ))}
+          </select>
+          <input value={fillHint} onChange={(e) => setFillHint(e.target.value)} className={field} placeholder="optional vibe — late night desk, no RGB" />
+          <select value={fillCount} onChange={(e) => setFillCount(Number(e.target.value))} className={field}>
+            {[3, 4, 5, 6, 8].map((n) => (
+              <option key={n} value={n}>{n} cards</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={!!busy}
+            onClick={async () => {
+              setBusy("research");
+              try {
+                const d = await post({
+                  action: "research",
+                  section: fillSection,
+                  hint: fillHint,
+                  count: fillCount,
+                  avoid: picks.map((p) => p.name),
+                });
+                setIdeas(d.picks || []);
+                setMsg(`${(d.picks || []).length} ideas — save the keepers`);
+              } catch (err: any) {
+                setMsg(err.message);
+              } finally {
+                setBusy("");
+              }
+            }}
+            className="px-3 py-2 rounded-lg text-xs border border-neutral-700 disabled:opacity-40"
+          >
+            {busy === "research" ? "Researching…" : "Research only"}
+          </button>
+          <button
+            type="button"
+            disabled={!!busy}
+            onClick={async () => {
+              setBusy("fill");
+              try {
+                const d = await post({
+                  action: "fill",
+                  section: fillSection,
+                  hint: fillHint,
+                  count: fillCount,
+                  avoid: picks.map((p) => p.name),
+                });
+                setIdeas([]);
+                setMsg(`Saved ${d.picks?.length || 0} cards`);
+                await load();
+              } catch (err: any) {
+                setMsg(err.message);
+              } finally {
+                setBusy("");
+              }
+            }}
+            className="px-3 py-2 rounded-lg text-xs border border-amber-800/50 text-amber-100 disabled:opacity-40"
+          >
+            {busy === "fill" ? "Filling…" : "Fill and save"}
+          </button>
+        </div>
+        {ideas.length > 0 && (
+          <div className="space-y-2">
+            {ideas.map((p) => (
+              <div key={p.id} className="rounded-xl border border-neutral-800 p-3 space-y-1">
+                <p className="text-sm text-neutral-100">{p.name}</p>
+                <p className="text-xs text-neutral-500">{p.snippet}</p>
+                <p className="text-[10px] text-neutral-600">Search: {p.search_query}</p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await post({ action: "save", pick: p });
+                    setIdeas((list) => list.filter((x) => x.id !== p.id));
+                    await load();
+                  }}
+                  className="text-[11px] text-amber-200"
+                >
+                  Save this one
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
         <p className="text-xs uppercase tracking-wide text-neutral-500">New / edit pick</p>
         <div className="grid sm:grid-cols-2 gap-2">
           <select value={draft.section} onChange={(e) => setDraft({ ...draft, section: e.target.value })} className={field}>
@@ -132,7 +230,7 @@ export function LootTab() {
         </div>
         <div className="grid sm:grid-cols-3 gap-2">
           <input value={draft.search_query || ""} onChange={(e) => setDraft({ ...draft, search_query: e.target.value })} className={field} placeholder="Amazon search" />
-          <input value={draft.asin || ""} onChange={(e) => setDraft({ ...draft, asin: e.target.value })} className={field} placeholder="ASIN optional" />
+          <input value={draft.asin || ""} onChange={(e) => setDraft({ ...draft, asin: e.target.value })} className={field} placeholder="ASIN only if you want one SKU" />
           <select value={tone} onChange={(e) => setTone(e.target.value)} className={field}>
             <option value="dry">dry</option>
             <option value="petty">petty</option>

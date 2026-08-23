@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { affiliateUrl, LOOT_SECTIONS, slugify, type LootPick } from "@/lib/loot-data";
+import { affiliateUrl, LOOT_SECTIONS, PHOTO_SCENES, slugify, type LootPick } from "@/lib/loot-data";
 
 const blank: LootPick = {
   id: "",
@@ -18,14 +18,80 @@ const blank: LootPick = {
   sort_order: 0,
 };
 
+function Editor({
+  pick,
+  onChange,
+  onSave,
+  onPhoto,
+  onCopy,
+  busy,
+  showCodes,
+}: {
+  pick: LootPick;
+  onChange: (p: LootPick) => void;
+  onSave: () => void;
+  onPhoto: (scene: string, extra: string) => void;
+  onCopy: (field: string) => void;
+  busy: string;
+  showCodes: boolean;
+}) {
+  const [scene, setScene] = useState("auto");
+  const [extra, setExtra] = useState("");
+  const field = "w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200";
+  return (
+    <div className="p-3 space-y-2 border-t border-neutral-800">
+      <div className="grid sm:grid-cols-2 gap-2">
+        <select value={pick.section} onChange={(e) => onChange({ ...pick, section: e.target.value })} className={field}>
+          {LOOT_SECTIONS.map((s) => (
+            <option key={s.id} value={s.id}>{s.label}</option>
+          ))}
+        </select>
+        <input value={pick.search_query || ""} onChange={(e) => onChange({ ...pick, search_query: e.target.value })} className={field} placeholder="Amazon search" />
+      </div>
+      <input value={pick.name} onChange={(e) => onChange({ ...pick, name: e.target.value })} className={field} placeholder="Title" />
+      <input value={pick.snippet} onChange={(e) => onChange({ ...pick, snippet: e.target.value })} className={field} placeholder="Snippet" />
+      <textarea value={pick.body} onChange={(e) => onChange({ ...pick, body: e.target.value })} rows={4} className={field} placeholder="Two short paragraphs" />
+      {showCodes && (
+        <input value={pick.tag_override || ""} onChange={(e) => onChange({ ...pick, tag_override: e.target.value })} className={field} placeholder="Tag override" />
+      )}
+      <div className="grid sm:grid-cols-2 gap-2">
+        <select value={scene} onChange={(e) => setScene(e.target.value)} className={field}>
+          {PHOTO_SCENES.map((s) => (
+            <option key={s.id} value={s.id}>{s.label}</option>
+          ))}
+        </select>
+        <input value={extra} onChange={(e) => setExtra(e.target.value)} className={field} placeholder="Photo extra" />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {[
+          ["title", "Title"],
+          ["snippet", "Snippet"],
+          ["body", "Note"],
+          ["all", "All copy"],
+        ].map(([k, label]) => (
+          <button key={k} type="button" disabled={!!busy} onClick={() => onCopy(k)} className="px-3 py-2 rounded-lg text-xs border border-neutral-700 disabled:opacity-40">
+            {busy === k ? "…" : label}
+          </button>
+        ))}
+        <button type="button" disabled={!!busy || !pick.name} onClick={() => onPhoto(scene, extra)} className="px-3 py-2 rounded-lg text-xs border border-amber-800/50 text-amber-200 disabled:opacity-40">
+          {busy === "photo" ? "Shooting…" : "Photo"}
+        </button>
+        <button type="button" disabled={!!busy || !pick.name} onClick={onSave} className="px-3 py-2 rounded-lg text-xs bg-amber-200 text-black disabled:opacity-40">
+          Save
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function LootTab() {
   const [picks, setPicks] = useState<LootPick[]>([]);
   const [tag, setTag] = useState("thievnsden-20");
   const [showCodes, setShowCodes] = useState(false);
-  const [draft, setDraft] = useState<LootPick>({ ...blank });
-  const [hint, setHint] = useState("");
-  const [tone, setTone] = useState("dry");
-  const [extra, setExtra] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, LootPick>>({});
+  const [creating, setCreating] = useState(false);
+  const [newPick, setNewPick] = useState<LootPick>({ ...blank });
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
   const [fillSection, setFillSection] = useState("desk");
@@ -38,12 +104,7 @@ export function LootTab() {
     const data = await res.json();
     const rows: LootPick[] = data.picks?.length ? data.picks : data.seeded || [];
     const covers = data.covers || {};
-    setPicks(
-      rows.map((p) => ({
-        ...p,
-        image_url: p.image_url || covers[p.id]?.image_url,
-      }))
-    );
+    setPicks(rows.map((p) => ({ ...p, image_url: p.image_url || covers[p.id]?.image_url })));
     if (data.settings?.default_tag) setTag(data.settings.default_tag);
   };
 
@@ -72,13 +133,67 @@ export function LootTab() {
 
   const field = "w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200";
 
+  const workPick = async (pick: LootPick, kind: string, extra?: { scene?: string; extra?: string; field?: string }) => {
+    setBusy(kind);
+    try {
+      if (kind === "save") {
+        const d = await post({ action: "save", pick: { ...pick, id: pick.id || slugify(pick.name) } });
+        setMsg(`Saved ${d.pick.id}`);
+        setOpenId(null);
+        setCreating(false);
+        setNewPick({ ...blank });
+        await load();
+      }
+      if (kind === "photo") {
+        const id = pick.id || slugify(pick.name);
+        const d = await post({
+          action: "photo",
+          id,
+          name: pick.name,
+          section: pick.section,
+          search_query: pick.search_query,
+          snippet: pick.snippet,
+          body: pick.body,
+          scene: extra?.scene || "auto",
+          extra: extra?.extra || "",
+        });
+        const next = { ...pick, id, image_url: d.image_url };
+        if (pick.id) setDrafts((m) => ({ ...m, [pick.id]: next }));
+        else setNewPick(next);
+        setMsg("Photo saved");
+        await load();
+      }
+      if (["title", "snippet", "body", "all"].includes(kind)) {
+        const d = await post({
+          action: "copy",
+          field: extra?.field || kind,
+          hint: pick.search_query || pick.name,
+          name: pick.name,
+          section: pick.section,
+        });
+        const next = {
+          ...pick,
+          name: d.name || pick.name,
+          snippet: d.snippet || pick.snippet,
+          body: d.body || pick.body,
+          id: pick.id || slugify(d.name || pick.name),
+        };
+        if (pick.id) setDrafts((m) => ({ ...m, [pick.id]: next }));
+        else setNewPick(next);
+        setMsg("Copy ready");
+      }
+    } catch (err: any) {
+      setMsg(err.message);
+    } finally {
+      setBusy("");
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="rounded-2xl border border-amber-900/30 bg-[#111] p-5 space-y-3">
         <p className="text-sm text-neutral-100 font-medium">Loot desk</p>
-        <p className="text-xs text-neutral-500">
-          Grok does not scrape live Amazon. It writes search pages so Check it out opens a whole results list with your tag hidden.
-        </p>
+        <p className="text-xs text-neutral-500">Edit opens on the card. Auto photo picks studio / shelf / hand from the item name.</p>
         <label className="flex items-center gap-2 text-sm text-neutral-300">
           <input type="checkbox" checked={showCodes} onChange={(e) => setShowCodes(e.target.checked)} />
           Show affiliate codes
@@ -86,297 +201,118 @@ export function LootTab() {
         {showCodes && (
           <div className="space-y-2">
             <input value={tag} onChange={(e) => setTag(e.target.value)} className={field} />
-            <button
-              type="button"
-              onClick={async () => {
-                setBusy("tag");
-                try {
-                  await post({ action: "settings", default_tag: tag });
-                  setMsg("Tag saved");
-                } catch (err: any) {
-                  setMsg(err.message);
-                } finally {
-                  setBusy("");
-                }
-              }}
-              className="px-3 py-2 rounded-lg text-xs border border-neutral-700"
-            >
-              Save default tag
-            </button>
+            <button type="button" onClick={async () => { await post({ action: "settings", default_tag: tag }); setMsg("Tag saved"); }} className="px-3 py-2 rounded-lg text-xs border border-neutral-700">Save default tag</button>
           </div>
         )}
-        <button
-          type="button"
-          onClick={async () => {
-            setBusy("seed");
-            try {
-              const d = await post({ action: "seed" });
-              setMsg(`Seeded ${d.seeded}`);
-              await load();
-            } catch (err: any) {
-              setMsg(err.message);
-            } finally {
-              setBusy("");
-            }
-          }}
-          className="px-3 py-2 rounded-lg text-xs border border-neutral-700"
-        >
-          Seed current six picks
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={async () => { const d = await post({ action: "seed" }); setMsg(`Seeded ${d.seeded}`); await load(); }} className="px-3 py-2 rounded-lg text-xs border border-neutral-700">Seed six</button>
+          <button type="button" onClick={() => { setCreating(true); setOpenId(null); }} className="px-3 py-2 rounded-lg text-xs border border-amber-800/50 text-amber-100">New card</button>
+        </div>
         {msg && <p className="text-xs text-amber-200">{msg}</p>}
       </div>
+
+      {creating && (
+        <div className="rounded-2xl border border-amber-800/40 bg-[#111] overflow-hidden">
+          <div className="px-3 py-2 flex justify-between text-xs text-neutral-400">
+            <span>New card</span>
+            <button type="button" onClick={() => setCreating(false)}>Close</button>
+          </div>
+          <Editor
+            pick={newPick}
+            onChange={setNewPick}
+            busy={busy}
+            showCodes={showCodes}
+            onSave={() => workPick(newPick, "save")}
+            onPhoto={(scene, extra) => workPick(newPick, "photo", { scene, extra })}
+            onCopy={(fieldName) => workPick(newPick, fieldName, { field: fieldName })}
+          />
+        </div>
+      )}
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
         <p className="text-xs uppercase tracking-wide text-neutral-500">Fill a section</p>
         <div className="grid sm:grid-cols-3 gap-2">
           <select value={fillSection} onChange={(e) => setFillSection(e.target.value)} className={field}>
-            {LOOT_SECTIONS.map((s) => (
-              <option key={s.id} value={s.id}>{s.label}</option>
-            ))}
+            {LOOT_SECTIONS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
-          <input value={fillHint} onChange={(e) => setFillHint(e.target.value)} className={field} placeholder="optional vibe — late night desk, no RGB" />
+          <input value={fillHint} onChange={(e) => setFillHint(e.target.value)} className={field} placeholder="optional vibe" />
           <select value={fillCount} onChange={(e) => setFillCount(Number(e.target.value))} className={field}>
-            {[3, 4, 5, 6, 8].map((n) => (
-              <option key={n} value={n}>{n} cards</option>
-            ))}
+            {[3, 4, 5, 6, 8].map((n) => <option key={n} value={n}>{n} cards</option>)}
           </select>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={!!busy}
-            onClick={async () => {
-              setBusy("research");
-              try {
-                const d = await post({
-                  action: "research",
-                  section: fillSection,
-                  hint: fillHint,
-                  count: fillCount,
-                  avoid: picks.map((p) => p.name),
-                });
-                setIdeas(d.picks || []);
-                setMsg(`${(d.picks || []).length} ideas — save the keepers`);
-              } catch (err: any) {
-                setMsg(err.message);
-              } finally {
-                setBusy("");
-              }
-            }}
-            className="px-3 py-2 rounded-lg text-xs border border-neutral-700 disabled:opacity-40"
-          >
-            {busy === "research" ? "Researching…" : "Research only"}
-          </button>
-          <button
-            type="button"
-            disabled={!!busy}
-            onClick={async () => {
-              setBusy("fill");
-              try {
-                const d = await post({
-                  action: "fill",
-                  section: fillSection,
-                  hint: fillHint,
-                  count: fillCount,
-                  avoid: picks.map((p) => p.name),
-                });
-                setIdeas([]);
-                setMsg(`Saved ${d.picks?.length || 0} cards`);
-                await load();
-              } catch (err: any) {
-                setMsg(err.message);
-              } finally {
-                setBusy("");
-              }
-            }}
-            className="px-3 py-2 rounded-lg text-xs border border-amber-800/50 text-amber-100 disabled:opacity-40"
-          >
-            {busy === "fill" ? "Filling…" : "Fill and save"}
-          </button>
+        <div className="flex gap-2">
+          <button type="button" disabled={!!busy} onClick={async () => {
+            setBusy("research");
+            try {
+              const d = await post({ action: "research", section: fillSection, hint: fillHint, count: fillCount, avoid: picks.map((p) => p.name) });
+              setIdeas(d.picks || []);
+            } catch (err: any) { setMsg(err.message); } finally { setBusy(""); }
+          }} className="px-3 py-2 rounded-lg text-xs border border-neutral-700">Research</button>
+          <button type="button" disabled={!!busy} onClick={async () => {
+            setBusy("fill");
+            try {
+              const d = await post({ action: "fill", section: fillSection, hint: fillHint, count: fillCount, avoid: picks.map((p) => p.name) });
+              setIdeas([]);
+              setMsg(`Saved ${d.picks?.length || 0}`);
+              await load();
+            } catch (err: any) { setMsg(err.message); } finally { setBusy(""); }
+          }} className="px-3 py-2 rounded-lg text-xs border border-amber-800/50 text-amber-100">Fill and save</button>
         </div>
-        {ideas.length > 0 && (
-          <div className="space-y-2">
-            {ideas.map((p) => (
-              <div key={p.id} className="rounded-xl border border-neutral-800 p-3 space-y-1">
-                <p className="text-sm text-neutral-100">{p.name}</p>
-                <p className="text-xs text-neutral-500">{p.snippet}</p>
-                <p className="text-[10px] text-neutral-600">Search: {p.search_query}</p>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await post({ action: "save", pick: p });
-                    setIdeas((list) => list.filter((x) => x.id !== p.id));
-                    await load();
-                  }}
-                  className="text-[11px] text-amber-200"
-                >
-                  Save this one
-                </button>
-              </div>
-            ))}
+        {ideas.map((p) => (
+          <div key={p.id} className="rounded-xl border border-neutral-800 p-3">
+            <p className="text-sm text-neutral-100">{p.name}</p>
+            <p className="text-xs text-neutral-500">{p.snippet}</p>
+            <button type="button" className="text-[11px] text-amber-200 mt-1" onClick={async () => { await post({ action: "save", pick: p }); setIdeas((x) => x.filter((i) => i.id !== p.id)); await load(); }}>Save this one</button>
           </div>
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
-        <p className="text-xs uppercase tracking-wide text-neutral-500">New / edit pick</p>
-        <div className="grid sm:grid-cols-2 gap-2">
-          <select value={draft.section} onChange={(e) => setDraft({ ...draft, section: e.target.value })} className={field}>
-            {LOOT_SECTIONS.map((s) => (
-              <option key={s.id} value={s.id}>{s.label}</option>
-            ))}
-          </select>
-          <input value={hint} onChange={(e) => setHint(e.target.value)} className={field} placeholder="What it is — 60% board, black, no RGB" />
-        </div>
-        <div className="grid sm:grid-cols-3 gap-2">
-          <input value={draft.search_query || ""} onChange={(e) => setDraft({ ...draft, search_query: e.target.value })} className={field} placeholder="Amazon search" />
-          <input value={draft.asin || ""} onChange={(e) => setDraft({ ...draft, asin: e.target.value })} className={field} placeholder="ASIN only if you want one SKU" />
-          <select value={tone} onChange={(e) => setTone(e.target.value)} className={field}>
-            <option value="dry">dry</option>
-            <option value="petty">petty</option>
-            <option value="useful">useful</option>
-          </select>
-        </div>
-        {showCodes && (
-          <input value={draft.tag_override || ""} onChange={(e) => setDraft({ ...draft, tag_override: e.target.value })} className={field} placeholder="Tag override for this card only" />
-        )}
-        <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className={field} placeholder="Title" />
-        <input value={draft.snippet} onChange={(e) => setDraft({ ...draft, snippet: e.target.value })} className={field} placeholder="Snippet" />
-        <textarea value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} rows={4} className={field} placeholder="Two short paragraphs" />
-        <input value={extra} onChange={(e) => setExtra(e.target.value)} className={field} placeholder="Photo extra — matte black, RGB off" />
-        {draft.image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={draft.image_url} alt="" className="w-full max-w-sm aspect-[4/3] object-cover rounded-xl border border-neutral-800" />
-        )}
-        <div className="flex flex-wrap gap-2">
-          {[
-            ["title", "Write title"],
-            ["snippet", "Write snippet"],
-            ["body", "Write note"],
-            ["all", "Write all copy"],
-          ].map(([fieldName, label]) => (
-            <button
-              key={fieldName}
-              type="button"
-              disabled={!!busy}
-              onClick={async () => {
-                setBusy(fieldName);
-                try {
-                  const d = await post({
-                    action: "copy",
-                    field: fieldName,
-                    hint: hint || draft.name,
-                    section: draft.section,
-                    tone,
-                  });
-                  setDraft((p) => ({
-                    ...p,
-                    name: d.name || p.name,
-                    snippet: d.snippet || p.snippet,
-                    body: d.body || p.body,
-                    id: p.id || slugify(d.name || p.name || hint),
-                  }));
-                  setMsg("Copy ready");
-                } catch (err: any) {
-                  setMsg(err.message);
-                } finally {
-                  setBusy("");
-                }
-              }}
-              className="px-3 py-2 rounded-lg text-xs border border-neutral-700 disabled:opacity-40"
-            >
-              {busy === fieldName ? "…" : label}
-            </button>
-          ))}
-          <button
-            type="button"
-            disabled={!!busy || !draft.name}
-            onClick={async () => {
-              setBusy("photo");
-              try {
-                const id = draft.id || slugify(draft.name);
-                const d = await post({
-                  action: "photo",
-                  id,
-                  name: draft.name,
-                  section: draft.section,
-                  search_query: draft.search_query || hint,
-                  snippet: draft.snippet,
-                  body: draft.body,
-                  extra,
-                });
-                setDraft((p) => ({ ...p, id, image_url: d.image_url }));
-                setMsg("Photo saved");
-                await load();
-              } catch (err: any) {
-                setMsg(err.message);
-              } finally {
-                setBusy("");
-              }
-            }}
-            className="px-3 py-2 rounded-lg text-xs border border-amber-800/50 text-amber-200 disabled:opacity-40"
-          >
-            {busy === "photo" ? "Shooting…" : "Generate photo"}
-          </button>
-          <button
-            type="button"
-            disabled={!!busy || !draft.name}
-            onClick={async () => {
-              setBusy("save");
-              try {
-                const d = await post({ action: "save", pick: { ...draft, id: draft.id || slugify(draft.name) } });
-                setDraft({ ...blank });
-                setHint("");
-                setMsg(`Saved ${d.pick.id}`);
-                await load();
-              } catch (err: any) {
-                setMsg(err.message);
-              } finally {
-                setBusy("");
-              }
-            }}
-            className="px-3 py-2 rounded-lg text-xs bg-amber-200 text-black disabled:opacity-40"
-          >
-            Save card
-          </button>
-        </div>
+        ))}
       </div>
 
       {LOOT_SECTIONS.map((sec) => (
         <section key={sec.id} className="space-y-3">
           <h2 className="text-xs uppercase tracking-wide text-neutral-500">{sec.label}</h2>
           <div className="grid sm:grid-cols-2 gap-3">
-            {(groups[sec.id] || []).map((p) => (
-              <div key={p.id} className="rounded-2xl border border-neutral-800 bg-[#111] overflow-hidden">
-                <div className="aspect-[4/3] bg-black">
-                  {p.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.image_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="h-full flex items-center justify-center text-[11px] text-neutral-600">No cover</div>
-                  )}
-                </div>
-                <div className="p-3 space-y-2">
-                  <p className="text-sm text-neutral-100">{p.name}</p>
-                  <p className="text-xs text-neutral-500">{p.snippet}</p>
-                  {showCodes && (
-                    <p className="text-[10px] font-mono text-amber-200/80 break-all">{affiliateUrl(p, tag)}</p>
-                  )}
-                  <div className="flex gap-2 text-[11px]">
-                    <button type="button" onClick={() => { setDraft(p); setHint(p.search_query || p.name); }} className="text-neutral-300">Edit</button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (!confirm("Delete?")) return;
-                        await post({ action: "delete", id: p.id });
-                        await load();
-                      }}
-                      className="text-red-400"
-                    >Delete</button>
+            {(groups[sec.id] || []).map((p) => {
+              const live = drafts[p.id] || p;
+              const open = openId === p.id;
+              return (
+                <div key={p.id} className={`rounded-2xl border bg-[#111] overflow-hidden ${
+                  open ? "border-amber-800/50 sm:col-span-2" : "border-neutral-800"
+                }`}>
+                  <div className={`grid ${open ? "sm:grid-cols-2" : ""}`}>
+                    <div className="aspect-[4/3] bg-black">
+                      {live.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={live.image_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-[11px] text-neutral-600">No cover</div>
+                      )}
+                    </div>
+                    <div className="p-3 space-y-2">
+                      <p className="text-sm text-neutral-100">{live.name}</p>
+                      <p className="text-xs text-neutral-500">{live.snippet}</p>
+                      {showCodes && <p className="text-[10px] font-mono text-amber-200/80 break-all">{affiliateUrl(live, tag)}</p>}
+                      <div className="flex gap-3 text-[11px]">
+                        <button type="button" onClick={() => { setOpenId(open ? null : p.id); setDrafts((m) => ({ ...m, [p.id]: live })); setCreating(false); }} className="text-amber-200">
+                          {open ? "Close" : "Edit here"}
+                        </button>
+                        <button type="button" onClick={async () => { if (!confirm("Delete?")) return; await post({ action: "delete", id: p.id }); await load(); }} className="text-red-400">Delete</button>
+                      </div>
+                    </div>
                   </div>
+                  {open && (
+                    <Editor
+                      pick={live}
+                      onChange={(next) => setDrafts((m) => ({ ...m, [p.id]: next }))}
+                      busy={busy}
+                      showCodes={showCodes}
+                      onSave={() => workPick(live, "save")}
+                      onPhoto={(scene, extra) => workPick(live, "photo", { scene, extra })}
+                      onCopy={(fieldName) => workPick(live, fieldName, { field: fieldName })}
+                    />
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       ))}

@@ -23,6 +23,7 @@ export function AfterimageApp() {
   const [styleId, setStyleId] = useState("anime");
   const [styleSearch, setStyleSearch] = useState("");
   const [heat, setHeat] = useState("flirty");
+  const [brand, setBrand] = useState("iPhone");
   const [phoneId, setPhoneId] = useState("iphone-16");
   const [more, setMore] = useState(false);
   const [subject, setSubject] = useState("");
@@ -37,11 +38,15 @@ export function AfterimageApp() {
   const [board, setBoard] = useState<Print[]>([]);
   const [mine, setMine] = useState<Print[]>([]);
   const [credits, setCredits] = useState(0);
-  const [previewUsed, setPreviewUsed] = useState(false);
   const [picked, setPicked] = useState<Print[]>([]);
 
   const phone = useMemo(() => phoneById(phoneId), [phoneId]);
   const brands = [...new Set(PHONES.map((p) => p.brand))];
+  const shown = PHONES.filter((p) => p.brand === brand);
+
+  useEffect(() => {
+    if (!shown.some((p) => p.id === phoneId)) setPhoneId(shown[0]?.id || PHONES[0].id);
+  }, [brand]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetch("/api/afterimage/board")
@@ -57,19 +62,18 @@ export function AfterimageApp() {
 
   const loadMe = async (id: string) => {
     const res = await fetch(`/api/afterimage/me?userId=${id}`);
-    const data = await res.json();
+    const data = await res.json().catch(() => ({}));
     setCredits(data.wallet?.credits || 0);
-    setPreviewUsed(!!data.wallet?.preview_used);
     setMine(data.prints || []);
   };
 
-  const print = async (finish: "preview" | "phone") => {
+  const print = async () => {
     if (!userId) {
       setMsg("Make an account first.");
       return;
     }
     setBusy(true);
-    setMsg(finish === "preview" ? "Previewing…" : "Printing phone-ready…");
+    setMsg("Printing…");
     try {
       const res = await fetch("/api/afterimage/print", {
         method: "POST",
@@ -87,15 +91,24 @@ export function AfterimageApp() {
           place,
           overlay,
           safeZone,
-          threeUp: finish === "phone" && threeUp,
-          finish,
+          threeUp,
+          finish: "phone",
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed");
+      const raw = await res.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        throw new Error(raw.slice(0, 140) || "Print failed");
+      }
+      if (!res.ok) throw new Error(data.error || "Couldn\u2019t print that.");
       setPicked(data.prints || []);
-      setMsg(data.threeUp ? "Pick a keeper from the three." : "Printed.");
+      setMsg(data.threeUp ? "Pick a keeper." : "Printed.");
       await loadMe(userId);
+      const boardRes = await fetch("/api/afterimage/board");
+      const boardData = await boardRes.json().catch(() => ({ prints: [] }));
+      setBoard(boardData.prints || []);
     } catch (err: any) {
       setMsg(err.message);
     } finally {
@@ -104,13 +117,13 @@ export function AfterimageApp() {
   };
 
   const share = async (p: Print) => {
-    const url = `https://thievnsden.com/afterimage`;
-    const text = `Afterimage · ${p.want || "a lock screen"}\n${url}`;
+    const url = "https://thievnsden.com/afterimage";
+    const text = `Afterimage · ${p.want || "wallpaper"}\n${url}`;
     try {
       if (navigator.share) await navigator.share({ title: "Afterimage", text, url });
       else {
         await navigator.clipboard.writeText(text);
-        setMsg("Copied share text");
+        setMsg("Copied");
       }
     } catch {}
   };
@@ -130,10 +143,10 @@ export function AfterimageApp() {
             Afterimage
           </p>
           <h1 className="ai-title text-4xl sm:text-6xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-rose-200 to-amber-200">
-            Print a lock screen
+            Print a wallpaper
           </h1>
           <p className="mt-3 text-neutral-300 max-w-lg mx-auto">
-            Type what you want. Pick a look. One free preview per account. Phone-ready is the sharp one.
+            Type what you want. Pick a look. Lock screen, home screen, whatever fits the phone.
           </p>
         </div>
 
@@ -142,13 +155,24 @@ export function AfterimageApp() {
             <div className="rounded-3xl border border-fuchsia-500/20 bg-black/50 backdrop-blur-md p-5 sm:p-6 space-y-5 shadow-[0_0_80px_-24px_rgba(217,70,239,0.55)]">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.2em] text-fuchsia-300/80 mb-2">Phone</p>
-                <div className="flex flex-wrap gap-2 mb-2">
+                <div className="flex flex-wrap gap-2 mb-3">
                   {brands.map((b) => (
-                    <span key={b} className="text-[11px] text-neutral-500">{b}</span>
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => setBrand(b)}
+                      className={`px-3 py-1.5 rounded-full border text-xs ${
+                        brand === b
+                          ? "border-fuchsia-400/60 bg-fuchsia-950/40 text-white"
+                          : "border-neutral-800 text-neutral-500"
+                      }`}
+                    >
+                      {b}
+                    </button>
                   ))}
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {PHONES.map((p) => (
+                  {shown.map((p) => (
                     <button
                       key={p.id}
                       type="button"
@@ -159,7 +183,8 @@ export function AfterimageApp() {
                           : "border-neutral-800 text-neutral-400"
                       }`}
                     >
-                      {p.brand} {p.name}
+                      {p.name}
+                      <span className="block text-[10px] text-neutral-500">{p.w}×{p.h}</span>
                     </button>
                   ))}
                 </div>
@@ -240,32 +265,20 @@ export function AfterimageApp() {
                 </div>
               )}
 
-              <div className="grid sm:grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  disabled={busy || (!!userId && previewUsed)}
-                  onClick={() => print("preview")}
-                  className="py-3.5 rounded-2xl border border-neutral-700 text-sm font-medium disabled:opacity-40"
-                >
-                  {previewUsed ? "Preview used" : "Free preview"}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => print("phone")}
-                  className="py-3.5 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-400 text-black font-semibold disabled:opacity-50 ai-print"
-                >
-                  Phone-ready{threeUp ? " ×3" : ""}
-                </button>
-              </div>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={print}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-400 text-black font-semibold disabled:opacity-50 ai-print"
+              >
+                {busy ? "Printing…" : threeUp ? "Print ×3" : "Print wallpaper"}
+              </button>
               {!userId && (
                 <p className="text-xs text-neutral-500">
                   <Link href="/join" className="text-fuchsia-300">Join</Link> or <Link href="/login" className="text-fuchsia-300">log in</Link> to print.
                 </p>
               )}
-              {userId && (
-                <p className="text-xs text-neutral-500">Credits {credits} · Preview {previewUsed ? "spent" : "ready"}</p>
-              )}
+              {userId && <p className="text-xs text-neutral-500">Credits {credits}</p>}
               {msg && <p className="text-sm text-amber-100">{msg}</p>}
             </div>
 
@@ -307,13 +320,14 @@ export function AfterimageApp() {
           </div>
           <div className="flex gap-4 overflow-x-auto pb-4 snap-x">
             {board.length === 0 && (
-              <p className="text-sm text-neutral-500">Nothing public yet. Admin can print the first walls.</p>
+              <p className="text-sm text-neutral-500">Nothing up yet. Print one and share it here.</p>
             )}
             {board.map((p) => (
               <div key={p.id} className="ai-card snap-start shrink-0 w-[160px] rounded-2xl overflow-hidden border border-white/10 bg-black/60">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.image_url} alt="" className="w-full aspect-[9/16] object-cover" />
-                <p className="p-2 text-[10px] text-neutral-400 line-clamp-2">{p.want || p.style_id}</p>
+                <p className="px-2 pt-2 text-[11px] text-fuchsia-200/80">{p.username || "anon"}</p>
+                <p className="px-2 pb-2 text-[10px] text-neutral-500 line-clamp-2">{p.want || p.style_id}</p>
               </div>
             ))}
           </div>
@@ -328,7 +342,7 @@ export function AfterimageApp() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.image_url} alt="" className="w-full aspect-[9/16] object-cover" />
                   <div className="p-2 flex justify-between text-[10px] text-neutral-500">
-                    <span>{p.finish}</span>
+                    <span>{p.username || "you"}</span>
                     <a href={p.image_url} download>Save</a>
                   </div>
                 </div>

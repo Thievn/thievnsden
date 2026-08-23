@@ -36,19 +36,6 @@ export const LOOKS = [
   { id: "pastel", label: "Pastel", hint: "Soft candy" },
 ];
 
-export const SERIES = [
-  "One Piece",
-  "Naruto",
-  "Bleach",
-  "Demon Slayer",
-  "Jujutsu Kaisen",
-  "Chainsaw Man",
-  "Spy x Family",
-  "Frieren",
-  "Solo Leveling",
-  "Original",
-];
-
 export const POSES = [
   "standing confident",
   "looking back over the shoulder",
@@ -86,8 +73,8 @@ export const PLACES = [
 ];
 
 export const LOOK_PROMPT: Record<string, string> = {
-  photo: "photorealistic photograph, real skin, phone camera",
-  cinematic: "cinematic film still, anamorphic bokeh, movie lighting",
+  photo: "photorealistic photograph of a real person, DSLR or phone camera, real skin pores, real hair, not illustration, not anime, not 3D render, not digital painting",
+  cinematic: "cinematic film still, anamorphic bokeh, movie lighting, photoreal",
   anime: "modern high-quality anime illustration, sharp linework, detailed eyes",
   "90s-cel": "1990s hand-painted anime cel, visible paint, analog grain",
   manhwa: "full-color manhwa illustration, glossy fashion lighting",
@@ -96,15 +83,15 @@ export const LOOK_PROMPT: Record<string, string> = {
   water: "watercolor on paper, soft blooms",
   ink: "graphic novel ink, dramatic blacks",
   "3d": "cinematic 3D render, film lighting",
-  neon: "neon night, wet asphalt, magenta and teal",
+  neon: "neon night, wet asphalt, magenta and teal, photoreal if photo look",
   soft: "soft glow portrait, warm practical lights",
-  glamour: "high-fashion editorial, skin sheen",
+  glamour: "high-fashion editorial photograph, skin sheen",
   vapor: "vaporwave, chrome and grid, dusk pink",
   fantasy: "dark fantasy illustration, rich cloak and light",
   pixel: "detailed pixel art, clean clusters",
   comic: "western comic colors, bold ink",
-  fashion: "lookbook crop, designer clothes",
-  noir: "black and white noir, hard shadows",
+  fashion: "lookbook photograph, designer clothes",
+  noir: "black and white noir photograph, hard shadows",
   pastel: "pastel palette, dreamy soft light",
 };
 
@@ -115,7 +102,7 @@ export const HEAT_PROMPT: Record<string, string> = {
 };
 
 export const NEGATIVE =
-  "no empty banner at the top, no letterbox, no black bar, no huge empty sky taking the frame, no sex act, no nudity, no topless, no genitals, no porn, no underage, no watermark, no UI chrome";
+  "no white bars, no black bars, no letterbox, no border, no empty banner, no frame, no polaroid, no UI, no watermark, no illustration if photoreal was requested, no anime if photoreal was requested, no sex act, no nudity, no underage";
 
 export type PrintDraft = {
   want: string;
@@ -144,22 +131,20 @@ export function compilePrompt(d: PrintDraft) {
   const look = LOOK_PROMPT[d.styleId] || LOOK_PROMPT.photo;
   const heat = HEAT_PROMPT[d.heat] || HEAT_PROMPT.clean;
   const bits = [
-    "Full-bleed vertical 9:16 phone wallpaper.",
-    "The subject fills most of the frame from mid-thigh or waist to head.",
-    "No empty header, no blank bar, no huge unused sky.",
-    d.styleSearch ? `Visual language of ${d.styleSearch}.` : look + ".",
-    d.series && d.series !== "Original" ? `Inspired by ${d.series} character design, original enough to stand alone.` : "",
+    "Full-bleed vertical 9:16 phone wallpaper, edge to edge, no bars.",
+    "Subject fills the frame from mid-thigh to head.",
+    look + ".",
+    d.styleSearch?.trim() ? `Extra art direction: ${d.styleSearch.trim()}.` : "",
+    d.series && d.series !== "Original" ? `Series vibe: ${d.series}.` : "",
     d.subject ? `Subject: ${d.subject}.` : "",
     d.pose ? `Pose: ${d.pose}.` : "",
     d.clothes ? `Wardrobe: ${d.clothes}.` : "",
     d.place ? `Setting: ${d.place}.` : "",
     d.lighting ? `Lighting: ${d.lighting}.` : "",
-    d.want?.trim() ? d.want.trim() + "." : "A striking single subject.",
+    d.want?.trim() ? `Scene: ${d.want.trim()}.` : "",
     heat + ".",
     `Avoid: ${NEGATIVE}.`,
-    d.overlay?.trim() ? `Tiny integrated text: ${d.overlay.trim()}.` : "No watermark.",
-    d.extra || "",
-    "Adults only as subjects. Wallpaper-ready. Sharp. Rich color.",
+    "Wallpaper-ready. Sharp. No padding. Adults only.",
   ];
   return bits.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 }

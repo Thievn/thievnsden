@@ -127,12 +127,19 @@ export default function AccountPage() {
         <InstallAppCard />
       </div>
 
-      <div className="mb-5 rounded-2xl border border-neutral-800/80 bg-[#111] p-4">
+      <div className="mb-5 rounded-2xl border border-neutral-800/80 bg-[#111] divide-y divide-neutral-800/60">
         <Link
           href="/account/judgments"
-          className="text-sm text-neutral-300 hover:text-neutral-100 flex items-center justify-between"
+          className="p-4 text-sm text-neutral-300 hover:text-neutral-100 flex items-center justify-between"
         >
           <span>My judgments</span>
+          <span className="text-neutral-600">→</span>
+        </Link>
+        <Link
+          href="/account/afterimage"
+          className="p-4 text-sm text-neutral-300 hover:text-neutral-100 flex items-center justify-between"
+        >
+          <span>My Afterimage prints</span>
           <span className="text-neutral-600">→</span>
         </Link>
       </div>

@@ -3,36 +3,37 @@
 import { useEffect, useState } from "react";
 import { LOOT_ITEMS } from "@/lib/loot-data";
 
-function LootImage({ id, name, cover }: { id: string; name: string; cover?: string }) {
-  const [state, setState] = useState<"loading" | "ok" | "missing">("loading");
-  const src = cover || `/loot/${id}.jpg`;
+function LootImage({ name, cover }: { name: string; cover?: string | null }) {
+  const [ok, setOk] = useState(false);
 
   useEffect(() => {
-    setState("loading");
-  }, [src]);
+    setOk(false);
+  }, [cover]);
 
   return (
     <div className="relative aspect-[16/10] sm:aspect-[4/3] bg-[#0a0a0a] border-b border-neutral-800/60 overflow-hidden">
-      {state !== "ok" && (
+      {!ok && (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#0c0c0c] to-[#080808]">
           <div className="text-center px-4">
             <div className="w-11 h-11 mx-auto mb-3 rounded-full border border-neutral-800/90 bg-black/40 flex items-center justify-center">
               <div className="w-2 h-2 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-70" />
             </div>
-            <p className="text-[11px] text-neutral-500 tracking-wide">Photo coming</p>
+            <p className="text-[11px] text-neutral-500 tracking-wide">{cover ? "Loading photo" : "Photo coming"}</p>
           </div>
         </div>
       )}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt={name}
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-          state === "ok" ? "opacity-100" : "opacity-0"
-        }`}
-        onLoad={() => setState("ok")}
-        onError={() => setState("missing")}
-      />
+      {cover && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={cover}
+          alt={name}
+          referrerPolicy="no-referrer"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+            ok ? "opacity-100" : "opacity-0"
+          }`}
+          onLoad={() => setOk(true)}
+        />
+      )}
     </div>
   );
 }
@@ -101,7 +102,7 @@ export default function LootPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {LOOT_ITEMS.map((item) => (
             <div key={item.id} className="card group rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden flex flex-col">
-              <LootImage id={item.id} name={item.name} cover={covers[item.id]} />
+              <LootImage name={item.name} cover={covers[item.id] || null} />
               <div className="p-4 sm:p-5 flex flex-col flex-1">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] sm:text-[11px] font-medium text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 uppercase tracking-wide">

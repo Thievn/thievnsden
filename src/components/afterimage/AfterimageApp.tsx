@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { HEATS, LIGHTS, LOOKS, PHONES, PLACES, phoneById } from "@/lib/afterimage";
 import { runPrintJob } from "@/lib/afterimage-print";
+import { AfterimageBoard } from "@/components/afterimage/AfterimageBoard";
 
 type Print = {
   id: string;
@@ -33,7 +34,6 @@ export function AfterimageApp() {
   const [place, setPlace] = useState("city rooftop");
   const [overlay, setOverlay] = useState("");
   const [safeZone, setSafeZone] = useState(true);
-  const [threeUp, setThreeUp] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [board, setBoard] = useState<Print[]>([]);
@@ -136,14 +136,12 @@ export function AfterimageApp() {
         <div className="ai-orb ai-orb-c" />
         <div className="den-grain" />
       </div>
-
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-14 pb-20">
         <div className="text-center mb-10">
           <p className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full border border-fuchsia-500/30 bg-black/40 text-[10px] uppercase tracking-[0.28em] text-fuchsia-200">Afterimage</p>
           <h1 className="ai-title text-4xl sm:text-6xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-rose-200 to-amber-200">Print a wallpaper</h1>
           <p className="mt-3 text-neutral-300 max-w-lg mx-auto">Type what you want. Pick a look. Lock screen, home screen, whatever fits the phone.</p>
         </div>
-
         <div className="grid lg:grid-cols-[minmax(0,1fr)_280px] gap-8 items-start">
           <div className="space-y-5">
             <div className="rounded-3xl border border-fuchsia-500/20 bg-black/50 backdrop-blur-md p-5 sm:p-6 space-y-5 shadow-[0_0_80px_-24px_rgba(217,70,239,0.55)]">
@@ -236,6 +234,24 @@ export function AfterimageApp() {
             <p className="text-center text-[11px] text-neutral-500 mt-3">{phone.brand} {phone.name}</p>
           </div>
         </div>
+        <AfterimageBoard board={board} />
+        {mine.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-xl font-semibold mb-4">Yours</h2>
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {mine.map((p) => (
+                <div key={p.id} className="shrink-0 w-[140px] rounded-2xl overflow-hidden border border-neutral-800">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.image_url} alt="" className="w-full aspect-[9/16] object-cover" />
+                  <div className="p-2 flex justify-between text-[10px] text-neutral-500">
+                    <span>{p.username || "you"}</span>
+                    <a href={p.image_url} download>Save</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

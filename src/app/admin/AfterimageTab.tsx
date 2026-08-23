@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { HEATS, LIGHTS, LOOKS, PHONES, PLACES } from "@/lib/afterimage";
+import { runPrintJob } from "@/lib/afterimage-print";
 
 export function AfterimageTab() {
   const [userId, setUserId] = useState("");
@@ -10,20 +11,18 @@ export function AfterimageTab() {
   const [q, setQ] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
-  const [want, setWant] = useState("rain on a rooftop, looking back, city below");
-  const [styleId, setStyleId] = useState("glamour");
+  const [want, setWant] = useState("");
+  const [styleId, setStyleId] = useState("photo");
   const [styleSearch, setStyleSearch] = useState("");
   const [heat, setHeat] = useState("flirty");
-  const [phoneId, setPhoneId] = useState("iphone-16-pro-max");
+  const [phoneId, setPhoneId] = useState("classic");
   const [subject, setSubject] = useState("");
   const [clothes, setClothes] = useState("");
-  const [lighting, setLighting] = useState("neon night");
-  const [place, setPlace] = useState("city rooftop");
+  const [lighting, setLighting] = useState("");
+  const [place, setPlace] = useState("");
   const [overlay, setOverlay] = useState("");
   const [extra, setExtra] = useState("");
   const [rawPrompt, setRawPrompt] = useState("");
-  const [safeZone, setSafeZone] = useState(true);
-  const [threeUp, setThreeUp] = useState(true);
   const [publish, setPublish] = useState(true);
   const [finish, setFinish] = useState<"preview" | "phone">("phone");
   const [grantUser, setGrantUser] = useState("");
@@ -46,34 +45,19 @@ export function AfterimageTab() {
   const print = async () => {
     if (!userId) return setMsg("Not logged in");
     setBusy(true);
-    setMsg("Printing… this can take a minute");
+    setMsg("Printing… stay on this page");
     try {
       const res = await fetch("/api/afterimage/print", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId,
-          want,
-          styleId,
-          styleSearch,
-          heat,
-          phoneId,
-          subject,
-          clothes,
-          lighting,
-          place,
-          overlay,
-          extra,
-          rawPrompt,
-          safeZone,
-          threeUp,
-          publish,
-          finish,
+          userId, want, styleId, styleSearch, heat, phoneId, subject, clothes, lighting, place, overlay, extra, rawPrompt, publish, finish,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
-      setMsg(`OK · ${data.prints?.length || 1} print(s)`);
+      if (data.jobId) await runPrintJob(data.jobId);
+      setMsg("Printed.");
       await load();
     } catch (err: any) {
       setMsg(err.message);
@@ -89,62 +73,44 @@ export function AfterimageTab() {
       <div className="rounded-2xl border border-fuchsia-900/30 bg-gradient-to-b from-fuchsia-950/20 to-[#111] p-5 space-y-4">
         <div>
           <p className="text-sm text-neutral-100 font-medium">Admin press</p>
-          <p className="text-xs text-neutral-500 mt-1">
-            You skip credits. Phone-ready + 3-up is on by default so the board fills with sharp walls.
-          </p>
+          <p className="text-xs text-neutral-500 mt-1">Same job queue as the public maker. No rooftop unless you pick it.</p>
         </div>
-        <textarea value={want} onChange={(e) => setWant(e.target.value)} rows={3} className={field} placeholder="What you want" />
+        <textarea value={want} onChange={(e) => setWant(e.target.value)} rows={3} className={field} placeholder="Action / extras" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label className="text-xs text-neutral-500 space-y-1">
-            Look
+          <label className="text-xs text-neutral-500 space-y-1">Look
             <select value={styleId} onChange={(e) => setStyleId(e.target.value)} className={field}>
-              {LOOKS.map((l) => (
-                <option key={l.id} value={l.id}>{l.label}</option>
-              ))}
+              {LOOKS.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
             </select>
           </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            Style search
-            <input value={styleSearch} onChange={(e) => setStyleSearch(e.target.value)} className={field} placeholder="Makoto Shinkai, oil portrait…" />
+          <label className="text-xs text-neutral-500 space-y-1">Art note
+            <input value={styleSearch} onChange={(e) => setStyleSearch(e.target.value)} className={field} placeholder="Lens, grain, color only" />
           </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            Heat
+          <label className="text-xs text-neutral-500 space-y-1">Heat
             <select value={heat} onChange={(e) => setHeat(e.target.value)} className={field}>
-              {HEATS.map((h) => (
-                <option key={h.id} value={h.id}>{h.label}</option>
-              ))}
+              {HEATS.map((h) => <option key={h.id} value={h.id}>{h.label}</option>)}
             </select>
           </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            Phone
+          <label className="text-xs text-neutral-500 space-y-1">Size
             <select value={phoneId} onChange={(e) => setPhoneId(e.target.value)} className={field}>
-              {PHONES.map((p) => (
-                <option key={p.id} value={p.id}>{p.brand} · {p.name}</option>
-              ))}
+              {PHONES.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            Subject
+          <label className="text-xs text-neutral-500 space-y-1">Who they are
             <input value={subject} onChange={(e) => setSubject(e.target.value)} className={field} />
           </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            Clothes
+          <label className="text-xs text-neutral-500 space-y-1">Clothes
             <input value={clothes} onChange={(e) => setClothes(e.target.value)} className={field} />
           </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            Light
+          <label className="text-xs text-neutral-500 space-y-1">Light
             <select value={lighting} onChange={(e) => setLighting(e.target.value)} className={field}>
-              {LIGHTS.map((l) => (
-                <option key={l}>{l}</option>
-              ))}
+              <option value="">None</option>
+              {LIGHTS.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
             </select>
           </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            Place
+          <label className="text-xs text-neutral-500 space-y-1">Place
             <select value={place} onChange={(e) => setPlace(e.target.value)} className={field}>
-              {PLACES.map((p) => (
-                <option key={p}>{p}</option>
-              ))}
+              <option value="">None</option>
+              {PLACES.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
             </select>
           </label>
         </div>
@@ -152,8 +118,6 @@ export function AfterimageTab() {
         <input value={extra} onChange={(e) => setExtra(e.target.value)} className={field} placeholder="Extra notes" />
         <textarea value={rawPrompt} onChange={(e) => setRawPrompt(e.target.value)} rows={3} className={field} placeholder="Raw prompt override — skips the builder if filled" />
         <div className="flex flex-wrap gap-4 text-sm text-neutral-300">
-          <label className="flex items-center gap-2"><input type="checkbox" checked={safeZone} onChange={(e) => setSafeZone(e.target.checked)} /> Clock space</label>
-          <label className="flex items-center gap-2"><input type="checkbox" checked={threeUp} onChange={(e) => setThreeUp(e.target.checked)} /> 3 versions</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={publish} onChange={(e) => setPublish(e.target.checked)} /> Show on board</label>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={finish === "phone"} onChange={(e) => setFinish(e.target.checked ? "phone" : "preview")} />
@@ -161,7 +125,7 @@ export function AfterimageTab() {
           </label>
         </div>
         <button onClick={print} disabled={busy} className="w-full py-3 rounded-xl bg-gradient-to-r from-fuchsia-600 via-rose-500 to-amber-400 text-black font-semibold disabled:opacity-50">
-          {busy ? "Printing…" : threeUp ? "Print 3 versions" : "Print"}
+          {busy ? "Printing…" : "Print"}
         </button>
         {msg && <p className="text-xs text-fuchsia-200">{msg}</p>}
       </div>
@@ -182,9 +146,7 @@ export function AfterimageTab() {
               setMsg(data.error || `Credits now ${data.credits}`);
             }}
             className="px-4 py-2 rounded-lg border border-neutral-700 text-sm"
-          >
-            Add
-          </button>
+          >Add</button>
         </div>
       </div>
 
@@ -201,33 +163,8 @@ export function AfterimageTab() {
             <div className="p-2 space-y-1">
               <p className="text-[10px] text-neutral-500 truncate">{p.username} · {p.finish}</p>
               <div className="flex gap-1">
-                <button
-                  onClick={async () => {
-                    await fetch("/api/admin/afterimage", {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ id: p.id, is_public: !p.is_public }),
-                    });
-                    load();
-                  }}
-                  className="text-[10px] text-fuchsia-300"
-                >
-                  {p.is_public ? "Hide" : "Board"}
-                </button>
-                <button
-                  onClick={async () => {
-                    if (!confirm("Delete?")) return;
-                    await fetch("/api/admin/afterimage", {
-                      method: "DELETE",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ id: p.id }),
-                    });
-                    load();
-                  }}
-                  className="text-[10px] text-red-400"
-                >
-                  Del
-                </button>
+                <button onClick={async () => { await fetch("/api/admin/afterimage", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id, is_public: !p.is_public }) }); load(); }} className="text-[10px] text-fuchsia-300">{p.is_public ? "Hide" : "Board"}</button>
+                <button onClick={async () => { if (!confirm("Delete?")) return; await fetch("/api/admin/afterimage", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: p.id }) }); load(); }} className="text-[10px] text-red-400">Del</button>
               </div>
             </div>
           </div>

@@ -1,3 +1,28 @@
+export const LOOT_SECTIONS = [
+  { id: "desk", label: "Desk" },
+  { id: "shelf", label: "Shelf" },
+  { id: "phone", label: "Phone" },
+  { id: "house", label: "House-lite" },
+] as const;
+
+export type LootSection = (typeof LOOT_SECTIONS)[number]["id"];
+
+export type LootPick = {
+  id: string;
+  section: LootSection | string;
+  name: string;
+  snippet: string;
+  body: string;
+  image_url?: string | null;
+  search_query?: string;
+  asin?: string;
+  dest_url?: string;
+  tag_override?: string;
+  status?: string;
+  active?: boolean;
+  sort_order?: number;
+};
+
 export type LootItem = {
   id: string;
   name: string;
@@ -71,6 +96,18 @@ export const LOOT_ITEMS: LootItem[] = [
   },
 ];
 
+export const SEED_PICKS: LootPick[] = LOOT_ITEMS.map((item, i) => ({
+  id: item.id,
+  section: item.category.includes("Anime") ? "shelf" : "desk",
+  name: item.name,
+  snippet: item.short,
+  body: item.review,
+  search_query: searchTermFromLink(item.link),
+  status: item.status,
+  active: true,
+  sort_order: i,
+}));
+
 export function searchTermFromLink(link: string) {
   try {
     const u = new URL(link);
@@ -80,14 +117,51 @@ export function searchTermFromLink(link: string) {
   }
 }
 
-export function lootCoverPrompt(item: LootItem, extra = "") {
-  const term = searchTermFromLink(item.link) || item.name;
+export function slugify(s: string) {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48) || `pick-${Date.now().toString(36)}`;
+}
+
+export function sectionLabel(id: string) {
+  return LOOT_SECTIONS.find((s) => s.id === id)?.label || id;
+}
+
+export function affiliateUrl(pick: Partial<LootPick>, defaultTag = "thievnsden-20") {
+  const tag = (pick.tag_override || defaultTag || "thievnsden-20").trim();
+  if (pick.asin) return `https://www.amazon.com/dp/${pick.asin.replace(/[^A-Z0-9]/gi, "")}?tag=${encodeURIComponent(tag)}`;
+  if (pick.search_query) {
+    return `https://www.amazon.com/s?k=${encodeURIComponent(pick.search_query)}&tag=${encodeURIComponent(tag)}`;
+  }
+  if (pick.dest_url) {
+    try {
+      const u = new URL(pick.dest_url);
+      if (!u.searchParams.get("tag")) u.searchParams.set("tag", tag);
+      return u.toString();
+    } catch {
+      return pick.dest_url;
+    }
+  }
+  const fallback = LOOT_ITEMS.find((i) => i.id === pick.id);
+  return fallback?.link || `https://www.amazon.com/s?k=${encodeURIComponent(pick.name || "")}&tag=${encodeURIComponent(tag)}`;
+}
+
+export function lootCoverPrompt(
+  item: { name: string; section?: string; search_query?: string; category?: string },
+  extra = ""
+) {
+  const term = item.search_query || item.name;
+  const section = item.section || "desk";
   const scene =
-    item.category === "PC Builds"
-      ? "dark clean desk, dim room, subtle RGB bounce, product hero shot of real computer hardware"
-      : item.category === "Gaming"
-        ? "dark desk setup, moody practical lighting, real gaming peripheral product photo"
-        : "dark collector shelf, warm spot light, real painted figure product photo, no brand watermark";
+    section === "shelf"
+      ? "dark collector shelf, warm spot light, real object product photo"
+      : section === "phone"
+        ? "dark nightstand, phone accessories product photo, moody light"
+        : section === "house"
+          ? "clean apartment corner, useful home object product photo, dark tasteful"
+          : "dark clean desk, dim room, real hardware product photo";
 
   return [
     "Photorealistic ecommerce product photograph,",
@@ -96,9 +170,9 @@ export function lootCoverPrompt(item: LootItem, extra = "") {
     scene + ",",
     "looks like a real Amazon listing photo, sharp, catalog lighting,",
     "single hero object, tasteful crop, 4:3 frame,",
-    "no text, no logos overlay, no watermark, no collage, no hands unless needed for scale,",
+    "no text, no logos overlay, no watermark, no collage,",
     extra,
-    "adult collector aesthetic, premium, not cartoon, not CGI-plastic unless the object is a figure",
+    "adult collector aesthetic, premium, not cartoon",
   ]
     .filter(Boolean)
     .join(" ")

@@ -1,0 +1,53 @@
+@keyframes pgDriftA {
+  0%, 100% { transform: translate(-8%, 0) scale(1); opacity: 0.5; }
+  50% { transform: translate(6%, 5%) scale(1.15); opacity: 0.85; }
+}
+@keyframes pgDriftB {
+  0%, 100% { transform: translate(8%, 8%) scale(1); opacity: 0.4; }
+  50% { transform: translate(-10%, -4%) scale(1.12); opacity: 0.7; }
+}
+@keyframes pgTitle {
+  0%, 100% { filter: drop-shadow(0 0 14px rgba(244, 114, 182, 0.4)); }
+  50% { filter: drop-shadow(0 0 26px rgba(251, 191, 36, 0.3)); }
+}
+@keyframes pgCardIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+.pg-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(48px);
+}
+.pg-orb-a {
+  width: 20rem; height: 20rem; left: -5rem; top: 12%;
+  background: rgba(225, 29, 72, 0.32);
+  animation: pgDriftA 12s ease-in-out infinite;
+}
+.pg-orb-b {
+  width: 22rem; height: 22rem; right: -4rem; top: 28%;
+  background: rgba(168, 85, 247, 0.28);
+  animation: pgDriftB 14s ease-in-out infinite;
+}
+.pg-orb-c {
+  width: 16rem; height: 16rem; left: 35%; bottom: -3rem;
+  background: rgba(251, 191, 36, 0.14);
+  animation: pgDriftA 16s ease-in-out infinite reverse;
+}
+.pg-title { animation: pgTitle 4.5s ease-in-out infinite; }
+.pg-card {
+  animation: pgCardIn 0.5s ease both;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.pg-card:nth-child(1) { animation-delay: 0.05s; }
+.pg-card:nth-child(2) { animation-delay: 0.12s; }
+.pg-card:nth-child(3) { animation-delay: 0.18s; }
+.pg-card:nth-child(4) { animation-delay: 0.24s; }
+.pg-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 50px -20px rgba(244, 63, 94, 0.45);
+}
+.pg-card-disabled:hover {
+  transform: none;
+  box-shadow: none;
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import "./playground.css";
 
 const GAMES = [
   {
@@ -8,96 +9,94 @@ const GAMES = [
     title: "Face The Den",
     tag: "Live",
     line: "Upload. Get judged. Climb the ranks.",
-    tilt: "-rotate-1",
+    accent: "from-red-500/30 via-rose-500/10 to-transparent",
+    border: "hover:border-rose-500/40",
+    chip: "border-rose-500/40 text-rose-200",
   },
   {
     href: "/playground/would-you-rather",
     title: "Would You Rather",
     tag: "Live",
     line: "Two real costs. Pick one. Get clocked.",
-    tilt: "rotate-1",
+    accent: "from-purple-500/30 via-fuchsia-500/10 to-transparent",
+    border: "hover:border-purple-500/40",
+    chip: "border-purple-500/40 text-purple-200",
+  },
+  {
+    href: "/playground/highway-hunter",
+    title: "Highway Hunter",
+    tag: "Preview",
+    line: "Night interstate. Guns. Power-ups. Soft wrecks.",
+    accent: "from-amber-500/25 via-orange-500/10 to-transparent",
+    border: "hover:border-amber-500/40",
+    chip: "border-amber-500/40 text-amber-200",
   },
   {
     href: "#",
     title: "Den Arena",
     tag: "Soon",
     line: "1v1 face-off. ELO later.",
-    tilt: "-rotate-[0.5deg]",
+    accent: "from-neutral-700/20 to-transparent",
+    border: "",
+    chip: "border-neutral-800 text-neutral-600",
     disabled: true,
   },
 ];
 
 export default function PlaygroundLobby() {
   return (
-    <div className="relative min-h-[calc(100vh-8rem)]">
+    <div className="relative overflow-hidden min-h-[calc(100vh-8rem)]">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div
-          className="den-ember absolute bottom-[-20%] left-1/2 h-[55%] w-[120%] max-w-none"
-          style={{
-            background:
-              "radial-gradient(ellipse 70% 55% at 50% 100%, rgba(185,28,92,0.22) 0%, rgba(124,20,50,0.08) 35%, transparent 70%)",
-          }}
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_#070707_78%)]" />
+        <div className="pg-orb pg-orb-a" />
+        <div className="pg-orb pg-orb-b" />
+        <div className="pg-orb pg-orb-c" />
         <div className="den-grain" />
       </div>
 
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-20">
-        <div className="text-center mb-6 sm:mb-8">
-          <div className="inline-flex items-center gap-2 mb-4 px-3.5 py-1.5 rounded-full border border-red-900/30 bg-black/40">
-            <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-red-400 to-purple-500 animate-pulse" />
-            <span className="text-[10px] uppercase tracking-[0.22em] text-neutral-300 font-medium">
-              Playground
-            </span>
-          </div>
-          <h1 className="den-title-glow text-3xl sm:text-4xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-red-300 via-rose-200 to-purple-300">
+      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-10 sm:pt-14 pb-20">
+        <div className="text-center mb-10">
+          <p className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full border border-rose-500/30 bg-black/40 text-[10px] uppercase tracking-[0.28em] text-rose-200">
+            Playground
+          </p>
+          <h1 className="pg-title text-4xl sm:text-6xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-fuchsia-200 to-amber-200">
             Pick a machine
           </h1>
-          <p className="mt-3 text-sm text-neutral-400 max-w-md mx-auto">
+          <p className="mt-3 text-neutral-300 max-w-lg mx-auto text-sm sm:text-base">
             Short games. 18+. Each one has its own page if you want to send someone in.
           </p>
         </div>
 
-        <div className="pt-8 pb-10 -mx-2 px-2 sm:overflow-visible overflow-x-auto">
-          <div className="flex justify-center gap-4 min-w-min sm:min-w-0 px-2">
-            {GAMES.map((g) => {
-              const inner = (
-                <div
-                  className={`wyr-cabinet w-[78vw] max-w-[280px] sm:w-[260px] rounded-3xl border border-neutral-800 bg-[#111] p-5 min-h-[280px] flex flex-col justify-between ${g.tilt} ${
-                    g.disabled ? "opacity-55" : "hover:border-red-900/40"
-                  }`}
-                >
-                  <div>
-                    <span
-                      className={`text-[10px] uppercase tracking-[0.18em] px-2 py-0.5 rounded border ${
-                        g.disabled
-                          ? "border-neutral-800 text-neutral-600"
-                          : "border-red-900/40 text-red-300/90"
-                      }`}
-                    >
-                      {g.tag}
-                    </span>
-                    <h2 className="mt-4 text-xl font-semibold text-neutral-50 leading-tight">
-                      {g.title}
-                    </h2>
-                    <p className="mt-2 text-sm text-neutral-400 leading-relaxed">{g.line}</p>
-                  </div>
-                  <p className="text-sm text-red-400/80">
-                    {g.disabled ? "Not open" : "Enter →"}
-                  </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+          {GAMES.map((g) => {
+            const card = (
+              <div
+                className={`pg-card relative overflow-hidden rounded-3xl border border-white/10 bg-black/55 backdrop-blur-md p-5 sm:p-6 min-h-[200px] flex flex-col justify-between ${
+                  g.disabled ? "pg-card-disabled opacity-55" : g.border
+                }`}
+              >
+                <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${g.accent}`} />
+                <div className="relative">
+                  <span className={`text-[10px] uppercase tracking-[0.18em] px-2 py-0.5 rounded-full border ${g.chip}`}>
+                    {g.tag}
+                  </span>
+                  <h2 className="mt-4 text-xl sm:text-2xl font-semibold text-neutral-50 leading-tight">{g.title}</h2>
+                  <p className="mt-2 text-sm text-neutral-400 leading-relaxed">{g.line}</p>
                 </div>
-              );
-              return g.disabled ? (
-                <div key={g.title} className="shrink-0 py-2">
-                  {inner}
-                </div>
-              ) : (
-                <Link key={g.title} href={g.href} className="shrink-0 py-2">
-                  {inner}
-                </Link>
-              );
-            })}
-          </div>
+                <p className={`relative mt-6 text-sm font-medium ${
+                  g.disabled ? "text-neutral-600" : "text-transparent bg-clip-text bg-gradient-to-r from-rose-300 to-amber-200"
+                }`}>
+                  {g.disabled ? "Not open" : "Enter →"}
+                </p>
+              </div>
+            );
+            return g.disabled ? (
+              <div key={g.title}>{card}</div>
+            ) : (
+              <Link key={g.title} href={g.href} className="block">
+                {card}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PublishedFeed } from "@/components/thoughts/PublishedFeed";
 
 export const metadata: Metadata = {
   title: "Thoughts",
@@ -82,6 +83,8 @@ export default function ThoughtsPage() {
             Things people usually keep to themselves. Written without the usual polish.
           </p>
         </div>
+
+        <PublishedFeed />
 
         <div className="space-y-4">
           {thoughts.map((thought) => (

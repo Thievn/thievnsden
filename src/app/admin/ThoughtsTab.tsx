@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { COVER_STYLES, FORMS, HEATS, OUTLOOKS, TOPICS, pickRandom } from "@/lib/thoughts-packs";
+import { CLASSICS, COVER_STYLES, FORMS, HEATS, OUTLOOKS, TOPICS, packOfTopic, pickRandom } from "@/lib/thoughts-packs";
 
 export function ThoughtsTab() {
   const [topic, setTopic] = useState(TOPICS[0].id);
@@ -62,19 +62,52 @@ export function ThoughtsTab() {
     }
   };
 
+  const requestCover = async (t: string, e: string) => {
+    const res = await fetch("/api/admin/thoughts/cover", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: t, excerpt: e, style: coverStyle }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Cover failed");
+    return String(data.cover_url || "");
+  };
+
   const makeCover = async () => {
     if (!title) return setMsg("Draft a title first");
     setBusy("cover");
     setMsg("");
     try {
-      const res = await fetch("/api/admin/thoughts/cover", {
+      setCover(await requestCover(title, excerpt));
+    } catch (err: any) {
+      setMsg(err.message);
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const headerClassic = async (c: (typeof CLASSICS)[number]) => {
+    setBusy(c.slug);
+    setMsg("");
+    try {
+      const url = await requestCover(c.title, c.excerpt);
+      const res = await fetch("/api/admin/thoughts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, excerpt, style: coverStyle }),
+        body: JSON.stringify({
+          slug: c.slug,
+          title: c.title,
+          excerpt: c.excerpt,
+          body: "Classic essay.",
+          cover_url: url,
+          topic: c.pack,
+          published: true,
+        }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Cover failed");
-      setCover(data.cover_url || "");
+      if (!res.ok) throw new Error(data.error || "Save failed");
+      setMsg(`Header on ${c.slug}`);
+      await load();
     } catch (err: any) {
       setMsg(err.message);
     } finally {
@@ -86,13 +119,12 @@ export function ThoughtsTab() {
     setBusy("save");
     setMsg("");
     try {
-      const topicLabel = TOPICS.find((t) => t.id === topic)?.label || topic;
       const res = await fetch("/api/admin/thoughts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slug, title, excerpt, body, cover_url: cover || null,
-          outlook, heat, topic: topicLabel, published,
+          outlook, heat, topic: packOfTopic(topic), published,
         }),
       });
       const data = await res.json();
@@ -116,11 +148,8 @@ export function ThoughtsTab() {
             <p className="text-sm text-neutral-100 font-medium">Thought press</p>
             <p className="text-xs text-neutral-500 mt-1">Grok drafts. You edit. Header optional. Nothing auto-posts.</p>
           </div>
-          <button type="button" onClick={roll} className="px-3 py-1.5 rounded-lg text-xs border border-amber-500/40 text-amber-200">
-            Random
-          </button>
+          <button type="button" onClick={roll} className="px-3 py-1.5 rounded-lg text-xs border border-amber-500/40 text-amber-200">Random</button>
         </div>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="text-xs text-neutral-500 space-y-1">Topic
             <select value={topic} onChange={(e) => setTopic(e.target.value)} className={field}>
@@ -143,7 +172,7 @@ export function ThoughtsTab() {
             </select>
           </label>
         </div>
-        <input value={seed} onChange={(e) => setSeed(e.target.value)} className={field} placeholder="Optional extra direction — a line only you would write" />
+        <input value={seed} onChange={(e) => setSeed(e.target.value)} className={field} placeholder="Optional extra direction" />
         <button type="button" onClick={draft} disabled={!!busy} className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-amber-400 text-black font-semibold disabled:opacity-50">
           {busy === "draft" ? "Writing…" : "Draft thought"}
         </button>
@@ -165,14 +194,36 @@ export function ThoughtsTab() {
           </button>
         </div>
         {cover && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover} alt="" className="w-full aspect-[16/9] object-cover rounded-xl border border-neutral-800" />
+          <div className="relative w-full h-40 overflow-hidden rounded-xl border border-neutral-800">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={cover} alt="" className="absolute inset-0 w-full h-full object-cover" />
+          </div>
         )}
         <div className="flex gap-2">
-          <button type="button" onClick={() => save(false)} disabled={!!busy || !title || !body || !slug} className="flex-1 py-2.5 rounded-xl border border-neutral-700 text-sm">Save draft</button>
-          <button type="button" onClick={() => save(true)} disabled={!!busy || !title || !body || !slug} className="flex-1 py-2.5 rounded-xl bg-neutral-100 text-black text-sm font-medium">Publish</button>
+          <button type="button" onClick={() => save(false)} disabled={!!busy || !title || !slug} className="flex-1 py-2.5 rounded-xl border border-neutral-700 text-sm">Save draft</button>
+          <button type="button" onClick={() => save(true)} disabled={!!busy || !title || !slug} className="flex-1 py-2.5 rounded-xl bg-neutral-100 text-black text-sm font-medium">Publish</button>
         </div>
         {msg && <p className="text-xs text-amber-200">{msg}</p>}
+      </div>
+
+      <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
+        <p className="text-xs uppercase tracking-wide text-neutral-500">Headers for the original six</p>
+        {CLASSICS.map((c) => {
+          const existing = rows.find((r) => r.slug === c.slug);
+          return (
+            <div key={c.slug} className="flex items-center justify-between gap-3">
+              <p className="text-sm text-neutral-300 truncate">{c.title}</p>
+              <button
+                type="button"
+                disabled={!!busy}
+                onClick={() => headerClassic(c)}
+                className="text-[11px] text-fuchsia-300 shrink-0"
+              >
+                {busy === c.slug ? "Making…" : existing?.cover_url ? "Remake header" : "Make header"}
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       <div className="space-y-2">
@@ -184,30 +235,9 @@ export function ThoughtsTab() {
               <p className="text-[11px] text-neutral-500">{r.slug} · {r.published ? "live" : "draft"}</p>
             </div>
             <div className="flex gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  setTitle(r.title); setExcerpt(r.excerpt || ""); setBody(r.body || ""); setSlug(r.slug); setCover(r.cover_url || "");
-                }}
-                className="text-[11px] text-fuchsia-300"
-              >Load</button>
-              <button
-                type="button"
-                onClick={async () => {
-                  await fetch("/api/admin/thoughts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: r.id, published: !r.published }) });
-                  load();
-                }}
-                className="text-[11px] text-neutral-400"
-              >{r.published ? "Hide" : "Live"}</button>
-              <button
-                type="button"
-                onClick={async () => {
-                  if (!confirm("Delete?")) return;
-                  await fetch("/api/admin/thoughts", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: r.id }) });
-                  load();
-                }}
-                className="text-[11px] text-red-400"
-              >Del</button>
+              <button type="button" onClick={() => { setTitle(r.title); setExcerpt(r.excerpt || ""); setBody(r.body || ""); setSlug(r.slug); setCover(r.cover_url || ""); }} className="text-[11px] text-fuchsia-300">Load</button>
+              <button type="button" onClick={async () => { await fetch("/api/admin/thoughts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: r.id, published: !r.published }) }); load(); }} className="text-[11px] text-neutral-400">{r.published ? "Hide" : "Live"}</button>
+              <button type="button" onClick={async () => { if (!confirm("Delete?")) return; await fetch("/api/admin/thoughts", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: r.id }) }); load(); }} className="text-[11px] text-red-400">Del</button>
             </div>
           </div>
         ))}

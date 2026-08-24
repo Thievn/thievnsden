@@ -10,10 +10,11 @@ interface ThoughtArticleProps {
   date: string;
   readTime: string;
   slug: string;
+  cover?: string;
   children: React.ReactNode;
 }
 
-export function ThoughtArticle({ title, date, readTime, slug, children }: ThoughtArticleProps) {
+export function ThoughtArticle({ title, date, readTime, slug, cover, children }: ThoughtArticleProps) {
   const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
 
   const sizeClasses = {
@@ -49,6 +50,11 @@ export function ThoughtArticle({ title, date, readTime, slug, children }: Though
           ))}
         </div>
       </div>
+
+      {cover && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={cover} alt="" className="w-full aspect-[16/9] object-cover rounded-2xl border border-neutral-800 mb-8" />
+      )}
 
       <header className="mb-8">
         <div className="flex items-center gap-3 mb-4 text-[12px]">

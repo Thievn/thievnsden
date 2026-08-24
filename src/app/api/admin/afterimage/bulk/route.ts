@@ -36,13 +36,14 @@ export async function POST(req: NextRequest) {
       auth.user.email?.split("@")[0] ||
       "Thievn";
 
-    const bytes = Buffer.from(await file.arrayBuffer());
-    let uploadBytes = bytes;
+    const raw = Buffer.from(await file.arrayBuffer());
+    let uploadBytes: Uint8Array = new Uint8Array(raw);
     try {
       const { cropTo916 } = await import("@/lib/afterimage-crop");
-      uploadBytes = await cropTo916(bytes.toString("base64"));
+      const cropped = await cropTo916(raw.toString("base64"));
+      uploadBytes = new Uint8Array(cropped);
     } catch {
-      uploadBytes = bytes;
+      uploadBytes = new Uint8Array(raw);
     }
 
     const path = `${userId}/bulk-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.jpg`;

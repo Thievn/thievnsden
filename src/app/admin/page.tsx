@@ -5,11 +5,12 @@ import AdminDashboard from "@/app/admin/AdminDashboard";
 import { AfterimageTab } from "@/app/admin/AfterimageTab";
 import { LootTab } from "@/app/admin/LootTab";
 import { ThoughtsTab } from "@/app/admin/ThoughtsTab";
+import { XThoughtsTab } from "@/app/admin/XThoughtsTab";
 import { CatalogSeed } from "@/components/afterimage/CatalogSeed";
 import { BulkUpload } from "@/components/afterimage/BulkUpload";
 
 function AdminShell() {
-  const [mode, setMode] = useState<"main" | "afterimage" | "loot" | "thoughts">("main");
+  const [mode, setMode] = useState<"main" | "afterimage" | "loot" | "thoughts" | "xthoughts">("main");
   return (
     <div>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 flex flex-wrap gap-2">
@@ -25,6 +26,9 @@ function AdminShell() {
         <button type="button" onClick={() => setMode("thoughts")} className={`px-3 py-1.5 rounded-lg text-xs border ${
           mode === "thoughts" ? "border-rose-500/50 text-rose-100" : "border-neutral-800 text-neutral-500"
         }`}>Thoughts</button>
+        <button type="button" onClick={() => setMode("xthoughts")} className={`px-3 py-1.5 rounded-lg text-xs border ${
+          mode === "xthoughts" ? "border-sky-500/50 text-sky-100" : "border-neutral-800 text-neutral-500"
+        }`}>X Thoughts</button>
       </div>
       {mode === "afterimage" ? (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -39,6 +43,10 @@ function AdminShell() {
       ) : mode === "thoughts" ? (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
           <ThoughtsTab />
+        </div>
+      ) : mode === "xthoughts" ? (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+          <XThoughtsTab />
         </div>
       ) : (
         <AdminDashboard />

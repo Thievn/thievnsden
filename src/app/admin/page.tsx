@@ -5,6 +5,7 @@ import AdminDashboard from "@/app/admin/AdminDashboard";
 import { AfterimageTab } from "@/app/admin/AfterimageTab";
 import { LootTab } from "@/app/admin/LootTab";
 import { CatalogSeed } from "@/components/afterimage/CatalogSeed";
+import { BulkUpload } from "@/components/afterimage/BulkUpload";
 
 function AdminShell() {
   const [mode, setMode] = useState<"main" | "afterimage" | "loot">("main");
@@ -23,6 +24,7 @@ function AdminShell() {
       </div>
       {mode === "afterimage" ? (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+          <BulkUpload />
           <CatalogSeed />
           <AfterimageTab />
         </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CLASSICS, COVER_STYLES, FORMS, HEATS, OUTLOOKS, TOPICS, packOfTopic, pickRandom } from "@/lib/thoughts-packs";
+import { readJson } from "@/lib/read-json";
 
 export function ThoughtsTab() {
   const [topic, setTopic] = useState(TOPICS[0].id);
@@ -21,7 +22,7 @@ export function ThoughtsTab() {
 
   const load = async () => {
     const res = await fetch("/api/admin/thoughts");
-    const data = await res.json();
+    const data = await readJson(res);
     setRows(data.rows || []);
     if (data.error) setMsg(data.error);
   };
@@ -49,7 +50,7 @@ export function ThoughtsTab() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ seed, topic, outlook, heat, form }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.error || "Draft failed");
       setTitle(data.title || "");
       setExcerpt(data.excerpt || "");
@@ -68,9 +69,10 @@ export function ThoughtsTab() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: t, excerpt: e, style: coverStyle }),
     });
-    const data = await res.json();
+    const data = await readJson(res);
     if (!res.ok) throw new Error(data.error || "Cover failed");
-    return String(data.cover_url || "");
+    if (!data.cover_url) throw new Error("Cover did not return a picture");
+    return String(data.cover_url);
   };
 
   const makeCover = async () => {
@@ -104,7 +106,7 @@ export function ThoughtsTab() {
           published: true,
         }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.error || "Save failed");
       setMsg(`Header on ${c.slug}`);
       await load();
@@ -127,7 +129,7 @@ export function ThoughtsTab() {
           outlook, heat, topic: packOfTopic(topic), published,
         }),
       });
-      const data = await res.json();
+      const data = await readJson(res);
       if (!res.ok) throw new Error(data.error || "Save failed");
       setMsg(published ? "Live on Thoughts" : "Saved as draft");
       await load();
@@ -213,12 +215,7 @@ export function ThoughtsTab() {
           return (
             <div key={c.slug} className="flex items-center justify-between gap-3">
               <p className="text-sm text-neutral-300 truncate">{c.title}</p>
-              <button
-                type="button"
-                disabled={!!busy}
-                onClick={() => headerClassic(c)}
-                className="text-[11px] text-fuchsia-300 shrink-0"
-              >
+              <button type="button" disabled={!!busy} onClick={() => headerClassic(c)} className="text-[11px] text-fuchsia-300 shrink-0">
                 {busy === c.slug ? "Making…" : existing?.cover_url ? "Remake header" : "Make header"}
               </button>
             </div>

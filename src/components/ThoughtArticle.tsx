@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ThoughtReactions } from "./ThoughtReactions";
 import { ThoughtComments } from "./ThoughtComments";
 
@@ -16,6 +16,26 @@ interface ThoughtArticleProps {
 
 export function ThoughtArticle({ title, date, readTime, slug, cover, children }: ThoughtArticleProps) {
   const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base");
+  const [header, setHeader] = useState(cover || "");
+  const [show, setShow] = useState(!!cover);
+
+  useEffect(() => {
+    if (cover) {
+      setHeader(cover);
+      setShow(true);
+      return;
+    }
+    fetch(`/api/thoughts/${slug}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const url = d?.thought?.cover_url;
+        if (url) {
+          setHeader(url);
+          setShow(true);
+        }
+      })
+      .catch(() => {});
+  }, [cover, slug]);
 
   const sizeClasses = {
     sm: "text-[14px] sm:text-[15px]",
@@ -32,7 +52,6 @@ export function ThoughtArticle({ title, date, readTime, slug, cover, children }:
         >
           ← Back to Thoughts
         </Link>
-
         <div className="flex items-center gap-1">
           <span className="text-[11px] text-neutral-500 mr-1.5">Text</span>
           {(["sm", "base", "lg"] as const).map((size) => (
@@ -51,9 +70,11 @@ export function ThoughtArticle({ title, date, readTime, slug, cover, children }:
         </div>
       </div>
 
-      {cover && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={cover} alt="" className="w-full aspect-[16/9] object-cover rounded-2xl border border-neutral-800 mb-8" />
+      {show && header && (
+        <div className="relative w-full h-44 sm:h-56 overflow-hidden rounded-2xl border border-neutral-800 mb-8 bg-[#0a0a0a]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={header} alt="" onError={() => setShow(false)} className="absolute inset-0 w-full h-full object-cover" />
+        </div>
       )}
 
       <header className="mb-8">
@@ -65,7 +86,6 @@ export function ThoughtArticle({ title, date, readTime, slug, cover, children }:
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-neutral-50 leading-snug mb-6">
           {title}
         </h1>
-
         <ThoughtReactions slug={slug} />
       </header>
 
@@ -78,7 +98,7 @@ export function ThoughtArticle({ title, date, readTime, slug, cover, children }:
       <div className="mt-10 pt-8 border-t border-neutral-900">
         <Link
           href="/thoughts"
-          className="text-sm font-medium text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 hover:from-red-300 hover:to-purple-300 transition-all"
+          className="text-sm font-medium text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400"
         >
           ← Back to Thoughts
         </Link>

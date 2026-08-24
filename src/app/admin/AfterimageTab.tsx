@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { HEATS, LIGHTS, LOOKS, PHONES, PLACES } from "@/lib/afterimage";
 import { runPrintJob } from "@/lib/afterimage-print";
+import { AfterimagePeek, PeekThumb } from "@/components/afterimage/AfterimagePeek";
 
 export function AfterimageTab() {
   const [userId, setUserId] = useState("");
@@ -27,6 +28,7 @@ export function AfterimageTab() {
   const [finish, setFinish] = useState<"preview" | "phone">("phone");
   const [grantUser, setGrantUser] = useState("");
   const [grantAmt, setGrantAmt] = useState(8);
+  const [peek, setPeek] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -158,8 +160,7 @@ export function AfterimageTab() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {prints.map((p) => (
           <div key={p.id} className="rounded-xl overflow-hidden border border-neutral-800 bg-black">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.image_url} alt="" className="w-full aspect-[9/16] object-cover" />
+            <PeekThumb src={p.image_url} onOpen={() => setPeek(p.image_url)} imgClass="w-full aspect-[9/16] object-cover" />
             <div className="p-2 space-y-1">
               <p className="text-[10px] text-neutral-500 truncate">{p.username} · {p.finish}</p>
               <div className="flex gap-1">
@@ -170,6 +171,7 @@ export function AfterimageTab() {
           </div>
         ))}
       </div>
+      <AfterimagePeek src={peek} onClose={() => setPeek(null)} />
     </div>
   );
 }

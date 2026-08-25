@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
-export const revalidate = 86400;
+export const maxDuration = 30;
 
 function allowed(host: string) {
   return (
@@ -9,6 +9,7 @@ function allowed(host: string) {
     host.includes("steamstatic") ||
     host.includes("steamcdn") ||
     host.includes("akamaihd.net") ||
+    host.includes("cloudfront.net") ||
     host.endsWith("igdb.com") ||
     host.includes("supabase.co")
   );
@@ -27,15 +28,18 @@ export async function GET(req: NextRequest) {
   }
 
   const upstream = await fetch(target.toString(), {
+    redirect: "follow",
     headers: {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
       Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+      Referer: target.hostname.includes("rawg") ? "https://rawg.io/" : "https://store.steampowered.com/",
     },
-    next: { revalidate: 86400 },
+    cache: "no-store",
   });
   if (!upstream.ok) return new NextResponse("cover missing", { status: 502 });
   const bytes = new Uint8Array(await upstream.arrayBuffer());
+  if (bytes.byteLength < 80) return new NextResponse("empty cover", { status: 502 });
   const type = upstream.headers.get("content-type") || "image/jpeg";
   return new NextResponse(bytes, {
     headers: {

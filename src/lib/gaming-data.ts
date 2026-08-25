@@ -40,6 +40,11 @@ export type GamingConfig = {
   radar_page_size: number;
   hero_line: string;
   currently_line: string;
+  auto_pull_enabled: boolean;
+  auto_pull_era: "coming" | "current" | "classic";
+  auto_pull_per_day: number;
+  auto_last_date: string;
+  auto_seen_ids: string[];
 };
 
 export const DEFAULT_GAMING_CONFIG: GamingConfig = {
@@ -49,6 +54,11 @@ export const DEFAULT_GAMING_CONFIG: GamingConfig = {
   radar_page_size: 8,
   hero_line: "Builds, takes, seasons, and whatever is eating the hours.",
   currently_line: "Currently in: rotation loading…",
+  auto_pull_enabled: false,
+  auto_pull_era: "current",
+  auto_pull_per_day: 3,
+  auto_last_date: "",
+  auto_seen_ids: [],
 };
 
 export function slugify(title: string): string {
@@ -181,9 +191,9 @@ export const SEED_GAMING_ITEMS: GamingItem[] = [
     kind: "radar",
     title: "Release radar",
     slug: "release-radar",
-    note: "Connect a RAWG API key in Admin → Gaming to pull live PC releases here.",
+    note: "Turn on daily pull in Admin → Gaming to drop live games here.",
     status: "hype",
-    meta: "Auto · needs API key",
+    meta: "Auto",
     sort: 100,
     published: true,
   },

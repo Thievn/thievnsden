@@ -12,7 +12,7 @@ import { BulkUpload } from "@/components/afterimage/BulkUpload";
 function AdminShell() {
   const [mode, setMode] = useState<"main" | "afterimage" | "loot" | "thoughts" | "xthoughts">("main");
   return (
-    <div>
+    <div data-admin-shell="xpic-v3">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 flex flex-wrap gap-2">
         <button type="button" onClick={() => setMode("main")} className={`px-3 py-1.5 rounded-lg text-xs border ${
           mode === "main" ? "border-red-800/50 text-neutral-100" : "border-neutral-800 text-neutral-500"

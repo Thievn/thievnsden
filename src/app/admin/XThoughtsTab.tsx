@@ -107,6 +107,7 @@ export function XThoughtsTab() {
   };
 
   const field = "w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-neutral-800 text-sm";
+  const btn = "px-3 py-2 rounded-lg border border-neutral-700 text-xs";
   const chars = [...post].length;
   const over = chars > X_PREMIUM_CAP;
   const frame = aspect === "9:16" ? "aspect-[9/16] max-w-[200px] mx-auto" : "aspect-[16/9] w-full";
@@ -117,7 +118,7 @@ export function XThoughtsTab() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-sm text-neutral-100 font-medium">X Thoughts</p>
-            <p className="text-xs text-neutral-500 mt-1">Draft the post, then make the pic in this same card.</p>
+            <p className="text-xs text-neutral-500 mt-1">Premium length. No URL. Pick the lanes, then draft.</p>
           </div>
           <button type="button" onClick={roll} className="px-3 py-1.5 rounded-lg text-xs border border-sky-500/40 text-sky-200">Random</button>
         </div>
@@ -162,61 +163,37 @@ export function XThoughtsTab() {
           </select>
         </label>
         <textarea value={seed} onChange={(e) => setSeed(e.target.value)} rows={2} className={field} placeholder="Optional extra direction" />
-
         <button type="button" onClick={() => run("fresh")} disabled={busy} className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-rose-400 text-black font-semibold disabled:opacity-50">
           {busy ? "Writing…" : "Draft post"}
         </button>
+      </div>
 
+      <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
         <textarea value={post} onChange={(e) => setPost(e.target.value)} rows={7} className={field + " font-medium leading-relaxed"} placeholder="Draft lands here" />
         <div className="flex items-center justify-between text-xs">
           <span className={over ? "text-red-400" : "text-neutral-500"}>{chars.toLocaleString()} / {X_PREMIUM_CAP.toLocaleString()}</span>
           {msg && <span className="text-amber-200">{msg}</span>}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => run("shorter")} disabled={busy || !post} className="px-3 py-2 rounded-lg border border-neutral-700 text-xs">Shorter</button>
-          <button type="button" onClick={() => run("meaner")} disabled={busy || !post} className="px-3 py-2 rounded-lg border border-neutral-700 text-xs">Meaner</button>
-          <button type="button" onClick={() => run("softer")} disabled={busy || !post} className="px-3 py-2 rounded-lg border border-neutral-700 text-xs">Softer</button>
+        <div className="flex flex-wrap gap-2 items-center">
+          <button type="button" onClick={() => run("shorter")} disabled={busy || !post} className={btn}>Shorter</button>
+          <button type="button" onClick={() => run("meaner")} disabled={busy || !post} className={btn}>Meaner</button>
+          <button type="button" onClick={() => run("softer")} disabled={busy || !post} className={btn}>Softer</button>
+          <button type="button" onClick={() => setAspect("16:9")} className={`${btn} ${aspect === "16:9" ? "border-sky-400 text-sky-100" : ""}`}>16:9</button>
+          <button type="button" onClick={() => setAspect("9:16")} className={`${btn} ${aspect === "9:16" ? "border-sky-400 text-sky-100" : ""}`}>9:16</button>
+          <button type="button" onClick={makeImage} disabled={imaging || (!post && !seed)} className="px-3 py-2 rounded-lg bg-sky-400 text-black text-xs font-semibold disabled:opacity-40">
+            {imaging ? "Making…" : "Make pic"}
+          </button>
           <button type="button" onClick={copy} disabled={!post} className="ml-auto px-4 py-2 rounded-lg bg-neutral-100 text-black text-xs font-medium">Copy</button>
         </div>
-
-        <div className="rounded-xl border border-sky-500/30 bg-sky-950/20 p-3 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm text-sky-100 font-medium">Make a pic for this post</p>
-            <div className="flex gap-1">
-              {(["16:9", "9:16"] as const).map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => setAspect(a)}
-                  className={`px-2.5 py-1.5 rounded-lg text-[11px] border ${
-                    aspect === a
-                      ? "border-sky-400 text-sky-50 bg-sky-900/70"
-                      : "border-neutral-800 text-neutral-500"
-                  }`}
-                >
-                  {a}
-                </button>
-              ))}
-            </div>
+        {image ? (
+          <div className="space-y-2 pt-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={image} alt="" className={`rounded-xl border border-neutral-800 object-cover ${frame}`} />
+            <button type="button" onClick={downloadPic} className="w-full py-2.5 rounded-xl text-sm border border-neutral-700 text-neutral-100">
+              Download for X
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={makeImage}
-            disabled={imaging || (!post && !seed)}
-            className="w-full py-3 rounded-xl text-sm font-semibold bg-sky-400 text-black disabled:opacity-40"
-          >
-            {imaging ? "Making pic…" : image ? "Regenerate pic" : "Make pic"}
-          </button>
-          {image ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={image} alt="" className={`rounded-xl border border-neutral-800 object-cover ${frame}`} />
-              <button type="button" onClick={downloadPic} className="w-full py-2.5 rounded-xl text-sm border border-neutral-600 text-neutral-100">
-                Download for X
-              </button>
-            </>
-          ) : null}
-        </div>
+        ) : null}
       </div>
     </div>
   );

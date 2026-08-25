@@ -17,6 +17,7 @@ export function XThoughtsTab() {
   const [rows, setRows] = useState<any[]>([]);
   const [post, setPost] = useState("");
   const [image, setImage] = useState("");
+  const [aspect, setAspect] = useState<"16:9" | "9:16">("16:9");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [imaging, setImaging] = useState(false);
@@ -68,7 +69,7 @@ export function XThoughtsTab() {
       const res = await fetch("/api/admin/x-thoughts/image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, post, seed }),
+        body: JSON.stringify({ topic, post, seed, aspect }),
       });
       const data = await readJson(res);
       if (!res.ok) throw new Error(data.error || "Image failed");
@@ -94,7 +95,7 @@ export function XThoughtsTab() {
       const href = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = href;
-      a.download = `x-thought-${topic || "den"}.jpg`;
+      a.download = `x-thought-${aspect.replace(":", "x")}-${topic || "den"}.jpg`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -108,6 +109,7 @@ export function XThoughtsTab() {
   const field = "w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-neutral-800 text-sm";
   const chars = [...post].length;
   const over = chars > X_PREMIUM_CAP;
+  const frame = aspect === "9:16" ? "aspect-[9/16] max-w-xs mx-auto" : "aspect-[16/9] w-full";
 
   return (
     <div className="space-y-6">
@@ -191,11 +193,27 @@ export function XThoughtsTab() {
             {imaging ? "Making…" : image ? "Regenerate pic" : "Make pic"}
           </button>
         </div>
-        <p className="text-[11px] text-neutral-600">Uses the topic plus the draft so the still matches the post. 16:9, no text in the frame.</p>
+        <div className="flex gap-2">
+          {(["16:9", "9:16"] as const).map((a) => (
+            <button
+              key={a}
+              type="button"
+              onClick={() => setAspect(a)}
+              className={`px-3 py-1.5 rounded-lg text-xs border ${
+                aspect === a
+                  ? "border-sky-500/50 text-sky-100 bg-sky-950/40"
+                  : "border-neutral-800 text-neutral-500"
+              }`}
+            >
+              {a === "16:9" ? "16:9 wide" : "9:16 tall"}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-neutral-600">Uses the topic plus the draft. No text in the frame.</p>
         {image ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image} alt="" className="w-full rounded-xl border border-neutral-800 object-cover aspect-[16/9]" />
+            <img src={image} alt="" className={`rounded-xl border border-neutral-800 object-cover ${frame}`} />
             <button
               type="button"
               onClick={downloadPic}
@@ -205,7 +223,7 @@ export function XThoughtsTab() {
             </button>
           </>
         ) : (
-          <div className="aspect-[16/9] rounded-xl border border-dashed border-neutral-800 bg-[#0a0a0a] flex items-center justify-center text-xs text-neutral-600">
+          <div className={`${frame} rounded-xl border border-dashed border-neutral-800 bg-[#0a0a0a] flex items-center justify-center text-xs text-neutral-600`}>
             Draft first, then make the pic.
           </div>
         )}

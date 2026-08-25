@@ -8,18 +8,13 @@ export function normalizeCoverUrl(url: string | null | undefined): string | null
   if (!u) return null;
   if (u.startsWith("//")) u = `https:${u}`;
   if (u.startsWith("http://")) u = `https://${u.slice(7)}`;
-  if (u.includes("media.rawg.io/media/games/")) {
-    u = u.replace(
-      "media.rawg.io/media/games/",
-      "media.rawg.io/media/crop/600/400/games/"
-    );
-  }
   return u;
 }
 
-function displaySrc(url: string) {
+export function displayCoverSrc(url: string) {
   if (url.startsWith("/")) return url;
-  if (url.includes("supabase.co") || url.includes("thievnsden.com")) return url;
+  if (url.includes("thievnsden.com")) return url;
+  if (url.includes("supabase.co") && url.includes("/storage/v1/object/public/")) return url;
   return `/api/gaming/cover?u=${encodeURIComponent(url)}`;
 }
 
@@ -36,10 +31,11 @@ export function CoverImage({
 }) {
   const normalized = normalizeCoverUrl(src);
   const [failed, setFailed] = useState(false);
+  const [tick, setTick] = useState(0);
 
-  if (!normalized || failed) {
+  if (!normalized || (failed && tick > 1)) {
     return (
-      <div className={`bg-gradient-to-br from-red-950/40 via-[#111] to-purple-950/30 ${className}`}>
+      <div className={`relative bg-gradient-to-br from-red-950/40 via-[#111] to-purple-950/30 ${className}`}>
         <div className="absolute inset-0 flex items-end p-5">
           <span className="text-xs uppercase tracking-widest text-neutral-600">Thievn's Den</span>
         </div>
@@ -47,16 +43,21 @@ export function CoverImage({
     );
   }
 
+  const shown = failed ? normalized : displayCoverSrc(normalized);
+
   return (
     <div className={`relative bg-neutral-900 overflow-hidden ${className}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={displaySrc(normalized)}
+        src={shown}
         alt={alt}
         referrerPolicy="no-referrer"
         loading="lazy"
         decoding="async"
-        onError={() => setFailed(true)}
+        onError={() => {
+          if (!failed) setFailed(true);
+          else setTick((n) => n + 1);
+        }}
         className={imgClassName}
       />
     </div>

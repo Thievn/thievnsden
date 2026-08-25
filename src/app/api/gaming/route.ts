@@ -7,6 +7,9 @@ import {
   type GamingItem,
 } from "@/lib/gaming-data";
 import { fillGamingCovers } from "@/lib/gaming-covers";
+import { mirrorItemCovers, runDailyPull } from "@/lib/gaming-pull";
+
+export const maxDuration = 60;
 
 export async function GET() {
   try {
@@ -18,14 +21,9 @@ export async function GET() {
       .eq("id", 1)
       .maybeSingle();
 
-    const config: GamingConfig = {
+    let config: GamingConfig = {
       ...DEFAULT_GAMING_CONFIG,
       ...(settings?.gaming_config || {}),
-    };
-
-    const publicConfig = {
-      ...config,
-      rawg_api_key: config.rawg_api_key ? "configured" : "",
     };
 
     let items: GamingItem[] = SEED_GAMING_ITEMS;
@@ -33,11 +31,39 @@ export async function GET() {
       items = settings.gaming_items as GamingItem[];
     }
 
+    try {
+      const pulled = await runDailyPull(config, items, false);
+      config = pulled.config;
+      items = pulled.items;
+    } catch {
+      /* keep existing cards */
+    }
+
     const published = items.filter((i) => i.published !== false);
-    const withCovers = await fillGamingCovers(published, config.rawg_api_key);
+    const filled = await fillGamingCovers(published, config.rawg_api_key);
+    const mirrored = await mirrorItemCovers(filled);
+
+    if (mirrored.changed || items.length !== (settings?.gaming_items || []).length || config.auto_last_date) {
+      const byId = new Map(items.map((i) => [i.id, i]));
+      for (const row of mirrored.items) byId.set(row.id, { ...(byId.get(row.id) || row), cover: row.cover });
+      const savedItems = Array.from(byId.values());
+      await supabase.from("site_settings").upsert({
+        id: 1,
+        gaming_config: config,
+        gaming_items: savedItems,
+        updated_at: new Date().toISOString(),
+      });
+      items = savedItems;
+    }
+
+    const publicConfig = {
+      ...config,
+      rawg_api_key: config.rawg_api_key ? "configured" : "",
+      auto_seen_ids: [],
+    };
 
     return NextResponse.json({
-      items: withCovers,
+      items: mirrored.items.filter((i) => i.published !== false),
       config: publicConfig,
       source: settings?.gaming_items ? "db" : "seed",
     });

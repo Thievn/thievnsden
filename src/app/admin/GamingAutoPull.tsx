@@ -1,19 +1,30 @@
 "use client";
 
-import { useState } from "react";
-import type { GamingConfig, GamingItem } from "@/lib/gaming-data";
+import { useEffect, useState } from "react";
+import { DEFAULT_GAMING_CONFIG, type GamingConfig } from "@/lib/gaming-data";
 
-export function GamingAutoPull({
-  config,
-  onConfig,
-  onItems,
-}: {
-  config: GamingConfig;
-  onConfig: (patch: Partial<GamingConfig>) => void;
-  onItems: (items: GamingItem[]) => void;
-}) {
+export function GamingAutoPull() {
+  const [config, setConfig] = useState<GamingConfig>(DEFAULT_GAMING_CONFIG);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      const res = await fetch("/api/admin/gaming");
+      if (!res.ok) return;
+      const data = await res.json();
+      setConfig({ ...DEFAULT_GAMING_CONFIG, ...(data.config || {}) });
+    })();
+  }, []);
+
+  const persist = async (next: GamingConfig) => {
+    setConfig(next);
+    await fetch("/api/admin/gaming", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ config: next }),
+    });
+  };
 
   const pullNow = async () => {
     setBusy(true);
@@ -29,11 +40,10 @@ export function GamingAutoPull({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Pull failed");
-      if (Array.isArray(data.items)) onItems(data.items);
-      if (data.config) onConfig(data.config);
+      if (data.config) setConfig({ ...DEFAULT_GAMING_CONFIG, ...data.config });
       setMsg(
         data.count
-          ? `Added ${data.count}: ${data.added.join(", ")}`
+          ? `Added ${data.count}: ${(data.added || []).join(", ")}. Refresh the cards below.`
           : "Nothing new to add."
       );
     } catch (e: any) {
@@ -51,7 +61,7 @@ export function GamingAutoPull({
         <input
           type="checkbox"
           checked={!!config.auto_pull_enabled}
-          onChange={(e) => onConfig({ auto_pull_enabled: e.target.checked })}
+          onChange={(e) => persist({ ...config, auto_pull_enabled: e.target.checked })}
           className="w-4 h-4 accent-red-600"
         />
       </label>
@@ -61,7 +71,10 @@ export function GamingAutoPull({
           <select
             value={config.auto_pull_era || "current"}
             onChange={(e) =>
-              onConfig({ auto_pull_era: e.target.value as GamingConfig["auto_pull_era"] })
+              persist({
+                ...config,
+                auto_pull_era: e.target.value as GamingConfig["auto_pull_era"],
+              })
             }
             className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200"
           >
@@ -77,14 +90,16 @@ export function GamingAutoPull({
             min={1}
             max={8}
             value={config.auto_pull_per_day || 3}
-            onChange={(e) => onConfig({ auto_pull_per_day: Number(e.target.value) || 3 })}
+            onChange={(e) =>
+              persist({ ...config, auto_pull_per_day: Number(e.target.value) || 3 })
+            }
             className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200"
           />
         </label>
       </div>
       <p className="text-[11px] text-neutral-600 leading-relaxed">
-        Coming soon goes to Watchlist. Current goes to Radar. Classics go to Library.
-        First visitor of the day triggers the pull. Covers get saved to your storage so the public page can show them.
+        Coming soon lands in Watchlist. Current lands in Radar. Classics land in Library.
+        First visit to /gaming each day adds that many new titles. Covers are copied onto your storage so the public page can show them.
       </p>
       <button
         type="button"

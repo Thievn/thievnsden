@@ -133,7 +133,7 @@ export async function pullRawgBatch(opts: {
       slug: slugify(title),
       note:
         opts.era === "coming"
-          ? "On the radar. Not pre-ordering.”.replace("”", "")
+          ? "On the radar. Not pre-ordering."
           : opts.era === "classic"
             ? "From the pile. Still worth a night."
             : "In rotation or making noise right now.",

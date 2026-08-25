@@ -6,6 +6,7 @@ import {
   type GamingConfig,
   type GamingItem,
 } from "@/lib/gaming-data";
+import { fillGamingCovers } from "@/lib/gaming-covers";
 
 export async function GET() {
   try {
@@ -22,10 +23,9 @@ export async function GET() {
       ...(settings?.gaming_config || {}),
     };
 
-    // Never expose full API key to the public client — only whether it exists
     const publicConfig = {
       ...config,
-      rawg_api_key: config.rawg_api_key ? "••••configured" : "",
+      rawg_api_key: config.rawg_api_key ? "configured" : "",
     };
 
     let items: GamingItem[] = SEED_GAMING_ITEMS;
@@ -33,14 +33,18 @@ export async function GET() {
       items = settings.gaming_items as GamingItem[];
     }
 
+    const published = items.filter((i) => i.published !== false);
+    const withCovers = await fillGamingCovers(published, config.rawg_api_key);
+
     return NextResponse.json({
-      items: items.filter((i) => i.published !== false),
+      items: withCovers,
       config: publicConfig,
       source: settings?.gaming_items ? "db" : "seed",
     });
   } catch {
+    const withCovers = await fillGamingCovers(SEED_GAMING_ITEMS, "");
     return NextResponse.json({
-      items: SEED_GAMING_ITEMS,
+      items: withCovers,
       config: { ...DEFAULT_GAMING_CONFIG, rawg_api_key: "" },
       source: "seed",
     });

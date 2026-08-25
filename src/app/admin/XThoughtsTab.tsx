@@ -16,8 +16,10 @@ export function XThoughtsTab() {
   const [fromSlug, setFromSlug] = useState("");
   const [rows, setRows] = useState<any[]>([]);
   const [post, setPost] = useState("");
+  const [image, setImage] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [imaging, setImaging] = useState(false);
 
   useEffect(() => {
     fetch("/api/admin/thoughts")
@@ -55,10 +57,52 @@ export function XThoughtsTab() {
     }
   };
 
+  const makeImage = async () => {
+    if (!post && !seed) {
+      setMsg("Draft first, then make the pic.");
+      return;
+    }
+    setImaging(true);
+    setMsg("");
+    try {
+      const res = await fetch("/api/admin/x-thoughts/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic, post, seed }),
+      });
+      const data = await readJson(res);
+      if (!res.ok) throw new Error(data.error || "Image failed");
+      setImage(data.image || "");
+    } catch (err: any) {
+      setMsg(err.message);
+    } finally {
+      setImaging(false);
+    }
+  };
+
   const copy = async () => {
     if (!post) return;
     await navigator.clipboard.writeText(post);
     setMsg("Copied");
+  };
+
+  const downloadPic = async () => {
+    if (!image) return;
+    try {
+      const res = await fetch(image);
+      const blob = await res.blob();
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = `x-thought-${topic || "den"}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+      setMsg("Downloaded");
+    } catch {
+      window.open(image, "_blank");
+    }
   };
 
   const field = "w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-neutral-800 text-sm";
@@ -133,6 +177,38 @@ export function XThoughtsTab() {
           <button type="button" onClick={() => run("softer")} disabled={busy || !post} className="px-3 py-2 rounded-lg border border-neutral-700 text-xs">Softer</button>
           <button type="button" onClick={copy} disabled={!post} className="ml-auto px-4 py-2 rounded-lg bg-neutral-100 text-black text-xs font-medium">Copy</button>
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-sky-900/30 bg-[#111] p-5 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-neutral-100 font-medium">Pic for X</p>
+          <button
+            type="button"
+            onClick={makeImage}
+            disabled={imaging || (!post && !seed)}
+            className="px-3 py-1.5 rounded-lg text-xs border border-sky-500/40 text-sky-200 disabled:opacity-40"
+          >
+            {imaging ? "Making…" : image ? "Regenerate pic" : "Make pic"}
+          </button>
+        </div>
+        <p className="text-[11px] text-neutral-600">Uses the topic plus the draft so the still matches the post. 16:9, no text in the frame.</p>
+        {image ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={image} alt="" className="w-full rounded-xl border border-neutral-800 object-cover aspect-[16/9]" />
+            <button
+              type="button"
+              onClick={downloadPic}
+              className="w-full py-2.5 rounded-xl text-sm border border-neutral-700 text-neutral-100 hover:bg-neutral-900"
+            >
+              Download for X
+            </button>
+          </>
+        ) : (
+          <div className="aspect-[16/9] rounded-xl border border-dashed border-neutral-800 bg-[#0a0a0a] flex items-center justify-center text-xs text-neutral-600">
+            Draft first, then make the pic.
+          </div>
+        )}
       </div>
     </div>
   );

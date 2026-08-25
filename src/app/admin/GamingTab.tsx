@@ -10,6 +10,7 @@ import {
   type GamingKind,
   type GamingStatus,
 } from "@/lib/gaming-data";
+import { GamingCoverField } from "@/app/admin/GamingCoverField";
 
 const KINDS: GamingKind[] = [
   "article",
@@ -611,13 +612,7 @@ export function GamingTab() {
               />
               Feature on Gaming home
             </label>
-            <input
-              type="url"
-              value={item.cover || ""}
-              onChange={(e) => updateItem(item.id, { cover: e.target.value })}
-              placeholder="Cover image URL"
-              className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-xs text-neutral-300 focus:outline-none focus:border-neutral-600"
-            />
+            <GamingCoverField item={item} onCover={(cover) => updateItem(item.id, { cover })} />
             <input
               type="url"
               value={item.url || ""}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { GamingItem } from "@/lib/gaming-data";
+import { displayCoverSrc } from "@/components/gaming/CoverImage";
 
 export function GamingCoverField({
   item,
@@ -37,11 +38,13 @@ export function GamingCoverField({
     }
   };
 
+  const preview = item.cover ? displayCoverSrc(item.cover) : "";
+
   return (
     <div className="space-y-2">
-      {item.cover ? (
+      {preview ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={item.cover} alt="" className="w-full h-28 object-cover rounded-xl border border-neutral-800" />
+        <img src={preview} alt="" referrerPolicy="no-referrer" className="w-full h-28 object-cover rounded-xl border border-neutral-800" />
       ) : null}
       <div className="flex gap-2">
         <input

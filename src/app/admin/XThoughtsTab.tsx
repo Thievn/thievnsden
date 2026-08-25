@@ -109,10 +109,10 @@ export function XThoughtsTab() {
   const field = "w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-neutral-800 text-sm";
   const chars = [...post].length;
   const over = chars > X_PREMIUM_CAP;
-  const frame = aspect === "9:16" ? "aspect-[9/16] max-w-xs mx-auto" : "aspect-[16/9] w-full";
+  const frame = aspect === "9:16" ? "aspect-[9/16] max-w-[220px] mx-auto" : "aspect-[16/9] w-full";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24">
       <div className="rounded-2xl border border-sky-900/30 bg-gradient-to-b from-sky-950/20 to-[#111] p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -179,54 +179,51 @@ export function XThoughtsTab() {
           <button type="button" onClick={() => run("softer")} disabled={busy || !post} className="px-3 py-2 rounded-lg border border-neutral-700 text-xs">Softer</button>
           <button type="button" onClick={copy} disabled={!post} className="ml-auto px-4 py-2 rounded-lg bg-neutral-100 text-black text-xs font-medium">Copy</button>
         </div>
-      </div>
 
-      <div className="rounded-2xl border border-sky-900/30 bg-[#111] p-5 space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-neutral-100 font-medium">Pic for X</p>
+        <div className="pt-3 mt-1 border-t border-neutral-800 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-neutral-100 font-medium">Pic for X</p>
+            <div className="flex gap-1.5">
+              {(["16:9", "9:16"] as const).map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => setAspect(a)}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] border ${
+                    aspect === a
+                      ? "border-sky-500/50 text-sky-100 bg-sky-950/40"
+                      : "border-neutral-800 text-neutral-500"
+                  }`}
+                >
+                  {a}
+                </button>
+              ))}
+            </div>
+          </div>
           <button
             type="button"
             onClick={makeImage}
             disabled={imaging || (!post && !seed)}
-            className="px-3 py-1.5 rounded-lg text-xs border border-sky-500/40 text-sky-200 disabled:opacity-40"
+            className="w-full py-3 rounded-xl text-sm font-medium border border-sky-500/40 text-sky-100 bg-sky-950/30 disabled:opacity-40"
           >
-            {imaging ? "Making…" : image ? "Regenerate pic" : "Make pic"}
+            {imaging ? "Making pic…" : image ? "Regenerate pic" : "Make pic"}
           </button>
+          {image ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={image} alt="" className={`rounded-xl border border-neutral-800 object-cover ${frame}`} />
+              <button
+                type="button"
+                onClick={downloadPic}
+                className="w-full py-2.5 rounded-xl text-sm border border-neutral-700 text-neutral-100"
+              >
+                Download for X
+              </button>
+            </>
+          ) : (
+            <p className="text-[11px] text-neutral-600 text-center">Pick 16:9 or 9:16, then make the pic.</p>
+          )}
         </div>
-        <div className="flex gap-2">
-          {(["16:9", "9:16"] as const).map((a) => (
-            <button
-              key={a}
-              type="button"
-              onClick={() => setAspect(a)}
-              className={`px-3 py-1.5 rounded-lg text-xs border ${
-                aspect === a
-                  ? "border-sky-500/50 text-sky-100 bg-sky-950/40"
-                  : "border-neutral-800 text-neutral-500"
-              }`}
-            >
-              {a === "16:9" ? "16:9 wide" : "9:16 tall"}
-            </button>
-          ))}
-        </div>
-        <p className="text-[11px] text-neutral-600">Uses the topic plus the draft. No text in the frame.</p>
-        {image ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image} alt="" className={`rounded-xl border border-neutral-800 object-cover ${frame}`} />
-            <button
-              type="button"
-              onClick={downloadPic}
-              className="w-full py-2.5 rounded-xl text-sm border border-neutral-700 text-neutral-100 hover:bg-neutral-900"
-            >
-              Download for X
-            </button>
-          </>
-        ) : (
-          <div className={`${frame} rounded-xl border border-dashed border-neutral-800 bg-[#0a0a0a] flex items-center justify-center text-xs text-neutral-600`}>
-            Draft first, then make the pic.
-          </div>
-        )}
       </div>
     </div>
   );

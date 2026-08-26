@@ -42,8 +42,16 @@ export async function POST(req: NextRequest) {
       body: body.body,
       height: body.height,
       hair: body.hair,
+      hairColor: body.hairColor,
+      hairStyle: body.hairStyle,
       eyes: body.eyes,
       world: body.world,
+      expression: body.expression,
+      accessory: body.accessory,
+      weather: body.weather,
+      makeup: body.makeup,
+      camera: body.camera,
+      vibe: body.vibe,
     };
 
     const { data: job, error } = await supabase

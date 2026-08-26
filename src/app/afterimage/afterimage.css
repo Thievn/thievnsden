@@ -89,3 +89,28 @@
   box-shadow: inset 0 0 0 2px rgba(244, 114, 182, 0.55);
   background: linear-gradient(to top, rgba(0,0,0,0.25), transparent 40%);
 }
+.ai-choice { transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease; }
+.ai-choice:hover { transform: translateY(-2px); }
+.ai-choice-on { box-shadow: 0 10px 28px -16px rgba(244, 114, 182, 0.85); }
+.ai-preset {
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.ai-preset:hover {
+  transform: translateY(-3px);
+  border-color: rgba(244, 114, 182, 0.45);
+  box-shadow: 0 16px 36px -18px rgba(217, 70, 239, 0.7);
+}
+.ai-dice { transition: transform 0.2s ease, border-color 0.2s ease; }
+.ai-dice-go { animation: aiDice 0.42s ease; }
+@keyframes aiDice {
+  0% { transform: rotate(0deg) scale(1); }
+  35% { transform: rotate(-8deg) scale(1.04); }
+  70% { transform: rotate(8deg) scale(1.04); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+@keyframes aiPanelIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.ai-panel-in { animation: aiPanelIn 0.28s ease both; }
+

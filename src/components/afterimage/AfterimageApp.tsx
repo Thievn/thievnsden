@@ -1,44 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import {
-  AGES, BODIES, ETHNICITIES, EYES, HAIRS, HEATS, HEIGHTS, LIGHTS, LOOKS,
-  PHONES, PLACES, POSES, WARDROBES, WHOS, WORLDS,
-} from "@/lib/afterimage";
+import { pickOpt, LOOKS } from "@/lib/afterimage";
 import { runPrintJob } from "@/lib/afterimage-print";
 import { AfterimageBoard } from "@/components/afterimage/AfterimageBoard";
 import { AfterimagePeek, PeekThumb } from "@/components/afterimage/AfterimagePeek";
-import { CatalogPick } from "@/components/afterimage/CatalogPick";
-import { SearchSelect } from "@/components/afterimage/SearchSelect";
+import { AfterimageStudio } from "@/components/afterimage/AfterimageStudio";
 import { isAdmin } from "@/lib/admin";
 import { DenHero } from "@/components/den/DenHero";
+import {
+  applyPreset,
+  draftToPrintBody,
+  EMPTY_DRAFT,
+  PRESETS,
+  recipeChips,
+  surpriseDraft,
+  type StudioDraft,
+  type StudioPanel,
+} from "@/lib/afterimage-presets";
 
 type Print = { id: string; image_url: string; want?: string; style_id?: string; username?: string };
 
 export function AfterimageApp() {
   const [userId, setUserId] = useState<string | null>(null);
   const [admin, setAdmin] = useState(false);
-  const [phoneId, setPhoneId] = useState("classic");
-  const [styleId, setStyleId] = useState("photo");
-  const [styleSearch, setStyleSearch] = useState("");
-  const [subject, setSubject] = useState("");
-  const [want, setWant] = useState("");
-  const [series, setSeries] = useState("");
-  const [seriesSlug, setSeriesSlug] = useState("");
-  const [who, setWho] = useState("woman");
-  const [age, setAge] = useState("21-24");
-  const [ethnicity, setEthnicity] = useState("");
-  const [body, setBody] = useState("");
-  const [height, setHeight] = useState("");
-  const [hair, setHair] = useState("");
-  const [eyes, setEyes] = useState("");
-  const [clothes, setClothes] = useState("");
-  const [pose, setPose] = useState("");
-  const [world, setWorld] = useState("");
-  const [place, setPlace] = useState("");
-  const [lighting, setLighting] = useState("");
-  const [heat, setHeat] = useState("flirty");
+  const [draft, setDraft] = useState<StudioDraft>(EMPTY_DRAFT);
+  const [panel, setPanel] = useState<StudioPanel>("look");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [board, setBoard] = useState<Print[]>([]);
@@ -46,8 +34,10 @@ export function AfterimageApp() {
   const [picked, setPicked] = useState<Print[]>([]);
   const [peek, setPeek] = useState<string | null>(null);
   const [saveAs, setSaveAs] = useState("");
+  const [shaking, setShaking] = useState(false);
 
-  const animeLook = ["anime", "90s-cel", "manhwa", "manga"].includes(styleId);
+  const look = pickOpt(LOOKS, draft.styleId);
+  const chips = useMemo(() => recipeChips(draft), [draft]);
 
   useEffect(() => {
     fetch("/api/afterimage/board").then((r) => r.json()).then((d) => setBoard(d.prints || [])).catch(() => {});
@@ -73,11 +63,7 @@ export function AfterimageApp() {
       const res = await fetch("/api/afterimage/print", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId, want, styleId, styleSearch, series: animeLook ? series : "",
-          pose, heat, phoneId, subject, clothes, lighting, place,
-          who, age, ethnicity, body, height, hair, eyes, world, finish: "print",
-        }),
+        body: JSON.stringify(draftToPrintBody(draft, userId)),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Print failed");
@@ -85,8 +71,8 @@ export function AfterimageApp() {
       const rows = done.prints || (done.image_url ? [{ id: done.print_id, image_url: done.image_url }] : []);
       setPicked(rows);
       setMsg("Printed.");
-    } catch (err: any) {
-      setMsg(err.message);
+    } catch (err: unknown) {
+      setMsg(err instanceof Error ? err.message : "Print failed");
     } finally {
       setBusy(false);
     }
@@ -100,13 +86,23 @@ export function AfterimageApp() {
     a.click();
   };
 
-  const recipe = [
-    LOOKS.find((x) => x.id === styleId)?.label,
-    WHOS.find((x) => x.id === who)?.label,
-    world && WORLDS.find((x) => x.id === world)?.label,
-    place && PLACES.find((x) => x.id === place)?.label,
-    heat && HEATS.find((x) => x.id === heat)?.label,
-  ].filter(Boolean);
+  const surprise = () => {
+    setShaking(true);
+    setDraft((d) => surpriseDraft(d.phoneId));
+    setPanel("look");
+    setTimeout(() => setShaking(false), 420);
+  };
+
+  const printButton = (
+    <button
+      type="button"
+      disabled={busy || !admin}
+      onClick={print}
+      className="w-full py-3 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-400 text-black font-semibold disabled:opacity-50 ai-print"
+    >
+      {admin ? (busy ? "Printing…" : "Print wallpaper") : "Coming soon"}
+    </button>
+  );
 
   return (
     <div className="relative overflow-hidden min-h-[calc(100vh-8rem)]">
@@ -121,122 +117,114 @@ export function AfterimageApp() {
           tone="fuchsia"
           kicker="Afterimage"
           title="Print a lock screen."
-          accent="Not stock. Yours."
-          body="Pick the shot. Empty menus stay out of the prompt. Take something you'd actually keep on the phone."
+          accent="Tap it into existence."
+          body="Start from a vibe, then play. Empty choices stay out of the prompt. Type only if you want something the chips don’t cover."
         />
+
+        <div className="flex flex-wrap items-center gap-2 mb-5">
+          <button type="button" onClick={surprise} className={`ai-dice px-4 py-2 rounded-full border border-amber-300/40 bg-amber-950/30 text-[13px] text-amber-100 ${shaking ? "ai-dice-go" : ""}`}>
+            Surprise me
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(EMPTY_DRAFT);
+              setPanel("look");
+            }}
+            className="px-4 py-2 rounded-full border border-white/10 text-[13px] text-neutral-400 hover:text-white"
+          >
+            Start over
+          </button>
+        </div>
+
+        <div className="mb-8">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-neutral-500 mb-3">Quick starts</p>
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
+            {PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => {
+                  setDraft((d) => applyPreset(d, p));
+                  setPanel("look");
+                }}
+                className={`ai-preset snap-start shrink-0 w-[11.5rem] rounded-2xl border border-white/10 bg-gradient-to-br ${p.wash} p-3 text-left`}
+              >
+                <span className="text-lg">{p.emoji}</span>
+                <span className="mt-1 block text-[13px] font-medium text-white">{p.label}</span>
+                <span className="mt-0.5 block text-[11px] text-white/65 leading-snug">{p.blurb}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="grid lg:grid-cols-[minmax(0,1fr)_260px] gap-8 items-start">
           <div className="space-y-4">
-            <div className="rounded-3xl border border-fuchsia-500/20 bg-black/55 backdrop-blur-md p-4 sm:p-5 space-y-4 shadow-[0_0_80px_-24px_rgba(217,70,239,0.55)]">
-              <div className="flex gap-2">
-                {PHONES.map((p) => (
-                  <button key={p.id} type="button" onClick={() => setPhoneId(p.id)} className={`flex-1 px-2 py-1.5 rounded-lg border text-[11px] ${
-                    phoneId === p.id ? "border-fuchsia-400/60 bg-fuchsia-950/40 text-white" : "border-neutral-800 text-neutral-500"
-                  }`}>{p.name}</button>
-                ))}
-              </div>
-
-              <SearchSelect label="Look" hint="How the picture is drawn. Photo = real camera." value={styleId} options={LOOKS} allowEmpty={false} onChange={setStyleId} />
-
-              <label className="block space-y-1">
-                <span className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">Who they are</span>
-                <span className="block text-[11px] text-neutral-600">Face, hair, attitude. Not the location.</span>
-                <input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Red pigtails, freckles, smirk" className="w-full px-3 py-2 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm" />
-              </label>
-
-              <label className="block space-y-1">
-                <span className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">What they’re doing</span>
-                <span className="block text-[11px] text-neutral-600">Action only. Daggers, sitting, rain. Place goes in Place below.</span>
-                <textarea value={want} onChange={(e) => setWant(e.target.value)} rows={2} placeholder="Holding two daggers" className="w-full px-3 py-2 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm" />
-              </label>
-
-              {animeLook && (
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500 mb-1">Series</p>
-                    <p className="text-[11px] text-neutral-600 mb-1">Type a show if you want that design language.</p>
-                    <CatalogPick kind="series" value={series} placeholder="Type an anime" onPick={(r) => { setSeries(r.label); setSeriesSlug(r.slug); }} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500 mb-1">Character</p>
-                    <p className="text-[11px] text-neutral-600 mb-1">Optional. Loads after a series.</p>
-                    <CatalogPick kind="character" parent={seriesSlug} value={subject} placeholder="Type a name" onPick={(r) => setSubject(r.label)} />
-                  </div>
-                </div>
-              )}
-
-              <div className="grid sm:grid-cols-2 gap-3">
-                <SearchSelect label="Who" value={who} options={WHOS} allowEmpty={false} onChange={setWho} />
-                <SearchSelect label="Age look" hint="Adult bands only." value={age} options={AGES} onChange={setAge} />
-                <SearchSelect label="Ethnicity" value={ethnicity} options={ETHNICITIES} onChange={setEthnicity} />
-                <SearchSelect label="Body" value={body} options={BODIES} onChange={setBody} />
-                <SearchSelect label="Height" value={height} options={HEIGHTS} onChange={setHeight} />
-                <SearchSelect label="Hair" value={hair} options={HAIRS} onChange={setHair} />
-                <SearchSelect label="Eyes" value={eyes} options={EYES} onChange={setEyes} />
-                <SearchSelect label="Clothes" value={clothes} options={WARDROBES} onChange={setClothes} />
-                <SearchSelect label="Pose" value={pose} options={POSES} onChange={setPose} />
-                <SearchSelect label="World" hint="Leave empty unless you want a setting. Cyber is the only neon city." value={world} options={WORLDS} onChange={setWorld} />
-                <SearchSelect label="Place" hint="Empty = no location baked in." value={place} options={PLACES} onChange={setPlace} />
-                <SearchSelect label="Light" value={lighting} options={LIGHTS} onChange={setLighting} />
-              </div>
-
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500 mb-2">Heat</p>
-                <div className="flex flex-wrap gap-2">
-                  {HEATS.map((h) => (
-                    <button key={h.id} type="button" onClick={() => setHeat(h.id)} className={`px-3 py-1.5 rounded-full border text-[11px] ${
-                      heat === h.id ? "border-rose-400/50 text-rose-100 bg-rose-950/30" : "border-neutral-800 text-neutral-500"
-                    }`}>{h.label}</button>
-                  ))}
-                </div>
-              </div>
-
-              <label className="block space-y-1">
-                <span className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">Art note</span>
-                <span className="block text-[11px] text-neutral-600">Optional camera/style only. Grain, lens, color. Do not describe the person here.</span>
-                <input value={styleSearch} onChange={(e) => setStyleSearch(e.target.value)} placeholder="35mm, wet streets, rim light" className="w-full px-3 py-2 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm" />
-              </label>
-
-              {recipe.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {recipe.map((r) => (
-                    <span key={r} className="px-2 py-0.5 rounded-full bg-fuchsia-950/40 border border-fuchsia-900/40 text-[10px] text-fuchsia-100">{r}</span>
-                  ))}
-                </div>
-              )}
-
-              <button type="button" disabled={busy || !admin} onClick={print} className="w-full py-3 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-rose-500 to-amber-400 text-black font-semibold disabled:opacity-50 ai-print">
-                {admin ? (busy ? "Printing…" : "Print wallpaper") : "Coming soon"}
-              </button>
-              {msg && <p className="text-sm text-amber-100">{msg}</p>}
+            <AfterimageStudio draft={draft} panel={panel} onPanel={setPanel} onDraft={setDraft} />
+            <div className="lg:hidden space-y-3">
+              {printButton}
+              {msg ? <p className="text-sm text-amber-100">{msg}</p> : null}
             </div>
-
             {picked.length > 0 && (
               <div className="space-y-3">
-                <input value={saveAs} onChange={(e) => setSaveAs(e.target.value)} placeholder="Name before save" className="w-full px-3 py-2 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm" />
+                <input
+                  value={saveAs}
+                  onChange={(e) => setSaveAs(e.target.value)}
+                  placeholder="Name before save"
+                  className="w-full px-3 py-2 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm"
+                />
                 <div className="grid grid-cols-3 gap-3">
                   {picked.map((p) => (
                     <div key={p.id} className="ai-card rounded-2xl overflow-hidden border border-fuchsia-500/30 bg-black">
                       <PeekThumb src={p.image_url} onOpen={() => setPeek(p.image_url)} imgClass="w-full aspect-[9/16] object-cover" />
-                      <button type="button" onClick={() => download(p.image_url)} className="w-full py-2 text-[11px] text-amber-200">Save</button>
+                      <button type="button" onClick={() => download(p.image_url)} className="w-full py-2 text-[11px] text-amber-200">
+                        Save
+                      </button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
           </div>
-          <div className="hidden lg:block sticky top-24">
-            <button type="button" disabled={!picked[0]} onClick={() => picked[0] && setPeek(picked[0].image_url)} className={`ai-phone mx-auto block ${picked[0] ? "ai-peek" : ""}`}>
+          <aside className="hidden lg:block sticky top-24 space-y-4">
+            <button
+              type="button"
+              disabled={!picked[0]}
+              onClick={() => picked[0] && setPeek(picked[0].image_url)}
+              className={`ai-phone mx-auto block ${picked[0] ? "ai-peek" : ""}`}
+            >
               <div className="ai-phone-notch" />
               {picked[0] ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={picked[0].image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-b from-fuchsia-700/30 via-transparent to-amber-700/20" />
+                <div className={`absolute inset-0 bg-gradient-to-br ${look?.wash || "from-fuchsia-700/30 to-amber-700/20"}`}>
+                  <div className="absolute inset-x-4 bottom-8 text-left">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-white/50">Preview</p>
+                    <p className="text-sm font-medium text-white mt-1">{look?.label || "Photo"}</p>
+                    <p className="text-[11px] text-white/60 mt-1 line-clamp-3">
+                      {chips.slice(1, 5).map((c) => c.label).join(" · ") || "Tap a look to start"}
+                    </p>
+                  </div>
+                </div>
               )}
               {picked[0] && <span className="ai-peek-glow" />}
             </button>
-            <p className="text-center text-[11px] text-neutral-500 mt-3">Preview</p>
-          </div>
+            <div className="flex flex-wrap gap-1.5 justify-center">
+              {chips.slice(0, 10).map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  onClick={() => setPanel(c.panel)}
+                  className="px-2 py-0.5 rounded-full bg-fuchsia-950/40 border border-fuchsia-900/40 text-[10px] text-fuchsia-100"
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            {printButton}
+            {msg ? <p className="text-sm text-amber-100 text-center">{msg}</p> : null}
+          </aside>
         </div>
         <AfterimageBoard board={board} />
         {mine.length > 0 && admin && (

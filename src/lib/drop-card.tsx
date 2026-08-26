@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import type { ReactNode } from "react";
+import sharp from "sharp";
 import { createServiceClient } from "@/lib/supabase/server";
 import { dropFeature } from "@/lib/x-drop";
 import { rowToPair } from "@/lib/wyr-map";
@@ -11,15 +12,18 @@ export function dropSize(aspect: string) {
   return { width: 1200, height: 675 };
 }
 
-async function asDataUri(url: string | null | undefined) {
+async function asCardImage(url: string | null | undefined, w: number, h: number) {
   if (!url) return null;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
-    const mime = (res.headers.get("content-type") || "image/jpeg").split(";")[0];
-    if (!mime.startsWith("image/")) return null;
     const buf = Buffer.from(await res.arrayBuffer());
-    return `data:${mime};base64,${buf.toString("base64")}`;
+    const out = await sharp(buf)
+      .rotate()
+      .resize(w, h, { fit: "cover" })
+      .jpeg({ quality: 78 })
+      .toBuffer();
+    return `data:image/jpeg;base64,${out.toString("base64")}`;
   } catch {
     return null;
   }
@@ -97,6 +101,15 @@ function Shell({
 }
 
 export async function renderDropCard(opts: { kind: string; aspect: string; id?: string }) {
+  try {
+    return await renderDropCardInner(opts);
+  } catch (err: any) {
+    console.error("drop-card", err);
+    return new Response(err?.message || "Drop card failed", { status: 500 });
+  }
+}
+
+async function renderDropCardInner(opts: { kind: string; aspect: string; id?: string }) {
   const { width, height } = dropSize(opts.aspect);
   const tall = height > width;
   const kind = opts.kind || "den";
@@ -121,31 +134,34 @@ export async function renderDropCard(opts: { kind: string; aspect: string; id?: 
     }
     const rarity = getRarity(Number(data.score));
     const verdict = String(data.verdict || "").slice(0, 160);
-    const portrait = await asDataUri(data.image_url);
+    const portrait = await asCardImage(data.image_url, tall ? 420 : 320, tall ? 560 : 420);
     return new ImageResponse(
       (
         <Shell section="Face The Den" footer={`${rarity.name} · ${Number(data.score).toFixed(1)}`} tall={tall}>
-          <div style={{ display: "flex", gap: 36, width: "100%", alignItems: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: tall ? "column" : "row",
+              gap: 28,
+              width: "100%",
+              alignItems: "flex-start",
+            }}
+          >
             {portrait ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={portrait}
-                width={tall ? 420 : 320}
-                height={tall ? 560 : 420}
+                width={tall ? 420 : 300}
+                height={tall ? 560 : 400}
                 style={{
                   objectFit: "cover",
-                  borderRadius: 28,
-                  border: "2px solid rgba(251,191,36,0.35)",
+                  borderRadius: 24,
                 }}
               />
             ) : null}
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1, maxWidth: 560 }}>
-              <div style={{ fontSize: 22, color: "#fbbf24", letterSpacing: "0.16em", textTransform: "uppercase" }}>
-                @{username}
-              </div>
-              <div style={{ fontSize: tall ? 28 : 24, color: "#fafafa", lineHeight: 1.35, fontWeight: 500 }}>
-                {verdict}
-              </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, width: tall ? 900 : 520 }}>
+              <div style={{ fontSize: 20, color: "#fbbf24" }}>{`@${username}`}</div>
+              <div style={{ fontSize: tall ? 28 : 22, color: "#fafafa", lineHeight: 1.3 }}>{verdict}</div>
               <div style={{ fontSize: 18, color: "#a3a3a3" }}>Walked in looking pretty.</div>
             </div>
           </div>
@@ -162,30 +178,32 @@ export async function renderDropCard(opts: { kind: string; aspect: string; id?: 
       .eq("id", id)
       .maybeSingle();
     if (!data) return new Response("Print not found", { status: 404 });
-    const still = await asDataUri(data.image_url);
+    const still = await asCardImage(data.image_url, tall ? 380 : 280, tall ? 760 : 500);
     const want = String(data.want || "A lock screen from the den.").slice(0, 140);
     return new ImageResponse(
       (
-        <Shell section="Afterimage" footer={data.finish || "lock screen"} tall={tall}>
-          <div style={{ display: "flex", gap: 36, width: "100%", alignItems: "center" }}>
+        <Shell section="Afterimage" footer={String(data.finish || "lock screen")} tall={tall}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: tall ? "column" : "row",
+              gap: 28,
+              width: "100%",
+              alignItems: "flex-start",
+            }}
+          >
             {still ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={still}
-                width={tall ? 380 : 280}
-                height={tall ? 760 : 500}
-                style={{
-                  objectFit: "cover",
-                  borderRadius: 36,
-                  border: "2px solid rgba(232,121,249,0.4)",
-                }}
+                width={tall ? 360 : 260}
+                height={tall ? 640 : 460}
+                style={{ objectFit: "cover", borderRadius: 28 }}
               />
             ) : null}
-            <div style={{ display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
-              <div style={{ fontSize: 18, color: "#e879f9", letterSpacing: "0.18em", textTransform: "uppercase" }}>
-                @{data.username || "den"}
-              </div>
-              <div style={{ fontSize: tall ? 30 : 26, color: "#fafafa", lineHeight: 1.35 }}>{want}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, width: tall ? 900 : 540 }}>
+              <div style={{ fontSize: 18, color: "#e879f9" }}>{`@${data.username || "den"}`}</div>
+              <div style={{ fontSize: tall ? 28 : 24, color: "#fafafa", lineHeight: 1.3 }}>{want}</div>
             </div>
           </div>
         </Shell>
@@ -202,49 +220,43 @@ export async function renderDropCard(opts: { kind: string; aspect: string; id?: 
       const { data } = await supabase.from("wyr_pairs").select("*").eq("id", id).maybeSingle();
       const pair = data ? rowToPair(data) : null;
       if (pair) {
-        a = pair.a;
-        b = pair.b;
+        a = pair.a.slice(0, 180);
+        b = pair.b.slice(0, 180);
         contrast = `${pair.topic || "Heat"} vs ${pair.topicB || "Cost"}`;
       }
     }
     return new ImageResponse(
       (
         <Shell section="The Floor" footer="Ten rounds" tall={tall}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 22, width: "100%" }}>
-            <div style={{ fontSize: 16, color: "#fde68a", letterSpacing: "0.22em", textTransform: "uppercase" }}>
-              Tonight · {contrast}
+          <div style={{ display: "flex", flexDirection: "column", gap: 18, width: "100%" }}>
+            <div style={{ fontSize: 16, color: "#fde68a" }}>{`Tonight - ${contrast}`}</div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                width: "100%",
+                padding: 24,
+                borderRadius: 24,
+                background: "#1a0a0c",
+              }}
+            >
+              <div style={{ fontSize: 14, color: "#fda4af" }}>A</div>
+              <div style={{ fontSize: tall ? 26 : 22, color: "#fafafa", lineHeight: 1.3 }}>{a}</div>
             </div>
-            <div style={{ display: "flex", gap: 18, width: "100%", flexDirection: tall ? "column" : "row" }}>
-              <div
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                  padding: 28,
-                  borderRadius: 28,
-                  border: "1px solid rgba(244,63,94,0.45)",
-                  background: "linear-gradient(160deg, rgba(127,29,29,0.45), #0a0a0a)",
-                }}
-              >
-                <div style={{ fontSize: 14, color: "#fda4af", letterSpacing: "0.2em" }}>A</div>
-                <div style={{ fontSize: tall ? 26 : 22, color: "#fafafa", lineHeight: 1.35 }}>{a}</div>
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                  padding: 28,
-                  borderRadius: 28,
-                  border: "1px solid rgba(139,92,246,0.45)",
-                  background: "linear-gradient(200deg, rgba(76,29,149,0.4), #0a0a0a)",
-                }}
-              >
-                <div style={{ fontSize: 14, color: "#c4b5fd", letterSpacing: "0.2em" }}>B</div>
-                <div style={{ fontSize: tall ? 26 : 22, color: "#fafafa", lineHeight: 1.35 }}>{b}</div>
-              </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                width: "100%",
+                padding: 24,
+                borderRadius: 24,
+                background: "#12081c",
+              }}
+            >
+              <div style={{ fontSize: 14, color: "#c4b5fd" }}>B</div>
+              <div style={{ fontSize: tall ? 26 : 22, color: "#fafafa", lineHeight: 1.3 }}>{b}</div>
             </div>
           </div>
         </Shell>

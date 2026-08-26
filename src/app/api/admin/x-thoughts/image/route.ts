@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { TOPICS } from "@/lib/thoughts-packs";
+import {
+  artLabel,
+  assembleXThoughtImagePrompt,
+  inventXThoughtScene,
+  localScene,
+  rollXThoughtArt,
+  thoughtGist,
+} from "@/lib/x-thought-image";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 90;
 
 function jsonError(msg: string, status = 500) {
   return NextResponse.json({ error: msg.slice(0, 280) }, { status });
@@ -15,16 +23,17 @@ export async function POST(req: NextRequest) {
     const topic = TOPICS.find((t) => t.id === body.topic);
     const post = String(body.post || body.seed || "").trim();
     const seed = String(body.seed || "").trim();
-    const aspect = body.aspect === "9:16" ? "9:16" : "16:9";
+    const aspect: "16:9" | "9:16" = body.aspect === "9:16" ? "9:16" : "16:9";
     if (!post && !topic && !seed) return jsonError("Draft or topic first", 400);
 
     const apiKey = process.env.XAI_API_KEY;
     if (!apiKey) return jsonError("XAI_API_KEY missing");
 
-    const mood = (post || seed).replace(/\s+/g, " ").slice(0, 420);
-    const label = topic?.label || "a human thought";
-    const shape = aspect === "9:16" ? "tall phone 9:16 portrait" : "wide 16:9 landscape";
-    const prompt = `Cinematic ${shape} still photograph for an X post about ${label}. Mood of the writing: ${mood || label}. Photoreal, moody, dark den lighting, adult-ok but not pornographic, no logos, no readable text, no UI, no watermarks, fill the frame edge to edge. Make it feel like the thought, not a stock smile.`;
+    const gist = thoughtGist(post, seed) || topic?.label || "a human thought";
+    const art = rollXThoughtArt();
+    const brief = { gist, topic: topic?.label, art, aspect };
+    const scene = (await inventXThoughtScene({ ...brief, apiKey }).catch(() => null)) || localScene(brief);
+    const prompt = assembleXThoughtImagePrompt({ scene, art, aspect, gist });
 
     const models = ["grok-imagine-image", "grok-imagine-image-2.0"];
     let bytes: Uint8Array | null = null;
@@ -85,7 +94,12 @@ export async function POST(req: NextRequest) {
     });
     if (upErr) return jsonError(upErr.message);
     const { data: pub } = supabase.storage.from("afterimage").getPublicUrl(path);
-    return NextResponse.json({ image: pub.publicUrl, aspect });
+    return NextResponse.json({
+      image: pub.publicUrl,
+      aspect,
+      style: art.style.label,
+      look: artLabel(art),
+    });
   } catch (err: any) {
     return jsonError(err?.message || "Image failed");
   }

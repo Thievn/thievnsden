@@ -36,6 +36,7 @@ export function XThoughtsTab() {
   const [rows, setRows] = useState<any[]>([]);
   const [post, setPost] = useState("");
   const [image, setImage] = useState("");
+  const [look, setLook] = useState("");
   const [aspect, setAspect] = useState<"16:9" | "9:16">("16:9");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
@@ -116,6 +117,7 @@ export function XThoughtsTab() {
       return;
     }
     setImaging(true);
+    setLook("");
     setMsg("");
     try {
       const res = await fetch("/api/admin/x-thoughts/image", {
@@ -126,6 +128,7 @@ export function XThoughtsTab() {
       const data = await readJson(res);
       if (!res.ok) throw new Error(data.error || "Image failed");
       setImage(data.image || "");
+      setLook(data.look || data.style || "");
     } catch (err: any) {
       setMsg(err.message);
     } finally {
@@ -252,7 +255,7 @@ export function XThoughtsTab() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-sm text-neutral-100 font-medium">X Thoughts</p>
-            <p className="text-xs text-neutral-500 mt-1">Private drafts, duplicate check, and a log of what you already posted. Not shown to visitors.</p>
+            <p className="text-xs text-neutral-500 mt-1">Private drafts, duplicate check, and a log of what you already posted. Pics follow the draft in a new art style each time. Not shown to visitors.</p>
           </div>
           <button type="button" onClick={roll} className="px-3 py-1.5 rounded-lg text-xs border border-sky-500/40 text-sky-200">Random</button>
         </div>
@@ -322,7 +325,7 @@ export function XThoughtsTab() {
           <button type="button" onClick={() => setAspect("16:9")} className={`${btn} ${aspect === "16:9" ? "border-sky-400 text-sky-100" : ""}`}>16:9</button>
           <button type="button" onClick={() => setAspect("9:16")} className={`${btn} ${aspect === "9:16" ? "border-sky-400 text-sky-100" : ""}`}>9:16</button>
           <button type="button" onClick={makeImage} disabled={imaging || (!post && !seed)} className="px-3 py-2 rounded-lg bg-sky-400 text-black text-xs font-semibold disabled:opacity-40">
-            {imaging ? "Making…" : "Make pic"}
+            {imaging ? "Making…" : image ? "New pic" : "Make pic"}
           </button>
           <button type="button" onClick={copy} disabled={!post} className="ml-auto px-4 py-2 rounded-lg bg-neutral-100 text-black text-xs font-medium">Copy</button>
         </div>
@@ -361,6 +364,7 @@ export function XThoughtsTab() {
           <div className="space-y-2 pt-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={image} alt="" className={`rounded-xl border border-neutral-800 object-cover ${frame}`} />
+            {look ? <p className="text-[11px] text-neutral-500">{look}</p> : null}
             <button type="button" onClick={downloadPic} className="w-full py-2.5 rounded-xl text-sm border border-neutral-700 text-neutral-100">
               Download for X
             </button>

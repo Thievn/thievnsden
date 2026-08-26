@@ -158,7 +158,8 @@ export function AfterimageApp() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_260px] gap-8 items-start">
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,42rem)_minmax(0,1fr)] gap-6 lg:gap-8 items-start">
+          <div className="hidden lg:block" aria-hidden />
           <div className="space-y-4">
             <AfterimageStudio draft={draft} panel={panel} onPanel={setPanel} onDraft={setDraft} />
             <div className="lg:hidden space-y-3">
@@ -186,7 +187,7 @@ export function AfterimageApp() {
               </div>
             )}
           </div>
-          <aside className="hidden lg:block sticky top-24 space-y-4">
+          <aside className="hidden lg:flex flex-col items-center sticky top-24 space-y-4">
             <button
               type="button"
               disabled={!picked[0]}

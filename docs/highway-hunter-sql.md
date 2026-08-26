@@ -1,18 +1,5 @@
-# Highway Hunter scores (optional)
+# Highway Hunter
 
-```sql
-create table if not exists highway_runs (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid,
-  username text,
-  score int default 0,
-  grade text,
-  distance int default 0,
-  kills int default 0,
-  civ_hits int default 0,
-  combo_max int default 0,
-  created_at timestamptz default now()
-);
+Scores (`highway_runs`) and garage (`highway_garage`) are written by the app with the service role.
 
-create index if not exists highway_runs_score on highway_runs (score desc);
-```
+Garage stores scrap, rebirths, and upgrade levels. Play is free; posting the board and keeping upgrades needs an account.

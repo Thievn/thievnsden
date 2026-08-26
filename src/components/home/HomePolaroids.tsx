@@ -13,28 +13,19 @@ function shuffle<T>(list: T[], seed: number) {
   return copy;
 }
 
-function visitSeed(key: string) {
-  try {
-    const n = Number(sessionStorage.getItem(key) || "0") + 1;
-    sessionStorage.setItem(key, String(n));
-    return n + (Date.now() % 997);
-  } catch {
-    return Date.now();
-  }
-}
-
 export function HomePolaroids({ prints }: { prints: string[] }) {
-  const [seed, setSeed] = useState(1);
+  const [seed, setSeed] = useState(0);
   const [offset, setOffset] = useState(0);
   const startX = useRef<number | null>(null);
+  const swiped = useRef(false);
 
   useEffect(() => {
-    setSeed(visitSeed("den-home-prints"));
+    setSeed(Date.now());
   }, []);
 
-  const deck = useMemo(() => shuffle(prints.filter(Boolean), seed), [prints, seed]);
-  const shown = deck.length
-    ? [0, 1, 2].map((i) => deck[(offset + i) % deck.length]).filter(Boolean)
+  const deck = useMemo(() => shuffle(prints.filter(Boolean), seed || 1), [prints, seed]);
+  const shown = seed
+    ? [0, 1, 2].map((i) => deck[(offset + i) % Math.max(deck.length, 1)]).filter(Boolean)
     : [];
 
   const next = useCallback(() => {
@@ -47,15 +38,22 @@ export function HomePolaroids({ prints }: { prints: string[] }) {
     setOffset((n) => (n - 1 + deck.length) % deck.length);
   }, [deck.length]);
 
-  if (!shown.length) {
+  if (!prints.length) {
     return (
-      <div className="h-[220px] sm:h-[300px] rounded-2xl bg-gradient-to-br from-fuchsia-700/30 via-rose-950/40 to-amber-900/20 border border-white/10" />
+      <div className="h-[240px] sm:h-[320px] rounded-2xl bg-gradient-to-br from-fuchsia-700/30 via-rose-950/40 to-amber-900/20 border border-white/10" />
     );
   }
 
+  if (!shown.length) {
+    return <div className="h-[240px] sm:h-[320px] rounded-2xl border border-white/10 bg-black/40" />;
+  }
+
+  const widths = ["w-[31%]", "w-[24%]", "w-[20%]"];
+  const lifts = ["translate-y-3", "translate-y-0", "translate-y-6"];
+
   return (
     <div
-      className="relative h-[220px] sm:h-[300px] lg:h-[340px] touch-pan-y select-none"
+      className="relative h-[250px] sm:h-[330px] lg:h-[360px] flex items-end justify-center gap-2 sm:gap-3 select-none"
       onPointerDown={(e) => {
         startX.current = e.clientX;
       }}
@@ -63,10 +61,21 @@ export function HomePolaroids({ prints }: { prints: string[] }) {
         if (startX.current == null) return;
         const dx = e.clientX - startX.current;
         startX.current = null;
-        if (dx < -40) next();
-        else if (dx > 40) prev();
+        if (dx < -40) {
+          swiped.current = true;
+          next();
+        } else if (dx > 40) {
+          swiped.current = true;
+          prev();
+        }
       }}
-      onClick={next}
+      onClick={() => {
+        if (swiped.current) {
+          swiped.current = false;
+          return;
+        }
+        next();
+      }}
       role="button"
       tabIndex={0}
       aria-label="Flip Afterimage stills"
@@ -76,22 +85,19 @@ export function HomePolaroids({ prints }: { prints: string[] }) {
       }}
     >
       {shown.map((src, i) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <div
           key={`${src}-${offset}-${i}`}
-          src={src}
-          alt=""
-          draggable={false}
-          className="absolute object-cover rounded-2xl border border-white/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.85)] transition-transform duration-500"
-          style={{
-            width: i === 0 ? "72%" : "56%",
-            height: i === 0 ? "88%" : "72%",
-            left: i === 0 ? "6%" : i === 1 ? "36%" : "16%",
-            top: i === 0 ? "6%" : i === 1 ? "20%" : "36%",
-            transform: `rotate(${[-8, 6, 2][i]}deg)`,
-            zIndex: i === 0 ? 2 : i === 1 ? 3 : 1,
-          }}
-        />
+          className={`relative ${widths[i]} aspect-[9/16] overflow-hidden rounded-2xl border border-white/20 bg-black shadow-[0_24px_50px_-18px_rgba(0,0,0,0.9)] ${lifts[i]}`}
+          style={{ transform: `rotate(${[-5, 4, 2][i]}deg)`, zIndex: i === 1 ? 3 : i === 0 ? 2 : 1 }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt=""
+            draggable={false}
+            className="absolute inset-0 w-full h-full object-contain object-top"
+          />
+        </div>
       ))}
       {deck.length > 3 ? (
         <p className="absolute bottom-1 right-2 z-10 text-[10px] uppercase tracking-[0.18em] text-white/70">
@@ -103,23 +109,26 @@ export function HomePolaroids({ prints }: { prints: string[] }) {
 }
 
 export function HomePrintStrip({ prints }: { prints: string[] }) {
-  const [seed, setSeed] = useState(1);
+  const [seed, setSeed] = useState(0);
   useEffect(() => {
-    setSeed(visitSeed("den-home-strip"));
+    setSeed(Date.now() + 17);
   }, []);
-  const deck = useMemo(() => shuffle(prints.filter(Boolean), seed).slice(0, 4), [prints, seed]);
+  const deck = useMemo(
+    () => shuffle(prints.filter(Boolean), seed || 1).slice(0, 4),
+    [prints, seed]
+  );
   if (!deck.length) return null;
   return (
-    <div className="absolute inset-0 flex items-end justify-center gap-2 px-6 sm:px-8 pb-3 overflow-x-auto">
+    <div className="absolute inset-0 flex items-end justify-center gap-2 px-5 sm:px-8 pb-3">
       {deck.map((src, i) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <div
           key={src + i}
-          src={src}
-          alt=""
-          className="h-[78%] w-[22%] min-w-[52px] object-cover rounded-md border border-white/15 shadow-2xl"
-          style={{ transform: `rotate(${[-8, -2, 3, 9][i] || 0}deg) translateY(${i % 2 ? 8 : 0}px)` }}
-        />
+          className="relative h-[82%] aspect-[9/16] overflow-hidden rounded-md border border-white/15 bg-black shadow-2xl"
+          style={{ transform: `rotate(${[-6, -2, 3, 7][i] || 0}deg)` }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt="" className="absolute inset-0 w-full h-full object-contain object-top" />
+        </div>
       ))}
     </div>
   );
@@ -132,14 +141,14 @@ export function HomeGamingRoom({
   covers: { cover: string; title: string }[];
   fallbackTitle: string | null;
 }) {
-  const [seed, setSeed] = useState(1);
+  const [seed, setSeed] = useState(0);
   useEffect(() => {
-    setSeed(visitSeed("den-home-game"));
+    setSeed(Date.now() + 41);
   }, []);
   const pick = useMemo(() => {
     const list = covers.filter((c) => c.cover);
     if (!list.length) return null;
-    return shuffle(list, seed)[0];
+    return shuffle(list, seed || 1)[0];
   }, [covers, seed]);
 
   return (
@@ -150,7 +159,7 @@ export function HomeGamingRoom({
           <img
             src={`/api/gaming/cover?u=${encodeURIComponent(pick.cover)}`}
             alt=""
-            className="absolute inset-0 w-full h-full object-cover opacity-85"
+            className="absolute inset-0 w-full h-full object-cover object-[center_18%] opacity-85"
             referrerPolicy="no-referrer"
           />
         ) : (

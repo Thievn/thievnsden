@@ -24,8 +24,8 @@ const GAMES = [
   {
     href: "/playground/highway-hunter",
     title: "Highway Hunter",
-    tag: "Preview",
-    line: "Night interstate. Soft wrecks. Heat on the asphalt.",
+    tag: "Live",
+    line: "Night interstate. Kits. Rebirths. Soft wrecks.",
     accent: "from-amber-500/25 via-orange-900/20 to-transparent",
     chip: "border-amber-500/40 text-amber-200",
   },

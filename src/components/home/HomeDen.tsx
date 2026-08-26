@@ -135,7 +135,7 @@ export function HomeDen({
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 pb-5">
           <Link href="/afterimage" className="home-room rounded-3xl border border-fuchsia-900/40 bg-[#100810] min-h-[280px] flex flex-col">
-            <div className="relative h-40 sm:h-48 overflow-hidden">
+            <div className="relative h-44 sm:h-52 overflow-hidden rounded-t-3xl">
               <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-600/35 via-rose-900/25 to-amber-800/20" />
               <HomePrintStrip prints={prints} />
             </div>

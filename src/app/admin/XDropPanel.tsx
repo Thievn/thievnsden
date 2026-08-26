@@ -44,16 +44,28 @@ export function XDropPanel() {
   const [clipping, setClipping] = useState(false);
   const [video, setVideo] = useState("");
   const [still, setStill] = useState("");
+  const [loadingPicks, setLoadingPicks] = useState(true);
 
   const load = async (feat: string) => {
-    const res = await fetch(`/api/admin/x-drop/picks?feature=${feat}`);
-    const data = await readJson(res);
-    setCards(data.cards || []);
-    setPairs(data.pairs || []);
-    setPrints(data.prints || []);
-    setPicked((data.cards?.[0]?.id || data.pairs?.[0]?.id || data.prints?.[0]?.id || "") as string);
-    setVideo("");
-    setStill("");
+    setLoadingPicks(true);
+    try {
+      const res = await fetch(`/api/admin/x-drop/picks?feature=${feat}`);
+      const data = await readJson(res);
+      if (!res.ok) throw new Error(data.error || "Could not load picks");
+      setCards(data.cards || []);
+      setPairs(data.pairs || []);
+      setPrints(data.prints || []);
+      setPicked((data.cards?.[0]?.id || data.pairs?.[0]?.id || data.prints?.[0]?.id || "") as string);
+      setVideo("");
+      setStill("");
+    } catch (err: any) {
+      setMsg(err.message || "Could not load picks");
+      setCards([]);
+      setPairs([]);
+      setPrints([]);
+    } finally {
+      setLoadingPicks(false);
+    }
   };
 
   useEffect(() => {
@@ -202,7 +214,12 @@ export function XDropPanel() {
 
       {feature === "ftd" && (
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 max-h-[280px] overflow-y-auto">
-          {cards.map((c) => (
+          {loadingPicks ? (
+            <p className="col-span-full text-xs text-neutral-500">Loading house cards…</p>
+          ) : !cards.length ? (
+            <p className="col-span-full text-xs text-neutral-500">No house portraits with photos yet.</p>
+          ) : (
+            cards.map((c) => (
             <button
               key={c.id}
               type="button"
@@ -219,13 +236,19 @@ export function XDropPanel() {
               )}
               <p className="px-2 py-1 text-[10px] text-neutral-400 truncate">@{c.username}</p>
             </button>
-          ))}
+            ))
+          )}
         </div>
       )}
 
       {feature === "afterimage" && (
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 max-h-[280px] overflow-y-auto">
-          {prints.map((p) => (
+          {loadingPicks ? (
+            <p className="col-span-full text-xs text-neutral-500">Loading prints…</p>
+          ) : !prints.length ? (
+            <p className="col-span-full text-xs text-neutral-500">No public Afterimage locks yet.</p>
+          ) : (
+            prints.map((p) => (
             <button
               key={p.id}
               type="button"
@@ -242,25 +265,32 @@ export function XDropPanel() {
               )}
               <p className="px-2 py-1 text-[10px] text-neutral-400 truncate">@{p.username || "den"}</p>
             </button>
-          ))}
+            ))
+          )}
         </div>
       )}
 
       {feature === "floor" && (
         <div className="space-y-2">
-          {pairs.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setPicked(p.id)}
-              className={`w-full text-left rounded-xl border p-3 text-sm ${
-                picked === p.id ? "border-amber-400/70" : "border-neutral-800"
-              }`}
-            >
-              <p className="text-neutral-200">{p.a}</p>
-              <p className="text-neutral-500 mt-1">{p.b}</p>
-            </button>
-          ))}
+          {loadingPicks ? (
+            <p className="text-xs text-neutral-500">Loading pairs…</p>
+          ) : !pairs.length ? (
+            <p className="text-xs text-neutral-500">No Floor pairs in the pool.</p>
+          ) : (
+            pairs.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setPicked(p.id)}
+                className={`w-full text-left rounded-xl border p-3 text-sm ${
+                  picked === p.id ? "border-amber-400/70" : "border-neutral-800"
+                }`}
+              >
+                <p className="text-neutral-200">{p.a}</p>
+                <p className="text-neutral-500 mt-1">{p.b}</p>
+              </button>
+            ))
+          )}
         </div>
       )}
 

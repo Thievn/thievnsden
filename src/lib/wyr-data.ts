@@ -154,7 +154,7 @@ export const WYR_PAIRS: WyrPair[] = [
     topicB: "family",
     aLean: L(1, 2, 0),
     bLean: L(1, 0, 2),
-    aSting: "Pass the potatoes. Explain the tabs.",
+    aSting: "The tabs stay open. So does the conversation.",
     bSting: "Safe and unread. That's a kind of death.",
   },
   {
@@ -226,6 +226,8 @@ export type WyrScore = {
   stay: number;
   title: string;
   line: string;
+  read: string;
+  tell: string;
 };
 
 export function scorePicks(leans: WyrLean[]): WyrScore {
@@ -235,25 +237,84 @@ export function scorePicks(leans: WyrLean[]): WyrScore {
   const stay = leans.reduce((s, l) => s + l.stay, 0) / (n * 2);
 
   let title = "Cold Open";
-  if (appetite > 0.62 && image > 0.58) title = "Prime Time Problem";
-  else if (appetite > 0.62 && stay < 0.38) title = "Hot Mic";
-  else if (appetite > 0.55 && stay > 0.55) title = "Closed Set";
-  else if (image > 0.62 && stay > 0.55) title = "Image First";
-  else if (image > 0.62 && appetite < 0.38) title = "Untelevised";
-  else if (stay > 0.68) title = "Won't Leave";
-  else if (appetite < 0.32 && image < 0.38) title = "Soft Alarm";
-  else if (appetite > 0.52 && image < 0.38) title = "Private Appetite";
-  else if (image > 0.55 && stay < 0.4) title = "Main Character";
-  else if (stay > 0.5 && appetite < 0.4) title = "House Favorite";
-  else if (appetite > 0.5 && image > 0.45) title = "Crowd Hazard";
-  else if (appetite > 0.48 && stay < 0.45) title = "Lights Out";
+  let line = "You pick the version you can live next to, even if the room hates it.";
+  let read =
+    "You don't perform the loud choice. You take the one you can still sit with in the morning.";
+  let tell = "You'd be the person who leaves early and still gets discussed.";
 
-  const line =
-    appetite > image && appetite > stay
-      ? "You take the heat live and argue with the edit later."
-      : image > stay
-        ? "You'd rather look intact than feel clean."
-        : "You pick the version you can live next to, even if the room hates it.";
+  if (appetite > 0.62 && image > 0.58) {
+    title = "Prime Time Problem";
+    line = "You take the heat live and argue with the edit later.";
+    read =
+      "You want it seen. Appetite and image pulling the same direction — that's a public problem with good lighting.";
+    tell = "You'd be the person the room watches even when they pretend not to.";
+  } else if (appetite > 0.62 && stay < 0.38) {
+    title = "Hot Mic";
+    line = "You take the heat live and argue with the edit later.";
+    read =
+      "You go toward the voltage. Staying looks like dying to you. The clip will outlive the night.";
+    tell = "You'd be the person who says it out loud, then acts surprised the tape was rolling.";
+  } else if (appetite > 0.55 && stay > 0.55) {
+    title = "Closed Set";
+    line = "You pick the version you can live next to, even if the room hates it.";
+    read =
+      "You want the heat and the house. That's a closed set — messy, loyal, expensive to leave.";
+    tell = "You'd be the person who stays in the room after everyone else has a better story.";
+  } else if (image > 0.62 && stay > 0.55) {
+    title = "Image First";
+    line = "You'd rather look intact than feel clean.";
+    read =
+      "You protect how it looks from the outside. The inside can wait. That's a kind of discipline, and a kind of cowardice.";
+    tell = "You'd be the person with the cleanest photo and the messiest private chat.";
+  } else if (image > 0.62 && appetite < 0.38) {
+    title = "Untelevised";
+    line = "You'd rather look intact than feel clean.";
+    read =
+      "You keep the appetite off-camera. The room thinks you're careful. You're just editing.";
+    tell = "You'd be the person nobody can quote, which is the point.";
+  } else if (stay > 0.68) {
+    title = "Won't Leave";
+    line = "You pick the version you can live next to, even if the room hates it.";
+    read =
+      "You choose the attached option even when it costs you. That's loyalty or fear — the Floor doesn't bother telling them apart.";
+    tell = "You'd be the person still at the table when the lights come up.";
+  } else if (appetite < 0.32 && image < 0.38) {
+    title = "Soft Alarm";
+    line = "You pick the version you can live next to, even if the room hates it.";
+    read =
+      "You don't chase heat or a look. You pick the quiet cost and hope it doesn't follow you home. It usually does.";
+    tell = "You'd be the person who remembers the night more clearly than anyone who performed it.";
+  } else if (appetite > 0.52 && image < 0.38) {
+    title = "Private Appetite";
+    line = "You take the heat live and argue with the edit later.";
+    read =
+      "You go toward what you want and keep the receipts off the internet. Private doesn't mean clean.";
+    tell = "You'd be the person with no posts and a very specific reputation.";
+  } else if (image > 0.55 && stay < 0.4) {
+    title = "Main Character";
+    line = "You'd rather look intact than feel clean.";
+    read =
+      "You want the frame, not the lease. You look like a story. You don't always stay for the ending.";
+    tell = "You'd be the person everyone thinks they know from one clip.";
+  } else if (stay > 0.5 && appetite < 0.4) {
+    title = "House Favorite";
+    line = "You pick the version you can live next to, even if the room hates it.";
+    read =
+      "You pick the livable option. The room calls it boring. You call it a life you can actually occupy.";
+    tell = "You'd be the person they come home to after they finish being interesting.";
+  } else if (appetite > 0.5 && image > 0.45) {
+    title = "Crowd Hazard";
+    line = "You take the heat live and argue with the edit later.";
+    read =
+      "You like being watched a little too much. Appetite plus image is how a room gets loud.";
+    tell = "You'd be the person who turns a dinner into a story by accident, on purpose.";
+  } else if (appetite > 0.48 && stay < 0.45) {
+    title = "Lights Out";
+    line = "You take the heat live and argue with the edit later.";
+    read =
+      "You take the hit now. Later is a problem for later. That's a short fuse with good taste.";
+    tell = "You'd be the person who leaves while the song is still playing.";
+  }
 
-  return { appetite, image, stay, title, line };
+  return { appetite, image, stay, title, line, read, tell };
 }

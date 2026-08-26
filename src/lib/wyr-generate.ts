@@ -126,7 +126,7 @@ export function parseGeneratedPairs(
       topicB,
       aSting:
         String(item.a_sting || item.aSting || "").trim().slice(0, 140) ||
-        `You picked ${topic}. The Floor heard that.`,
+        `You picked ${topic}. That one sticks.`,
       bSting:
         String(item.b_sting || item.bSting || "").trim().slice(0, 140) ||
         `You picked ${topicB}. Lights stay on.`,
@@ -178,7 +178,9 @@ HARD BANS
 Minors. Anyone who could be under 21. Suicide. Self-harm. Real private civilians (celebrities are fine, sparingly). Gore as the joke. Magic powers. Identical sentence structure across the batch.
 
 STINGS
-You are the host. After they pick a side, clock them in 16 words or fewer. Second person. No hashtags. No emoji. Dry, funny, a little mean.
+You are the host. After they pick a side, clock THE CHOICE in 22 words or fewer. Second person. No hashtags. No emoji. Dry, funny, a little mean. Sound like you actually watched what they chose.
+Ban these punchlines forever: auntie, aunt, uncle, potatoes, pass the potatoes, family dinner as the joke, "the Floor heard that", generic "live with it".
+Make the sting specific to that side's actual cost. Name the object, the room, or the consequence from the side itself. A and B must not share a joke.
 
 OUTPUT
 JSON only. No markdown.
@@ -410,4 +412,94 @@ export async function maybeRefillPool(supabase: ServiceClient) {
     });
     return { skipped: true, reason: "error", error: err?.message, count };
   }
+}
+
+export const LAZY_STING =
+  /\bauntie\b|\baunt\b|\buncle\b|potatoes|floor heard that|pass the potatoes/i;
+
+type StingRow = {
+  id: string;
+  a: string;
+  b: string;
+  topic?: string | null;
+  topic_b?: string | null;
+  a_sting?: string | null;
+  b_sting?: string | null;
+  heat?: string | null;
+};
+
+async function rewriteStingBatch(rows: StingRow[]) {
+  const apiKey = process.env.XAI_API_KEY;
+  if (!apiKey) throw new Error("XAI_API_KEY missing");
+  const payload = rows.map((r) => ({
+    id: r.id,
+    a: r.a,
+    b: r.b,
+    heat: r.heat,
+    topic: r.topic,
+    topic_b: r.topic_b,
+  }));
+  const res = await fetch("https://api.x.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "grok-4.3",
+      messages: [
+        {
+          role: "system",
+          content: `Rewrite host stings for The Floor, a late-night 18+ gameshow.
+Each sting clocks THAT side in 22 words or fewer. Second person. Dry, funny, a little mean.
+Ban: auntie, aunt, uncle, potatoes, family dinner as the joke, "the Floor heard that".
+Make each sting specific to that side's actual cost. A and B must not share a joke.
+JSON only: {"stings":[{"id":"...","a_sting":"...","b_sting":"..."}]}`,
+        },
+        { role: "user", content: JSON.stringify(payload) },
+      ],
+      temperature: 0.9,
+      max_tokens: 2200,
+    }),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`STING_REWRITE_FAILED: ${res.status} ${text.slice(0, 200)}`);
+  const data = JSON.parse(text);
+  const content = data.choices?.[0]?.message?.content || "";
+  const parsed = extractJson(content) as any;
+  const list = Array.isArray(parsed) ? parsed : parsed?.stings || [];
+  return list as { id: string; a_sting?: string; b_sting?: string }[];
+}
+
+export async function rewriteBadStings(
+  supabase: ServiceClient,
+  opts?: { all?: boolean; limit?: number }
+) {
+  const { data, error } = await supabase
+    .from("wyr_pairs")
+    .select("id, a, b, topic, topic_b, a_sting, b_sting, heat")
+    .eq("active", true);
+  if (error) throw new Error(error.message);
+  const rows = ((data || []) as StingRow[]).filter((r) => {
+    if (opts?.all) return true;
+    return LAZY_STING.test(r.a_sting || "") || LAZY_STING.test(r.b_sting || "");
+  });
+  const limited = rows.slice(0, Math.min(opts?.limit || 80, rows.length));
+  let updated = 0;
+  for (let i = 0; i < limited.length; i += 10) {
+    const chunk = limited.slice(i, i + 10);
+    const stings = await rewriteStingBatch(chunk);
+    for (const s of stings) {
+      const a = String(s.a_sting || "").trim().slice(0, 160);
+      const b = String(s.b_sting || "").trim().slice(0, 160);
+      if (!s.id || !a || !b) continue;
+      if (LAZY_STING.test(a) || LAZY_STING.test(b)) continue;
+      const { error: upErr } = await supabase
+        .from("wyr_pairs")
+        .update({ a_sting: a, b_sting: b, updated_at: new Date().toISOString() })
+        .eq("id", s.id);
+      if (!upErr) updated += 1;
+    }
+  }
+  return { matched: rows.length, attempted: limited.length, updated };
 }

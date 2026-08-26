@@ -34,6 +34,27 @@ export function WyrTab() {
     load();
   }, []);
 
+  const rewriteStings = async () => {
+    setBusy(true);
+    setFailed(false);
+    try {
+      const res = await fetch("/api/admin/wyr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "rewrite-stings" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.hint || data.error || "Rewrite failed");
+      setMsg(`Rewrote ${data.updated} host lines (${data.matched} matched).`);
+      await load();
+    } catch (err: any) {
+      setFailed(true);
+      setMsg(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const generate = async () => {
     setBusy(true);
     setFailed(false);
@@ -117,14 +138,24 @@ export function WyrTab() {
               </span>
             ))}
         </div>
-        <button
-          type="button"
-          onClick={generate}
-          disabled={busy}
-          className="px-4 py-2.5 rounded-xl text-sm border border-amber-800/50 text-amber-200 disabled:opacity-40"
-        >
-          {busy ? "Generating…" : "Refill 16 from Grok"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={generate}
+            disabled={busy}
+            className="px-4 py-2.5 rounded-xl text-sm border border-amber-800/50 text-amber-200 disabled:opacity-40"
+          >
+            {busy ? "Generating…" : "Refill 16 from Grok"}
+          </button>
+          <button
+            type="button"
+            onClick={rewriteStings}
+            disabled={busy}
+            className="px-4 py-2.5 rounded-xl text-sm border border-neutral-700 text-neutral-200 disabled:opacity-40"
+          >
+            Rewrite lazy stings
+          </button>
+        </div>
         {msg && (
           <p className={`text-xs ${failed ? "text-red-300" : "text-neutral-400"}`}>{msg}</p>
         )}

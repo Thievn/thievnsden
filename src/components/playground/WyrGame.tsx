@@ -125,7 +125,7 @@ export function WyrGame() {
       : null;
 
   const shareCard = async () => {
-    const text = `The Floor stamped me ${score.title}.\n${score.line}\nthievnsden.com/playground/would-you-rather`;
+    const text = `The Floor stamped me ${score.title}.\n${score.line}\n${score.read}\nthievnsden.com/playground/would-you-rather`;
     try {
       if (navigator.share) {
         await navigator.share({
@@ -238,22 +238,15 @@ export function WyrGame() {
 
           {phase === "result" && split && (
             <div className="pt-2 space-y-4">
-              <div
-                className={`floor-crowd ${crowdOn ? "is-on" : ""}`}
-                aria-label="Crowd split"
-              >
-                <div className="floor-crowd-bar">
-                  <div className="floor-crowd-a" style={{ width: crowdOn ? `${pctA}%` : "50%" }} />
-                  <div className="floor-crowd-b" style={{ width: crowdOn ? `${pctB}%` : "50%" }} />
-                </div>
-                <div className="flex justify-between text-[11px] uppercase tracking-[0.18em] text-neutral-500">
-                  <span className="text-rose-300/90 tabular-nums">{pctA} A</span>
-                  <span className="text-neutral-400">
-                    {withCrowd ? "You're with the room" : "You're alone on this"}
-                  </span>
-                  <span className="text-violet-300/90 tabular-nums">{pctB} B</span>
-                </div>
-              </div>
+              <p className={`floor-split ${crowdOn ? "is-on" : ""} text-center text-[11px] uppercase tracking-[0.18em] text-neutral-500`}>
+                <span className="text-rose-300/90 tabular-nums">{pctA} went A</span>
+                <span className="mx-2 text-neutral-600">·</span>
+                <span className="text-neutral-400">
+                  {withCrowd ? "with the room" : "alone on this"}
+                </span>
+                <span className="mx-2 text-neutral-600">·</span>
+                <span className="text-violet-300/90 tabular-nums">{pctB} went B</span>
+              </p>
               {stingOn && sting && (
                 <p className="floor-sting text-center text-sm sm:text-base text-amber-50 italic">
                   “{sting}”
@@ -283,8 +276,14 @@ export function WyrGame() {
           <h2 className="relative den-title-glow text-3xl sm:text-5xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-white to-violet-200 mb-3">
             {score.title}
           </h2>
-          <p className="relative text-base sm:text-lg text-neutral-100 leading-relaxed max-w-md mx-auto mb-8">
+          <p className="relative text-base sm:text-lg text-neutral-100 leading-relaxed max-w-md mx-auto mb-4">
             {score.line}
+          </p>
+          <p className="relative text-sm sm:text-base text-neutral-300 leading-relaxed max-w-md mx-auto mb-3">
+            {score.read}
+          </p>
+          <p className="relative text-sm text-amber-100/90 italic max-w-md mx-auto mb-8">
+            {score.tell}
           </p>
           <div className="relative space-y-4 text-left mb-8">
             {(

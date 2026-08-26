@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { WYR_BANK } from "@/lib/wyr-bank";
 import { pairToRow, rowToPair, DEFAULT_LEAN } from "@/lib/wyr-map";
 import { writeAudit } from "@/lib/audit";
-import { generateAndInsert } from "@/lib/wyr-generate";
+import { generateAndInsert, rewriteBadStings } from "@/lib/wyr-generate";
 
 export const maxDuration = 120;
 
@@ -48,6 +48,18 @@ export async function POST(req: NextRequest) {
       await writeAudit({
         action: "wyr_generate",
         details: `inserted ${result.inserted}`,
+      });
+      return NextResponse.json({ success: true, ...result });
+    }
+
+    if (body.action === "rewrite-stings") {
+      const result = await rewriteBadStings(supabase, {
+        all: Boolean(body.all),
+        limit: Math.min(120, Math.max(8, Number(body.limit) || 80)),
+      });
+      await writeAudit({
+        action: "wyr_rewrite_stings",
+        details: `updated ${result.updated} of ${result.matched}`,
       });
       return NextResponse.json({ success: true, ...result });
     }

@@ -7,30 +7,41 @@ import { maybeRefillPool } from "@/lib/wyr-generate";
 import type { WyrPair } from "@/lib/wyr-data";
 
 export const maxDuration = 30;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   let pool: WyrPair[] = [];
   let source: "db" | "code" = "code";
+  let supabase: ReturnType<typeof createServiceClient> | null = null;
   try {
-    const supabase = createServiceClient();
-    const { data, error } = await supabase
-      .from("wyr_pairs")
-      .select(
-        "id, a, b, heat, packs, a_lean, b_lean, topic, topic_b, a_sting, b_sting, active"
-      )
-      .eq("active", true);
+    supabase = createServiceClient();
+    const { data, error } = await supabase.rpc("wyr_random_pairs", { n: 36 });
 
     if (!error && data?.length) {
       pool = data.map(rowToPair).filter(Boolean) as WyrPair[];
       source = "db";
+    } else {
+      const fallback = await supabase
+        .from("wyr_pairs")
+        .select(
+          "id, a, b, heat, packs, a_lean, b_lean, topic, topic_b, a_sting, b_sting, active"
+        )
+        .eq("active", true)
+        .limit(36);
+      if (fallback.data?.length) {
+        pool = fallback.data.map(rowToPair).filter(Boolean) as WyrPair[];
+        source = "db";
+      }
     }
 
-    try {
-      after(() => {
-        maybeRefillPool(supabase).catch(() => {});
-      });
-    } catch {
-      void maybeRefillPool(supabase);
+    if (supabase) {
+      try {
+        after(() => {
+          maybeRefillPool(supabase!).catch(() => {});
+        });
+      } catch {
+        // refill is optional; never block the deal
+      }
     }
   } catch {
     pool = [];

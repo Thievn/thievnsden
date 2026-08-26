@@ -133,24 +133,8 @@
   color: rgba(253, 230, 138, 0.8);
 }
 
-.floor-crowd { opacity: 0.35; transform: translateY(6px); transition: opacity 0.4s ease, transform 0.4s ease; }
-.floor-crowd.is-on { opacity: 1; transform: none; }
-.floor-crowd-bar {
-  display: flex;
-  height: 10px;
-  overflow: hidden;
-  border-radius: 999px;
-  border: 1px solid #27272a;
-  background: #0a0a0a;
-  margin-bottom: 8px;
-}
-.floor-crowd-a,
-.floor-crowd-b {
-  height: 100%;
-  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.floor-crowd-a { background: linear-gradient(90deg, #e11d48, #fb7185); }
-.floor-crowd-b { background: linear-gradient(90deg, #8b5cf6, #c4b5fd); }
+.floor-split { opacity: 0.4; transition: opacity 0.35s ease; }
+.floor-split.is-on { opacity: 1; }
 
 .floor-sting {
   animation: floorSting 0.45s ease both;

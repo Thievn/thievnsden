@@ -10,6 +10,7 @@ import {
   DEFAULT_GAMING_CONFIG,
 } from "@/lib/gaming-data";
 import { GameCard } from "@/components/gaming/GameCard";
+import { CoverImage } from "@/components/gaming/CoverImage";
 import { DenHero } from "@/components/den/DenHero";
 
 function sectionTitle(id: FilterId | string) {
@@ -123,6 +124,8 @@ export function GamingHub() {
       ? null
       : [{ kind: filter, items: visible }];
 
+  const heroCovers = merged.filter((i) => i.cover).slice(0, 3);
+
   return (
     <div className="home-den relative min-h-[70vh]">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -137,6 +140,35 @@ export function GamingHub() {
           title="What's on the plate."
           accent="No press kits."
           body={`${config.hero_line || "Builds, rants, radar, and whatever is actually eating the hours."} ${currently}`}
+          visual={
+            <div className="relative h-[240px] sm:h-[300px]">
+              {heroCovers.length ? (
+                heroCovers.map((item, i) => (
+                  <div
+                    key={item.id}
+                    className="absolute overflow-hidden rounded-2xl border border-white/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.85)]"
+                    style={{
+                      width: i === 0 ? "68%" : "54%",
+                      height: i === 0 ? "86%" : "70%",
+                      left: i === 0 ? "8%" : i === 1 ? "38%" : "18%",
+                      top: i === 0 ? "6%" : i === 1 ? "22%" : "38%",
+                      transform: `rotate(${[-9, 7, 2][i]}deg)`,
+                      zIndex: i === 0 ? 2 : i === 1 ? 3 : 1,
+                    }}
+                  >
+                    <CoverImage
+                      src={item.cover}
+                      alt={item.title}
+                      className="h-full w-full"
+                      imgClassName="absolute inset-0 w-full h-full object-cover"
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="h-full rounded-2xl bg-gradient-to-br from-violet-700/30 via-fuchsia-950/40 to-rose-900/20 border border-white/10" />
+              )}
+            </div>
+          }
         />
 
         <div className="sticky top-14 z-20 -mx-4 sm:mx-0 px-4 sm:px-0 py-3 mb-8 backdrop-blur-md bg-[#070707]/85">

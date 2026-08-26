@@ -10,6 +10,8 @@ create table if not exists loot_covers (
   updated_at timestamptz default now()
 );
 
+alter table loot_covers enable row level security;
+
 create table if not exists loot_settings (
   id int primary key default 1,
   default_tag text default 'thievnsden-20',

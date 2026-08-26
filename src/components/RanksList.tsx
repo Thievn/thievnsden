@@ -127,7 +127,7 @@ function BoardColumn({
           ref={scrollerRef}
           className={
             scroll
-              ? `h-[min(72vh,760px)] overflow-y-auto overscroll-contain pr-1 space-y-2 ftd-scroll ${
+              ? `h-[min(58dvh,560px)] sm:h-[min(72vh,760px)] overflow-y-auto overscroll-contain pr-1 space-y-2 ftd-scroll min-w-0 ${
                   kind === "cut" ? "ftd-scroll-cut" : ""
                 }`
               : "space-y-2"
@@ -261,7 +261,7 @@ export function RanksList({ compact = false, showHeader = true, scroll = false }
           <h2 className={`${compact ? "text-xl" : "text-2xl sm:text-3xl"} font-semibold text-neutral-50 tracking-tight`}>
             {compact ? "Boards" : "Leaderboard"}
           </h2>
-          <p className="text-neutral-500 text-sm mt-1">
+          <p className="text-neutral-500 text-sm mt-1 px-1">
             {VOTE.like.board} · {VOTE.dislike.board} — own scroll on each side · top 10 in their own colors
           </p>
         </div>

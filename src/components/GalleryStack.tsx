@@ -194,7 +194,7 @@ export function GalleryStack({ compact = false }: Props) {
         </div>
       )}
 
-      <div className={`relative max-w-md mx-auto ${compact ? "" : "px-4 py-8 sm:py-12"}`}>
+      <div className={`relative w-full min-w-0 max-w-md mx-auto ${compact ? "" : "px-4 py-8 sm:py-12"}`}>
         {!compact && (
           <div className="text-center mb-6">
             <p className="text-[11px] uppercase tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 mb-2 font-medium">
@@ -235,7 +235,7 @@ export function GalleryStack({ compact = false }: Props) {
         )}
 
         {!loading && current && rarity && (
-          <div className="relative h-[560px] sm:h-[600px] touch-pan-y">
+          <div className="relative h-[min(62dvh,520px)] sm:h-[600px] touch-pan-y">
             {nextCard && (
               <div className="absolute inset-x-2 top-3 bottom-0 rounded-2xl border border-neutral-800/60 bg-[#0d0d0d] scale-[0.97] opacity-50" />
             )}
@@ -351,11 +351,11 @@ export function GalleryStack({ compact = false }: Props) {
 
         {current && (
           <div className="mt-5 space-y-3">
-            <div className="flex items-stretch justify-center gap-3">
+            <div className="flex items-stretch justify-center gap-2 sm:gap-3 min-w-0">
               <button
                 onClick={() => vote(-1)}
                 disabled={busy}
-                className="group flex-1 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-slate-600/50 bg-gradient-to-b from-[#1a1518] via-[#121014] to-[#0c0c0c] text-slate-100 shadow-[0_0_24px_-4px_rgba(148,163,184,0.28)] hover:shadow-[0_0_28px_-2px_rgba(248,113,113,0.35)] hover:border-red-700/50 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
+                className="group flex-1 min-w-0 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-slate-600/50 bg-gradient-to-b from-[#1a1518] via-[#121014] to-[#0c0c0c] text-slate-100 shadow-[0_0_24px_-4px_rgba(148,163,184,0.28)] hover:shadow-[0_0_28px_-2px_rgba(248,113,113,0.35)] hover:border-red-700/50 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
               >
                 <span className="text-[14px] font-bold tracking-[0.12em] uppercase">{VOTE.dislike.verb}</span>
                 <span className="text-[10px] text-slate-500 mt-0.5">{VOTE.dislike.hint}</span>
@@ -364,7 +364,7 @@ export function GalleryStack({ compact = false }: Props) {
               <button
                 onClick={() => skip("right")}
                 disabled={busy}
-                className="px-4 min-h-[44px] self-center rounded-full border border-neutral-800 text-[11px] text-neutral-500 hover:text-neutral-300 hover:border-neutral-600 disabled:opacity-40 transition-all"
+                className="px-3 sm:px-4 min-h-[44px] shrink-0 self-center rounded-full border border-neutral-800 text-[11px] text-neutral-500 hover:text-neutral-300 hover:border-neutral-600 disabled:opacity-40 transition-all"
               >
                 Skip
               </button>
@@ -372,7 +372,7 @@ export function GalleryStack({ compact = false }: Props) {
               <button
                 onClick={() => vote(1)}
                 disabled={busy}
-                className="group flex-1 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-rose-700/50 bg-gradient-to-b from-[#2a0a14] via-[#1a080e] to-[#0c0c0c] text-rose-100 shadow-[0_0_24px_-4px_rgba(244,63,94,0.45)] hover:shadow-[0_0_28px_-2px_rgba(244,63,94,0.55)] hover:border-rose-500/60 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
+                className="group flex-1 min-w-0 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-rose-700/50 bg-gradient-to-b from-[#2a0a14] via-[#1a080e] to-[#0c0c0c] text-rose-100 shadow-[0_0_24px_-4px_rgba(244,63,94,0.45)] hover:shadow-[0_0_28px_-2px_rgba(244,63,94,0.55)] hover:border-rose-500/60 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
               >
                 <span className="text-[14px] font-bold tracking-[0.12em] uppercase">{VOTE.like.verb}</span>
                 <span className="text-[10px] text-rose-300/70 mt-0.5">{VOTE.like.hint}</span>

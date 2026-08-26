@@ -20,6 +20,54 @@
   from { opacity: 0; transform: translateY(14px) scale(0.98); }
   to { opacity: 1; transform: none; }
 }
+@keyframes ftdRise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ftdPop {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ftdDropGlow {
+  0%, 100% {
+    border-color: rgba(64, 64, 64, 0.9);
+    box-shadow: inset 0 0 0 1px rgba(185, 28, 92, 0.08), 0 0 22px -14px rgba(244, 63, 94, 0.45);
+  }
+  50% {
+    border-color: rgba(185, 28, 92, 0.4);
+    box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.32), 0 0 28px -10px rgba(168, 85, 247, 0.5);
+  }
+}
+@keyframes ftdIconBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.ftd-shell {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+.ftd-studio {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.ftd-rail {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(225, 29, 72, 0.45) transparent;
+}
+.ftd-rail::-webkit-scrollbar { height: 4px; }
+.ftd-rail::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, rgba(244, 63, 94, 0.7), rgba(147, 51, 234, 0.65));
+  border-radius: 99px;
+}
 
 .ftd-orb {
   position: absolute;
@@ -42,6 +90,30 @@
   animation: ftdDriftA 16s ease-in-out infinite reverse;
 }
 .ftd-card { animation: ftdCardIn 0.42s ease both; }
+.ftd-rise { animation: ftdRise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ftd-pop { animation: ftdPop 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.ftd-delay-1 { animation-delay: 0.05s; }
+.ftd-delay-2 { animation-delay: 0.1s; }
+.ftd-delay-3 { animation-delay: 0.16s; }
+.ftd-delay-4 { animation-delay: 0.22s; }
+.ftd-delay-5 { animation-delay: 0.28s; }
+.ftd-drop {
+  animation: ftdDropGlow 3.2s ease-in-out infinite, ftdPop 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.ftd-drop .ftd-drop-icon {
+  animation: ftdIconBob 2.4s ease-in-out infinite;
+}
+@keyframes ftdDice {
+  0% { transform: rotate(0deg) scale(1); }
+  35% { transform: rotate(-8deg) scale(1.04); }
+  70% { transform: rotate(8deg) scale(1.04); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+.ftd-dice-go { animation: ftdDice 0.42s ease; }
+.ftd-tap {
+  transition: transform 0.16s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+.ftd-tap:active { transform: scale(0.97); }
 .ftd-scan {
   position: absolute;
   inset-x: 0;
@@ -88,9 +160,43 @@
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.35);
+  transition: border-color 0.2s ease, color 0.2s ease, transform 0.16s ease, box-shadow 0.2s ease;
 }
+.ftd-info:active { transform: scale(0.92); }
 .ftd-info:hover,
 .ftd-info[aria-expanded="true"] {
   border-color: rgba(244, 63, 94, 0.7);
   color: white;
+  box-shadow: 0 0 16px -4px rgba(244, 63, 94, 0.7);
+}
+
+@media (max-width: 640px) {
+  .ftd-orb-a, .ftd-orb-b, .ftd-orb-c {
+    width: 12rem;
+    height: 12rem;
+    filter: blur(36px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ftd-orb-a,
+  .ftd-orb-b,
+  .ftd-orb-c,
+  .ftd-card,
+  .ftd-rise,
+  .ftd-pop,
+  .ftd-drop,
+  .ftd-drop .ftd-drop-icon,
+  .ftd-scan,
+  .ftd-scan-glow,
+  .ftd-dice-go {
+    animation: none !important;
+  }
+  .ftd-rise,
+  .ftd-pop,
+  .ftd-drop,
+  .ftd-card {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }

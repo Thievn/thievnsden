@@ -50,6 +50,7 @@ export function DenChips({
       <DenField label={label} hint={hint} />
       <div
         className={cx(
+          "w-full min-w-0",
           variant === "chip" && "flex flex-wrap gap-2",
           variant === "card" && "grid grid-cols-2 sm:grid-cols-3 gap-2",
           variant === "heat" && "grid grid-cols-2 sm:grid-cols-4 gap-2",
@@ -65,14 +66,14 @@ export function DenChips({
                 aria-pressed={selected}
                 onClick={() => onChange(opt.id)}
                 className={cx(
-                  "relative overflow-hidden rounded-2xl border px-3 py-3 text-left transition-all bg-gradient-to-br",
+                  "ftd-tap relative overflow-hidden rounded-2xl border px-2.5 sm:px-3 py-3 text-left bg-gradient-to-br min-w-0",
                   opt.wash || "from-white/5 to-black/40",
                   selected ? SELECTED : IDLE,
                 )}
               >
                 <span className="text-lg leading-none">{opt.emoji || "•"}</span>
                 <span className="mt-1.5 block text-[13px] font-medium tracking-tight">{opt.label}</span>
-                {opt.desc ? <span className="mt-0.5 block text-[11px] text-white/55 leading-snug">{opt.desc}</span> : null}
+                {opt.desc ? <span className="mt-0.5 block text-[11px] text-white/55 leading-snug break-words">{opt.desc}</span> : null}
               </button>
             );
           }
@@ -83,11 +84,11 @@ export function DenChips({
                 type="button"
                 aria-pressed={selected}
                 onClick={() => onChange(opt.id)}
-                className={cx("rounded-2xl border px-3 py-3 text-left transition-all", selected ? SELECTED : IDLE)}
+                className={cx("ftd-tap rounded-2xl border px-2.5 sm:px-3 py-3 text-left min-w-0", selected ? SELECTED : IDLE)}
               >
                 <span className="text-base">{opt.emoji}</span>
                 <span className="mt-1 block text-[13px] font-medium">{opt.label}</span>
-                {opt.desc ? <span className="mt-0.5 block text-[11px] text-neutral-500">{opt.desc}</span> : null}
+                {opt.desc ? <span className="mt-0.5 block text-[11px] text-neutral-500 break-words">{opt.desc}</span> : null}
               </button>
             );
           }
@@ -98,7 +99,7 @@ export function DenChips({
               aria-pressed={selected}
               onClick={() => onChange(opt.id)}
               className={cx(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[13px] transition-all",
+                "ftd-tap inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[13px]",
                 selected ? SELECTED : IDLE,
               )}
             >

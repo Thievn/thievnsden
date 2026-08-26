@@ -302,21 +302,21 @@ export function FaceStudio({
   const showFilth = needsFilth(draft);
 
   return (
-    <div className="grid lg:grid-cols-[minmax(280px,400px)_minmax(0,1fr)] gap-5 lg:gap-7 items-start">
-      <div className={`relative rounded-[1.6rem] p-[1px] ${stage === "judging" ? "den-panel-judging" : "den-panel"}`}>
+    <div className="ftd-studio grid grid-cols-1 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] gap-5 lg:gap-7 items-start">
+      <div className={`relative w-full min-w-0 rounded-[1.6rem] p-[1px] ${stage === "judging" ? "den-panel-judging" : "den-panel"}`}>
         <div className="absolute inset-0 rounded-[1.6rem] den-border-glow opacity-55" />
-        <div className="relative rounded-[1.55rem] bg-[#0d0d0d]/95 overflow-hidden border border-neutral-800/70 min-h-[420px] flex flex-col">
+        <div className="relative rounded-[1.55rem] bg-[#0d0d0d]/95 overflow-hidden border border-neutral-800/70 min-h-[380px] sm:min-h-[420px] flex flex-col">
           {locked && !cameraActive && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#0a0708]/88 backdrop-blur-[2px] p-6 text-center">
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#0a0708]/88 backdrop-blur-[2px] p-5 sm:p-6 text-center">
               <p className="text-sm font-medium text-neutral-100">You need an account to face the Den.</p>
               <p className="text-[12px] text-neutral-500 mt-2 max-w-xs leading-relaxed">
                 Sign in, drop a photo, pick a voice, and let it talk. Gallery Marks and Cuts also need an account.
               </p>
-              <div className="mt-5 flex gap-2">
-                <Link href={LOGIN} className="px-4 py-2.5 rounded-xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white text-sm font-medium">
+              <div className="mt-5 flex flex-wrap justify-center gap-2">
+                <Link href={LOGIN} className="ftd-tap px-4 py-2.5 rounded-xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white text-sm font-medium">
                   Log in
                 </Link>
-                <Link href={JOIN} className="px-4 py-2.5 rounded-xl border border-white/15 text-neutral-200 text-sm">
+                <Link href={JOIN} className="ftd-tap px-4 py-2.5 rounded-xl border border-white/15 text-neutral-200 text-sm">
                   Join
                 </Link>
               </div>
@@ -328,11 +328,11 @@ export function FaceStudio({
               <div className="relative aspect-square rounded-2xl overflow-hidden border border-neutral-800 bg-black">
                 <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover scale-x-[-1]" />
               </div>
-              <div className="flex gap-3 mt-4 justify-center">
-                <button type="button" onClick={captureSelfie} className="px-6 py-3 rounded-xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white text-sm font-medium">
+              <div className="flex flex-wrap gap-3 mt-4 justify-center">
+                <button type="button" onClick={captureSelfie} className="ftd-tap px-6 py-3 rounded-xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white text-sm font-medium">
                   Capture
                 </button>
-                <button type="button" onClick={stopCamera} className="px-6 py-3 rounded-xl border border-neutral-700 text-neutral-400 text-sm">
+                <button type="button" onClick={stopCamera} className="ftd-tap px-6 py-3 rounded-xl border border-neutral-700 text-neutral-400 text-sm">
                   Cancel
                 </button>
               </div>
@@ -340,15 +340,15 @@ export function FaceStudio({
           )}
 
           {!cameraActive && (stage === "idle" || !image) && (
-            <div className="p-5 sm:p-6 flex-1 flex flex-col">
-              <div className="grid grid-cols-2 gap-3 flex-1">
+            <div className="p-4 sm:p-6 flex-1 flex flex-col min-w-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 min-w-0">
                 <button
                   type="button"
                   disabled={locked}
                   onClick={() => fileRef.current?.click()}
-                  className="invite-pulse group flex flex-col items-center justify-center gap-2 min-h-[150px] p-4 rounded-2xl border border-dashed border-neutral-700 hover:border-red-800/60 hover:bg-red-950/15 transition-all disabled:opacity-40"
+                  className="ftd-drop ftd-tap group flex flex-col items-center justify-center gap-2 min-h-[132px] sm:min-h-[150px] w-full min-w-0 p-4 rounded-2xl border border-dashed border-neutral-700 hover:border-red-800/60 hover:bg-red-950/15 disabled:opacity-40"
                 >
-                  <span className="w-10 h-10 rounded-full border border-neutral-700 group-hover:border-red-800/50 flex items-center justify-center text-neutral-500 group-hover:text-red-300">
+                  <span className="ftd-drop-icon w-10 h-10 rounded-full border border-neutral-700 group-hover:border-red-800/50 flex items-center justify-center text-neutral-500 group-hover:text-red-300">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -360,9 +360,9 @@ export function FaceStudio({
                   type="button"
                   disabled={locked}
                   onClick={startCamera}
-                  className="invite-pulse group flex flex-col items-center justify-center gap-2 min-h-[150px] p-4 rounded-2xl border border-dashed border-neutral-700 hover:border-purple-800/60 hover:bg-purple-950/15 transition-all disabled:opacity-40"
+                  className="ftd-drop ftd-tap group flex flex-col items-center justify-center gap-2 min-h-[132px] sm:min-h-[150px] w-full min-w-0 p-4 rounded-2xl border border-dashed border-neutral-700 hover:border-purple-800/60 hover:bg-purple-950/15 disabled:opacity-40 ftd-delay-2"
                 >
-                  <span className="w-10 h-10 rounded-full border border-neutral-700 group-hover:border-purple-800/50 flex items-center justify-center text-neutral-500 group-hover:text-purple-300">
+                  <span className="ftd-drop-icon w-10 h-10 rounded-full border border-neutral-700 group-hover:border-purple-800/50 flex items-center justify-center text-neutral-500 group-hover:text-purple-300">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -373,16 +373,21 @@ export function FaceStudio({
                 </button>
               </div>
               <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
-              <div className="mt-5 grid grid-cols-3 gap-2">
+              <div className="mt-4 sm:mt-5 grid grid-cols-3 gap-1.5 sm:gap-2 min-w-0">
                 {[
                   { n: "1", t: "Photo", d: "Drop or shoot" },
                   { n: "2", t: "Voice", d: "How it talks" },
                   { n: "3", t: "Face it", d: "Read + climb" },
-                ].map((s) => (
-                  <div key={s.n} className="rounded-xl border border-neutral-800/80 bg-black/40 px-2 py-3 text-center">
+                ].map((s, i) => (
+                  <div
+                    key={s.n}
+                    className={`ftd-pop min-w-0 rounded-xl border border-neutral-800/80 bg-black/40 px-1.5 sm:px-2 py-3 text-center ${
+                      i === 1 ? "ftd-delay-3" : i === 2 ? "ftd-delay-4" : "ftd-delay-2"
+                    }`}
+                  >
                     <div className="text-[11px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400">{s.n}</div>
-                    <div className="text-xs font-medium text-neutral-200">{s.t}</div>
-                    <div className="text-[10px] text-neutral-600 mt-0.5">{s.d}</div>
+                    <div className="text-[11px] sm:text-xs font-medium text-neutral-200">{s.t}</div>
+                    <div className="text-[9px] sm:text-[10px] text-neutral-600 mt-0.5 leading-tight">{s.d}</div>
                   </div>
                 ))}
               </div>
@@ -400,7 +405,7 @@ export function FaceStudio({
                 type="button"
                 onClick={() => judge(false)}
                 disabled={loading || locked}
-                className="mt-4 w-full py-3.5 rounded-2xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white font-semibold text-sm disabled:opacity-60 shadow-[0_0_32px_-8px_rgba(244,63,94,0.65)]"
+                className="ftd-tap mt-4 w-full py-3.5 rounded-2xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white font-semibold text-sm disabled:opacity-60 shadow-[0_0_32px_-8px_rgba(244,63,94,0.65)]"
               >
                 Face The Den
               </button>
@@ -442,13 +447,13 @@ export function FaceStudio({
               </div>
 
               <div className="flex flex-wrap gap-2 justify-center">
-                <button type="button" onClick={() => judge(true)} disabled={loading} className="px-3 py-1.5 rounded-lg border border-neutral-800 text-xs text-neutral-300">
+                <button type="button" onClick={() => judge(true)} disabled={loading} className="ftd-tap px-3 py-1.5 rounded-lg border border-neutral-800 text-xs text-neutral-300">
                   Go harder
                 </button>
-                <button type="button" onClick={() => judge(false)} disabled={loading} className="px-3 py-1.5 rounded-lg border border-neutral-800 text-xs text-neutral-300">
+                <button type="button" onClick={() => judge(false)} disabled={loading} className="ftd-tap px-3 py-1.5 rounded-lg border border-neutral-800 text-xs text-neutral-300">
                   Reroll
                 </button>
-                <button type="button" onClick={copyVerdict} className="px-3 py-1.5 rounded-lg border border-neutral-800 text-xs text-neutral-300">
+                <button type="button" onClick={copyVerdict} className="ftd-tap px-3 py-1.5 rounded-lg border border-neutral-800 text-xs text-neutral-300">
                   {copied ? "Copied" : "Copy roast"}
                 </button>
               </div>
@@ -478,7 +483,7 @@ export function FaceStudio({
                     type="button"
                     onClick={() => saveJudgment(false)}
                     disabled={!!saving}
-                    className="py-2.5 rounded-xl border border-neutral-800 text-neutral-300 text-sm disabled:opacity-60"
+                    className="ftd-tap py-2.5 rounded-xl border border-neutral-800 text-neutral-300 text-sm disabled:opacity-60"
                   >
                     {saving === "private" ? "Saving…" : "Keep private"}
                   </button>
@@ -486,7 +491,7 @@ export function FaceStudio({
                     type="button"
                     onClick={() => saveJudgment(true)}
                     disabled={!!saving}
-                    className="py-2.5 rounded-xl border border-purple-800/50 text-purple-200 text-sm disabled:opacity-60"
+                    className="ftd-tap py-2.5 rounded-xl border border-purple-800/50 text-purple-200 text-sm disabled:opacity-60"
                   >
                     {saving === "public" ? "Posting…" : "Post to stack"}
                   </button>
@@ -503,11 +508,11 @@ export function FaceStudio({
                     setSaved(null);
                     setSavedId(null);
                   }}
-                  className="flex-1 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 text-sm"
+                  className="ftd-tap flex-1 min-w-0 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 text-sm"
                 >
                   Change options
                 </button>
-                <button type="button" onClick={reset} className="flex-1 py-2.5 rounded-xl text-neutral-500 text-sm">
+                <button type="button" onClick={reset} className="ftd-tap flex-1 min-w-0 py-2.5 rounded-xl text-neutral-500 text-sm">
                   New photo
                 </button>
               </div>
@@ -516,12 +521,12 @@ export function FaceStudio({
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="space-y-4 w-full min-w-0">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
           <button
             type="button"
             onClick={surprise}
-            className={`px-4 py-2 rounded-full border border-amber-300/40 bg-amber-950/30 text-[13px] text-amber-100 ${shaking ? "ai-dice-go" : ""}`}
+            className={`ftd-tap px-4 py-2 rounded-full border border-amber-300/40 bg-amber-950/30 text-[13px] text-amber-100 ${shaking ? "ftd-dice-go" : ""}`}
           >
             Surprise me
           </button>
@@ -530,7 +535,7 @@ export function FaceStudio({
               key={p.id}
               type="button"
               onClick={() => setPanel(p.id)}
-              className={`px-3.5 py-2 rounded-full border text-[13px] transition-all ${
+              className={`ftd-tap px-3.5 py-2 rounded-full border text-[13px] ${
                 panel === p.id
                   ? "border-rose-300/70 bg-rose-950/60 text-white"
                   : "border-white/10 bg-black/30 text-neutral-400 hover:text-white"
@@ -541,7 +546,7 @@ export function FaceStudio({
           ))}
         </div>
 
-        <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 snap-x">
+        <div className="ftd-rail flex gap-3 pb-1 snap-x snap-mandatory">
           {PRESETS.map((p) => (
             <button
               key={p.id}
@@ -550,7 +555,7 @@ export function FaceStudio({
                 onDraft((d) => applyPreset(d, p));
                 setPanel("voice");
               }}
-              className={`snap-start shrink-0 w-[10.5rem] rounded-2xl border border-white/10 bg-gradient-to-br ${p.wash} p-3 text-left`}
+              className={`ftd-tap snap-start shrink-0 w-[9.5rem] sm:w-[10.5rem] rounded-2xl border border-white/10 bg-gradient-to-br ${p.wash} p-3 text-left`}
             >
               <span className="text-lg">{p.emoji}</span>
               <span className="mt-1 block text-[13px] font-medium text-white">{p.label}</span>
@@ -559,7 +564,7 @@ export function FaceStudio({
           ))}
         </div>
 
-        <div className="rounded-[1.6rem] border border-white/10 bg-black/45 backdrop-blur-sm p-4 sm:p-5 space-y-5 ftd-card">
+        <div className="rounded-[1.6rem] border border-white/10 bg-black/45 backdrop-blur-sm p-3.5 sm:p-5 space-y-5 ftd-card w-full min-w-0">
           {panel === "voice" && (
             <>
               <DenChips label="Voice" hint="How the Den talks." options={STYLES} value={draft.style} onChange={(id) => set("style", id as Style)} variant="card" />
@@ -586,14 +591,14 @@ export function FaceStudio({
                   value={draft.note}
                   onChange={(e) => set("note", e.target.value.slice(0, 160))}
                   placeholder="Go after the hair. Don’t mention the room."
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm text-neutral-200 placeholder:text-neutral-600"
+                  className="w-full min-w-0 px-3 py-2.5 rounded-xl bg-[#0b0b0b] border border-neutral-800 text-sm text-neutral-200 placeholder:text-neutral-600"
                 />
               </div>
             </>
           )}
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 min-w-0">
           {chips.map((c) => (
             <span key={c} className="px-2 py-0.5 rounded-full bg-rose-950/40 border border-rose-900/40 text-[10px] text-rose-100">
               {c}

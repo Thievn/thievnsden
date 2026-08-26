@@ -42,3 +42,19 @@ create index if not exists used_usernames_user_id_idx on public.used_usernames (
 ```
 
 `used_usernames` keeps handles reserved after a house account is deleted so names don’t recycle.
+
+Also mark leftover Auth house emails:
+
+```sql
+update public.profiles p
+set is_demo = true
+from auth.users u
+where u.id = p.id
+  and p.is_demo = false
+  and (
+    u.email ilike 'demo+%'
+    or u.email ilike 'house+%'
+    or coalesce(u.raw_user_meta_data->>'is_demo','') in ('true','t')
+    or coalesce(u.raw_app_meta_data->>'is_demo','') in ('true','t')
+  );
+```

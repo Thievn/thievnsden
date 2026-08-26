@@ -111,14 +111,32 @@ export function isHouseDefault(text: string) {
   });
 }
 
-export function thoughtGist(post: string, seed = "") {
-  const raw = [post, seed].filter(Boolean).join("\n");
+export function thoughtGist(post: string, extra = "") {
+  const raw = [post, extra].filter(Boolean).join("\n");
   const lines = raw
     .split(/\n+/)
     .map((line) => line.trim())
     .filter(Boolean)
     .filter((line) => !/^(link in bio|more in the den|written in the den)\b/i.test(line));
-  return lines.join(" ").replace(/\s+/g, " ").trim().slice(0, 420);
+  return lines.join(" ").replace(/\s+/g, " ").trim().slice(0, 900);
+}
+
+export function guidedArt(art: XThoughtArt, guide: string): XThoughtArt {
+  const clean = guide.trim();
+  if (!clean) return art;
+  return {
+    ...art,
+    composition: {
+      id: "guide",
+      label: "Your scene",
+      line: "follow the user's scene exactly; do not swap in a different location, object, or story",
+    },
+    twist: {
+      id: "none",
+      label: "No extra twist",
+      line: "no extra surreal twist unless the user asked for it in the scene guide",
+    },
+  };
 }
 
 export function rollXThoughtArt(rng: () => number = Math.random): XThoughtArt {
@@ -131,16 +149,29 @@ export function rollXThoughtArt(rng: () => number = Math.random): XThoughtArt {
   };
 }
 
-export function artLabel(art: XThoughtArt) {
-  return `${art.style.label} · ${art.composition.label}`;
+export function artLabel(art: XThoughtArt, guide = "") {
+  const mix = `${art.style.label} · ${art.composition.label}`;
+  const hint = guide.trim();
+  return hint ? `${mix} · ${hint.slice(0, 80)}` : mix;
 }
 
 export function localScene(input: {
   gist: string;
   topic?: string;
+  guide?: string;
   art: XThoughtArt;
 }) {
   const gist = input.gist || input.topic || "a human thought that will not sit still";
+  const guide = input.guide?.trim();
+  if (guide) {
+    return [
+      `Draw this scene, exactly: ${guide}.`,
+      `It has to illustrate this writing, not a different story: "${gist}".`,
+      `Lighting: ${input.art.light.line}.`,
+      `Palette: ${input.art.palette.line}.`,
+      "Keep the user's objects and place. Do not invent a house interior.",
+    ].join(" ");
+  }
   return [
     `Invent a specific scene that illustrates this writing: "${gist}".`,
     input.topic ? `Topic flavor, not the whole picture: ${input.topic}.` : "",
@@ -157,11 +188,13 @@ export function localScene(input: {
 export function directorMessages(input: {
   gist: string;
   topic?: string;
+  guide?: string;
   art: XThoughtArt;
   aspect: "16:9" | "9:16";
 }) {
   const shape = input.aspect === "9:16" ? "tall 9:16 phone frame" : "wide 16:9 landscape";
-  const system = `You are an art director for X images. You invent ONE original picture that illustrates a specific post.
+  const guide = input.guide?.trim();
+  const system = `You are an art director for X images. You write ONE original picture prompt that illustrates a specific post.
 Return a single image-generation prompt, 70 to 110 words, one paragraph, no quotes, no markdown.
 The picture must be about the writing, not a generic moody portrait.
 Required medium: ${input.art.style.line}.
@@ -170,13 +203,17 @@ Required light: ${input.art.light.line}.
 Required palette: ${input.art.palette.line}.
 Required twist: ${input.art.twist.line}.
 Frame: ${shape}.
+${guide ? "The user's scene guide is law. Use their objects and place. Do not replace them with a different metaphor." : ""}
 ${HOUSE_BAN}
 Adult-ok, not pornographic. No logos, no readable text, no UI, no watermarks.`;
 
   const user = [
     input.topic ? `Topic: ${input.topic}` : "",
+    guide ? `Scene guide (must follow):\n${guide}` : "",
     `Post:\n${input.gist}`,
-    "Invent the scene. Name real objects, places, weather, or bodies. Do not describe furniture in a home.",
+    guide
+      ? "Render the scene guide as the picture of this post. Name the user's objects. Do not invent a different location."
+      : "Invent the scene from the post. Name real objects, places, weather, or bodies from the writing. Do not describe furniture in a home.",
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -189,12 +226,15 @@ export function assembleXThoughtImagePrompt(input: {
   art: XThoughtArt;
   aspect: "16:9" | "9:16";
   gist: string;
+  guide?: string;
 }) {
   const shape = input.aspect === "9:16" ? "tall 9:16 phone portrait" : "wide 16:9 landscape";
   const scene = input.scene.replace(/\s+/g, " ").trim();
+  const guide = input.guide?.trim();
   return [
     `Render strictly as ${input.art.style.line}.`,
     `${shape}, fill the frame edge to edge.`,
+    guide ? `User scene lock: ${guide}.` : "",
     scene,
     `This picture is about: ${input.gist}`,
     `Composition lock: ${input.art.composition.line}.`,
@@ -202,6 +242,7 @@ export function assembleXThoughtImagePrompt(input: {
     HOUSE_BAN,
     "No logos, no readable text, no UI, no watermarks, not a stock smile, not the same indoor room as last time.",
   ]
+    .filter(Boolean)
     .join(" ")
     .replace(/\s+/g, " ")
     .trim();
@@ -221,6 +262,7 @@ export function sanitizeScene(scene: string, fallback: string) {
 export async function inventXThoughtScene(input: {
   gist: string;
   topic?: string;
+  guide?: string;
   art: XThoughtArt;
   aspect: "16:9" | "9:16";
   apiKey: string;
@@ -238,7 +280,7 @@ export async function inventXThoughtScene(input: {
         { role: "system", content: system },
         { role: "user", content: user },
       ],
-      temperature: 1.05,
+      temperature: input.guide?.trim() ? 0.55 : 0.85,
       max_tokens: 220,
     }),
   });

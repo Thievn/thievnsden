@@ -123,6 +123,8 @@ export function XThoughtsTab() {
   const [id, setId] = useState("");
   const [image, setImage] = useState("");
   const [look, setLook] = useState("");
+  const [scene, setScene] = useState("");
+  const [picGuide, setPicGuide] = useState("");
   const [aspect, setAspect] = useState<"16:9" | "9:16">("16:9");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState("");
@@ -183,6 +185,7 @@ export function XThoughtsTab() {
     setPost("");
     setImage("");
     setLook("");
+    setScene("");
     setHits([]);
     setPostedUrl("");
     setFromSlug("");
@@ -222,23 +225,25 @@ export function XThoughtsTab() {
   };
 
   const makeImage = async () => {
-    if (!post && !recipe.seed) {
-      setMsg("Draft first, then make the pic.");
+    if (!post && !recipe.seed && !picGuide) {
+      setMsg("Draft first, or write what the still should show.");
       return;
     }
     setBusy("pic");
     setLook("");
+    setScene("");
     setMsg("");
     try {
       const res = await fetch("/api/admin/x-thoughts/image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: recipe.topic, post, seed: recipe.seed, aspect }),
+        body: JSON.stringify({ topic: recipe.topic, post, seed: recipe.seed, guide: picGuide, aspect }),
       });
       const data = await readJson(res);
       if (!res.ok) throw new Error(data.error || "Image failed");
       setImage(data.image || "");
       setLook(data.look || data.style || "");
+      setScene(data.scene || "");
     } catch (err: any) {
       setMsg(err.message);
     } finally {
@@ -461,10 +466,20 @@ export function XThoughtsTab() {
           <button type="button" className={tweak} disabled={locked || !post} onClick={() => run("shorter")}>Shorter</button>
           <button type="button" className={tweak} disabled={locked || !post} onClick={() => run("longer")}>Longer</button>
         </div>
+        <div className="space-y-2">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-sky-200/70">Pic direction</p>
+          <textarea
+            value={picGuide}
+            onChange={(e) => setPicGuide(e.target.value)}
+            rows={2}
+            className={field}
+            placeholder="What the still should show — phones face-down in rain, a blank group chat, no people. Leave empty and it still follows the draft."
+          />
+        </div>
         <div className="flex flex-wrap gap-2 items-center">
           <button type="button" onClick={() => setAspect("16:9")} className={`${tweak} ${aspect === "16:9" ? "border-sky-400 text-sky-100" : ""}`}>16:9</button>
           <button type="button" onClick={() => setAspect("9:16")} className={`${tweak} ${aspect === "9:16" ? "border-sky-400 text-sky-100" : ""}`}>9:16</button>
-          <button type="button" onClick={makeImage} disabled={locked || (!post && !recipe.seed)} className="px-3 py-2 rounded-lg bg-sky-400 text-black text-xs font-semibold disabled:opacity-40">
+          <button type="button" onClick={makeImage} disabled={locked || (!post && !recipe.seed && !picGuide)} className="px-3 py-2 rounded-lg bg-sky-400 text-black text-xs font-semibold disabled:opacity-40">
             {busy === "pic" ? "Making…" : image ? "New pic" : "Make pic"}
           </button>
           <button type="button" onClick={copy} disabled={!post} className="ml-auto px-4 py-2 rounded-lg bg-neutral-100 text-black text-xs font-medium">Copy</button>
@@ -505,6 +520,7 @@ export function XThoughtsTab() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={image} alt="" className={`rounded-xl border border-neutral-800 object-cover ${frame}`} />
             {look ? <p className="text-[11px] text-neutral-500">{look}</p> : null}
+            {scene ? <p className="text-[11px] text-neutral-600 line-clamp-3">{scene}</p> : null}
             <button type="button" onClick={downloadPic} className="w-full py-2.5 rounded-xl text-sm border border-neutral-700 text-neutral-100">
               Download for X
             </button>

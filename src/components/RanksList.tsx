@@ -27,32 +27,32 @@ type Props = {
 
 type BoardKind = "mark" | "cut";
 
-type RankPaint = { bg: string; color: string; row: string; thumb: string };
+type RankPaint = { bg: string; color: string; accent: string; row: string; thumb: string };
 
 const MARK_TOP: RankPaint[] = [
-  { bg: "linear-gradient(135deg,#fbbf24,#ea580c)", color: "#111", row: "border-amber-400/70 bg-gradient-to-r from-amber-950/50 via-[#111] to-[#111]", thumb: "border-amber-400/50" },
-  { bg: "linear-gradient(135deg,#fb7185,#be123c)", color: "#fff", row: "border-rose-400/70 bg-gradient-to-r from-rose-950/45 via-[#111] to-[#111]", thumb: "border-rose-400/50" },
-  { bg: "linear-gradient(135deg,#c084fc,#6d28d9)", color: "#fff", row: "border-fuchsia-400/70 bg-gradient-to-r from-fuchsia-950/45 via-[#111] to-[#111]", thumb: "border-fuchsia-400/50" },
-  { bg: "#0ea5e9", color: "#04151c", row: "border-sky-500/50 bg-gradient-to-r from-sky-950/40 via-[#111] to-[#111]", thumb: "border-sky-500/40" },
-  { bg: "#22c55e", color: "#052e16", row: "border-green-500/50 bg-gradient-to-r from-green-950/35 via-[#111] to-[#111]", thumb: "border-green-500/40" },
-  { bg: "#eab308", color: "#1c1403", row: "border-yellow-500/50 bg-gradient-to-r from-yellow-950/35 via-[#111] to-[#111]", thumb: "border-yellow-500/40" },
-  { bg: "#f97316", color: "#fff", row: "border-orange-500/50 bg-gradient-to-r from-orange-950/40 via-[#111] to-[#111]", thumb: "border-orange-500/40" },
-  { bg: "#ec4899", color: "#fff", row: "border-pink-500/50 bg-gradient-to-r from-pink-950/40 via-[#111] to-[#111]", thumb: "border-pink-500/40" },
-  { bg: "#6366f1", color: "#fff", row: "border-indigo-500/50 bg-gradient-to-r from-indigo-950/40 via-[#111] to-[#111]", thumb: "border-indigo-500/40" },
-  { bg: "#94a3b8", color: "#0b1220", row: "border-slate-400/40 bg-gradient-to-r from-slate-800/40 via-[#111] to-[#111]", thumb: "border-slate-400/40" },
+  { bg: "linear-gradient(135deg,#fbbf24,#ea580c)", color: "#111", accent: "#fbbf24", row: "border-amber-400/70 bg-gradient-to-r from-amber-950/50 via-[#111] to-[#111]", thumb: "border-amber-400/50" },
+  { bg: "linear-gradient(135deg,#fb7185,#be123c)", color: "#fff", accent: "#fb7185", row: "border-rose-400/70 bg-gradient-to-r from-rose-950/45 via-[#111] to-[#111]", thumb: "border-rose-400/50" },
+  { bg: "linear-gradient(135deg,#c084fc,#6d28d9)", color: "#fff", accent: "#c084fc", row: "border-fuchsia-400/70 bg-gradient-to-r from-fuchsia-950/45 via-[#111] to-[#111]", thumb: "border-fuchsia-400/50" },
+  { bg: "#0ea5e9", color: "#04151c", accent: "#0ea5e9", row: "border-sky-500/50 bg-gradient-to-r from-sky-950/40 via-[#111] to-[#111]", thumb: "border-sky-500/40" },
+  { bg: "#22c55e", color: "#052e16", accent: "#22c55e", row: "border-green-500/50 bg-gradient-to-r from-green-950/35 via-[#111] to-[#111]", thumb: "border-green-500/40" },
+  { bg: "#eab308", color: "#1c1403", accent: "#eab308", row: "border-yellow-500/50 bg-gradient-to-r from-yellow-950/35 via-[#111] to-[#111]", thumb: "border-yellow-500/40" },
+  { bg: "#f97316", color: "#fff", accent: "#f97316", row: "border-orange-500/50 bg-gradient-to-r from-orange-950/40 via-[#111] to-[#111]", thumb: "border-orange-500/40" },
+  { bg: "#ec4899", color: "#fff", accent: "#ec4899", row: "border-pink-500/50 bg-gradient-to-r from-pink-950/40 via-[#111] to-[#111]", thumb: "border-pink-500/40" },
+  { bg: "#6366f1", color: "#fff", accent: "#6366f1", row: "border-indigo-500/50 bg-gradient-to-r from-indigo-950/40 via-[#111] to-[#111]", thumb: "border-indigo-500/40" },
+  { bg: "#94a3b8", color: "#0b1220", accent: "#94a3b8", row: "border-slate-400/40 bg-gradient-to-r from-slate-800/40 via-[#111] to-[#111]", thumb: "border-slate-400/40" },
 ];
 
 const CUT_TOP: RankPaint[] = [
-  { bg: "linear-gradient(135deg,#f87171,#991b1b)", color: "#fff", row: "border-red-400/70 bg-gradient-to-r from-red-950/50 via-[#111] to-[#111]", thumb: "border-red-400/50" },
-  { bg: "linear-gradient(135deg,#e2e8f0,#64748b)", color: "#111", row: "border-slate-300/50 bg-gradient-to-r from-slate-700/40 via-[#111] to-[#111]", thumb: "border-slate-300/40" },
-  { bg: "linear-gradient(135deg,#fb923c,#9a3412)", color: "#fff", row: "border-orange-600/50 bg-gradient-to-r from-orange-950/40 via-[#111] to-[#111]", thumb: "border-orange-600/40" },
-  { bg: "#38bdf8", color: "#082f49", row: "border-sky-400/50 bg-gradient-to-r from-sky-950/40 via-[#111] to-[#111]", thumb: "border-sky-400/40" },
-  { bg: "#a3e635", color: "#1a2e05", row: "border-lime-500/50 bg-gradient-to-r from-lime-950/35 via-[#111] to-[#111]", thumb: "border-lime-500/40" },
-  { bg: "#2dd4bf", color: "#042f2e", row: "border-teal-400/50 bg-gradient-to-r from-teal-950/40 via-[#111] to-[#111]", thumb: "border-teal-400/40" },
-  { bg: "#818cf8", color: "#fff", row: "border-indigo-400/50 bg-gradient-to-r from-indigo-950/40 via-[#111] to-[#111]", thumb: "border-indigo-400/40" },
-  { bg: "#f472b6", color: "#1f0514", row: "border-pink-400/50 bg-gradient-to-r from-pink-950/40 via-[#111] to-[#111]", thumb: "border-pink-400/40" },
-  { bg: "#facc15", color: "#1c1500", row: "border-yellow-400/50 bg-gradient-to-r from-yellow-950/35 via-[#111] to-[#111]", thumb: "border-yellow-400/40" },
-  { bg: "#78716c", color: "#fff", row: "border-stone-500/40 bg-gradient-to-r from-stone-900/50 via-[#111] to-[#111]", thumb: "border-stone-500/40" },
+  { bg: "linear-gradient(135deg,#f87171,#991b1b)", color: "#fff", accent: "#f87171", row: "border-red-400/70 bg-gradient-to-r from-red-950/50 via-[#111] to-[#111]", thumb: "border-red-400/50" },
+  { bg: "linear-gradient(135deg,#e2e8f0,#64748b)", color: "#111", accent: "#cbd5e1", row: "border-slate-300/50 bg-gradient-to-r from-slate-700/40 via-[#111] to-[#111]", thumb: "border-slate-300/40" },
+  { bg: "linear-gradient(135deg,#fb923c,#9a3412)", color: "#fff", accent: "#fb923c", row: "border-orange-600/50 bg-gradient-to-r from-orange-950/40 via-[#111] to-[#111]", thumb: "border-orange-600/40" },
+  { bg: "#38bdf8", color: "#082f49", accent: "#38bdf8", row: "border-sky-400/50 bg-gradient-to-r from-sky-950/40 via-[#111] to-[#111]", thumb: "border-sky-400/40" },
+  { bg: "#a3e635", color: "#1a2e05", accent: "#a3e635", row: "border-lime-500/50 bg-gradient-to-r from-lime-950/35 via-[#111] to-[#111]", thumb: "border-lime-500/40" },
+  { bg: "#2dd4bf", color: "#042f2e", accent: "#2dd4bf", row: "border-teal-400/50 bg-gradient-to-r from-teal-950/40 via-[#111] to-[#111]", thumb: "border-teal-400/40" },
+  { bg: "#818cf8", color: "#fff", accent: "#818cf8", row: "border-indigo-400/50 bg-gradient-to-r from-indigo-950/40 via-[#111] to-[#111]", thumb: "border-indigo-400/40" },
+  { bg: "#f472b6", color: "#1f0514", accent: "#f472b6", row: "border-pink-400/50 bg-gradient-to-r from-pink-950/40 via-[#111] to-[#111]", thumb: "border-pink-400/40" },
+  { bg: "#facc15", color: "#1c1500", accent: "#facc15", row: "border-yellow-400/50 bg-gradient-to-r from-yellow-950/35 via-[#111] to-[#111]", thumb: "border-yellow-400/40" },
+  { bg: "#78716c", color: "#fff", accent: "#78716c", row: "border-stone-500/40 bg-gradient-to-r from-stone-900/50 via-[#111] to-[#111]", thumb: "border-stone-500/40" },
 ];
 
 function rankPaint(i: number, kind: BoardKind): RankPaint | null {
@@ -146,6 +146,7 @@ function BoardColumn({
                 className={`group flex items-center gap-2.5 sm:gap-3 rounded-xl border p-2 sm:p-2.5 transition-all ${
                   paint ? paint.row : "border-neutral-800/80 bg-[#111] hover:border-neutral-700"
                 }`}
+                style={paint ? { boxShadow: `inset 4px 0 0 ${paint.accent}` } : undefined}
               >
                 <div
                   className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-black/20 flex items-center justify-center text-[11px] sm:text-xs font-bold tabular-nums shrink-0"

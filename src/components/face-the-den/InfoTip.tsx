@@ -16,9 +16,7 @@ export function InfoTip({
   return (
     <span
       className="relative inline-flex items-center align-middle"
-      onPointerEnter={(e) => {
-        if (e.pointerType === "mouse") setHover(true);
-      }}
+      onPointerEnter={() => setHover(true)}
       onPointerLeave={() => setHover(false)}
     >
       <button

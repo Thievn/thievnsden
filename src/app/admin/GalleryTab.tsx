@@ -113,7 +113,7 @@ export function GalleryTab() {
           { label: "Total likes", value: stats?.totalLikes ?? 0 },
           { label: "Total dislikes", value: stats?.totalDislikes ?? 0 },
           {
-            label: "Demo / real",
+            label: "House / real",
             value: `${stats?.demoCount ?? 0} / ${stats?.realCount ?? 0}`,
           },
         ].map((s) => (
@@ -171,7 +171,7 @@ export function GalleryTab() {
                   <span>{Number(c.score).toFixed(1)}/10</span>
                   {c.is_demo && (
                     <span className="text-amber-500/80 border border-amber-900/40 px-1 rounded">
-                      demo
+                      house
                     </span>
                   )}
                 </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getRarity, type GalleryJudgment } from "@/lib/gallery";
 import { supabase } from "@/lib/supabase/client";
 import { VOTE } from "@/lib/face-the-den";
+import { RarityFrame } from "@/components/RarityFrame";
 
 type Props = {
   compact?: boolean;
@@ -302,39 +303,44 @@ export function GalleryStack({ compact = false }: Props) {
                 </div>
 
                 <div className="px-2.5 shrink-0 flex-1 min-h-0 flex">
-                  <button
-                    type="button"
-                    data-no-swipe
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (current.image_url) setExpanded(true);
-                    }}
-                    className={`relative w-full flex-1 min-h-[340px] sm:min-h-[380px] rounded-xl overflow-hidden border ${rarity.border} bg-black block`}
+                  <RarityFrame
+                    slug={rarity.slug}
+                    className="relative w-full flex-1 min-h-[340px] sm:min-h-[380px] rounded-xl"
                   >
-                    {current.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={current.image_url}
-                        alt=""
-                        draggable={false}
-                        className="absolute inset-0 w-full h-full object-cover object-[center_15%]"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0a]">
-                        <div className="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-60" />
+                    <button
+                      type="button"
+                      data-no-swipe
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (current.image_url) setExpanded(true);
+                      }}
+                      className="absolute inset-0 w-full h-full bg-black block"
+                    >
+                      {current.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={current.image_url}
+                          alt=""
+                          draggable={false}
+                          className="absolute inset-0 w-full h-full object-cover object-[center_15%]"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-[#0a0a0a]">
+                          <div className="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-60" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 pointer-events-none" />
+                      <div className="absolute bottom-2.5 left-2.5 right-2.5 flex justify-between items-end pointer-events-none">
+                        <span className="text-sm text-neutral-100 font-medium drop-shadow-md">
+                          {current.username || "Anonymous"}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wide text-neutral-300/90 drop-shadow">
+                          {current.style}
+                          {current.filthy_mode ? ` · ${current.filthy_mode}` : ""} · {current.focus}
+                        </span>
                       </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 pointer-events-none" />
-                    <div className="absolute bottom-2.5 left-2.5 right-2.5 flex justify-between items-end pointer-events-none">
-                      <span className="text-sm text-neutral-100 font-medium drop-shadow-md">
-                        {current.username || "Anonymous"}
-                      </span>
-                      <span className="text-[10px] uppercase tracking-wide text-neutral-300/90 drop-shadow">
-                        {current.style}
-                        {current.filthy_mode ? ` · ${current.filthy_mode}` : ""} · {current.focus}
-                      </span>
-                    </div>
-                  </button>
+                    </button>
+                  </RarityFrame>
                 </div>
 
                 <div className="px-3 pt-2.5 pb-3 shrink-0">
@@ -413,13 +419,18 @@ export function GalleryStack({ compact = false }: Props) {
           >
             Close
           </button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={current.image_url}
-            alt=""
-            className="max-w-full max-h-[90vh] object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <RarityFrame
+            slug={getRarity(Number(current.score)).slug}
+            className="max-w-full max-h-[90vh] rounded-2xl"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={current.image_url}
+              alt=""
+              className="max-w-full max-h-[85vh] object-contain rounded-[0.9rem] block"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </RarityFrame>
         </div>
       )}
     </div>

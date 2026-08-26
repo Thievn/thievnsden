@@ -8,9 +8,39 @@ const PRESETS: Record<
   string,
   { total: number; filters: Record<string, unknown>; label: string }
 > = {
+  busy_room: {
+    total: 10,
+    label: "Busy room · 10 mixed",
+    filters: {},
+  },
+  clean_crowd: {
+    total: 8,
+    label: "Clean crowd · 8",
+    filters: { heat: "clean" },
+  },
+  spicy_night: {
+    total: 8,
+    label: "Spicy night · 8",
+    filters: { heat: "spicy" },
+  },
+  filthy_set: {
+    total: 6,
+    label: "Filthy set · 6",
+    filters: { heat: "filthy", style: "filthy" },
+  },
+  women_mix: {
+    total: 6,
+    label: "Women mix · 6",
+    filters: { gender: "woman" },
+  },
+  men_mix: {
+    total: 6,
+    label: "Men mix · 6",
+    filters: { gender: "man" },
+  },
   varied_women: {
     total: 5,
-    label: "5 varied women",
+    label: "5 women",
     filters: { gender: "woman" },
   },
   men_casual: {
@@ -20,12 +50,12 @@ const PRESETS: Record<
   },
   mirror_mix: {
     total: 5,
-    label: "5 mirror selfies",
+    label: "5 mirrors",
     filters: { camera: "mirror_selfie" },
   },
   mixed_10: {
     total: 10,
-    label: "Mixed 10 (full random)",
+    label: "Mixed 10",
     filters: {},
   },
 };
@@ -97,7 +127,7 @@ export async function POST(req: NextRequest) {
         log: [
           {
             at: new Date().toISOString(),
-            msg: `Queued ${total} demo(s) · mode=${mode}${preset ? ` · ${preset}` : ""}`,
+            msg: `Queued ${total} · mode=${mode}${preset ? ` · ${preset}` : ""}`,
           },
         ],
       })

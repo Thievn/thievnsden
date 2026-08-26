@@ -21,9 +21,19 @@ type Props = {
   makePublic: boolean;
   filters: Record<string, unknown>;
   onDemosMaybeChanged: () => void;
+  packs?: Array<{ id: string; label: string; desc: string; preset: string }>;
 };
 
-export function SeedQueuePanel({ makePublic, filters, onDemosMaybeChanged }: Props) {
+const DEFAULT_PACKS = [
+  { id: "busy_room", label: "Busy room", desc: "10 mixed", preset: "busy_room" },
+  { id: "clean_crowd", label: "Clean crowd", desc: "8 everyday", preset: "clean_crowd" },
+  { id: "spicy_night", label: "Spicy night", desc: "8 spicy", preset: "spicy_night" },
+  { id: "filthy_set", label: "Filthy set", desc: "6 NSFW-ish", preset: "filthy_set" },
+  { id: "women_mix", label: "Women mix", desc: "6 women", preset: "women_mix" },
+  { id: "men_mix", label: "Men mix", desc: "6 men", preset: "men_mix" },
+];
+
+export function SeedQueuePanel({ makePublic, filters, onDemosMaybeChanged, packs = DEFAULT_PACKS }: Props) {
   const [jobs, setJobs] = useState<SeedJob[]>([]);
   const [count, setCount] = useState(5);
   const [useFilters, setUseFilters] = useState(false);
@@ -81,7 +91,7 @@ export function SeedQueuePanel({ makePublic, filters, onDemosMaybeChanged }: Pro
         return;
       }
       setMsg(
-        `Queued ${data.job?.total || "?"} demos. Safe to close this tab — they run one at a time.`
+        `Queued ${data.job?.total || "?"} portraits. Safe to close this tab — they run one at a time.`
       );
       await loadJobs();
     } catch (err: any) {
@@ -124,10 +134,10 @@ export function SeedQueuePanel({ makePublic, filters, onDemosMaybeChanged }: Pro
   return (
     <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-4">
       <div>
-        <p className="text-sm text-neutral-200 font-medium mb-1">Bulk queue</p>
+        <p className="text-sm text-neutral-200 font-medium mb-1">Queue a room</p>
         <p className="text-xs text-neutral-500 leading-relaxed">
           Runs <strong className="text-neutral-400">one at a time</strong> with auto-retry.
-          Stored in the database — you can close the tab.
+          Stored in Supabase — you can close the tab.
         </p>
       </div>
 
@@ -153,7 +163,7 @@ export function SeedQueuePanel({ makePublic, filters, onDemosMaybeChanged }: Pro
             onChange={(e) => setUseFilters(e.target.checked)}
             className="accent-purple-600"
           />
-          Use filters below (gender/age/camera…)
+          Use the look you set above
         </label>
       </div>
 
@@ -164,40 +174,20 @@ export function SeedQueuePanel({ makePublic, filters, onDemosMaybeChanged }: Pro
           onClick={() => startQueue({ mode: useFilters ? "filter" : "random" })}
           className="px-4 py-2.5 rounded-xl text-sm border border-purple-800/50 text-purple-300 hover:bg-purple-950/30 disabled:opacity-40"
         >
-          Queue {count} random
+          Queue {count}
         </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => startQueue({ preset: "varied_women" })}
-          className="px-3 py-2.5 rounded-xl text-xs border border-neutral-800 text-neutral-300 disabled:opacity-40"
-        >
-          Pack: 5 women
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => startQueue({ preset: "men_casual" })}
-          className="px-3 py-2.5 rounded-xl text-xs border border-neutral-800 text-neutral-300 disabled:opacity-40"
-        >
-          Pack: 5 men
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => startQueue({ preset: "mirror_mix" })}
-          className="px-3 py-2.5 rounded-xl text-xs border border-neutral-800 text-neutral-300 disabled:opacity-40"
-        >
-          Pack: 5 mirrors
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => startQueue({ preset: "mixed_10" })}
-          className="px-3 py-2.5 rounded-xl text-xs border border-neutral-800 text-neutral-300 disabled:opacity-40"
-        >
-          Pack: mixed 10
-        </button>
+        {packs.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            disabled={busy}
+            onClick={() => startQueue({ preset: p.preset })}
+            className="px-3 py-2.5 rounded-xl text-xs border border-neutral-800 text-neutral-300 disabled:opacity-40 text-left"
+          >
+            {p.label}
+            <span className="block text-[10px] text-neutral-600">{p.desc}</span>
+          </button>
+        ))}
       </div>
 
       {msg && (

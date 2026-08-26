@@ -10,27 +10,13 @@ function appendLog(log: any[], msg: string, extra?: Record<string, unknown>) {
   return next.slice(-40);
 }
 
+import { CAST_FILTER_KEYS } from "@/lib/demo-cast";
+
 function buildCustomFromFilters(filters: Record<string, unknown>) {
   if (!filters || Object.keys(filters).length === 0) return undefined;
   const custom: Record<string, unknown> = {};
-  for (const key of [
-    "gender",
-    "ageBand",
-    "ethnicity",
-    "bodyType",
-    "height",
-    "expression",
-    "hair",
-    "camera",
-    "pose",
-    "setting",
-    "outfit",
-    "chest",
-    "style",
-    "focus",
-    "filthyMode",
-  ]) {
-    if (filters[key] !== undefined && filters[key] !== null && filters[key] !== "") {
+  for (const key of CAST_FILTER_KEYS) {
+    if (filters[key] !== undefined && filters[key] !== null && filters[key] !== "" && filters[key] !== "random") {
       custom[key] = filters[key];
     }
   }
@@ -121,7 +107,7 @@ export async function POST(req: NextRequest) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
         const result = await runOneSeed({ origin, makePublic, filters });
-        username = result.results?.[0]?.username || "demo";
+        username = result.results?.[0]?.username || "anon";
         success = true;
         break;
       } catch (err: any) {

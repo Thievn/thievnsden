@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getRarity } from "@/lib/gallery";
 import { VOTE } from "@/lib/face-the-den";
+import { RarityFrame } from "@/components/RarityFrame";
 
 type Entry = {
   id: string;
@@ -159,10 +160,10 @@ function BoardColumn({
                   {i + 1}
                 </div>
 
-                <div
-                  className={`w-10 h-12 sm:w-11 sm:h-[52px] rounded-lg overflow-hidden border shrink-0 bg-black ${
-                    paint ? paint.thumb : "border-neutral-800"
-                  }`}
+                <RarityFrame
+                  slug={rarity.slug}
+                  compact
+                  className="w-10 h-12 sm:w-11 sm:h-[52px] rounded-lg shrink-0"
                 >
                   {e.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -172,7 +173,7 @@ function BoardColumn({
                       <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-red-500 to-purple-500 opacity-50" />
                     </div>
                   )}
-                </div>
+                </RarityFrame>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-1.5 mb-0.5">

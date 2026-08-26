@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getRarity } from "@/lib/gallery";
 import { ShareActions } from "./ShareActions";
+import { RarityFrame } from "@/components/RarityFrame";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -106,9 +107,7 @@ export default async function ShareCardPage({ params }: Props) {
           </div>
 
           <div className="px-3">
-            <div
-              className={`relative aspect-[3/4] w-full rounded-xl overflow-hidden border ${rarity.border} bg-black`}
-            >
+            <RarityFrame slug={rarity.slug} className="relative aspect-[3/4] w-full rounded-xl">
               {card.image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -124,13 +123,13 @@ export default async function ShareCardPage({ params }: Props) {
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none" />
-              <div className="absolute bottom-2 left-2 right-2 flex justify-between">
+              <div className="absolute bottom-2 left-2 right-2 flex justify-between z-[2]">
                 <span className="text-xs text-neutral-200 font-medium">{card.username}</span>
                 <span className="text-[10px] uppercase tracking-wide text-neutral-400">
                   {card.style} · {card.focus}
                 </span>
               </div>
-            </div>
+            </RarityFrame>
           </div>
 
           <div className="px-3 pt-3 pb-4">

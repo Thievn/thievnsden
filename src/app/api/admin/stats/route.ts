@@ -24,7 +24,9 @@ export async function GET() {
   try {
     const supabase = createServiceClient();
 
-    const { data: profiles } = await supabase.from("profiles").select("id, created_at");
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, created_at, is_demo");
 
     const { data: allJudgments } = await supabase
       .from("judgments")
@@ -39,7 +41,9 @@ export async function GET() {
         .map((j) => j.user_id as string)
     );
 
-    const realProfiles = (profiles || []).filter((p) => !demoUserIds.has(p.id));
+    const realProfiles = (profiles || []).filter(
+      (p) => !p.is_demo && !demoUserIds.has(p.id)
+    );
 
     const total = judgments.length;
     const avgScore =

@@ -1,6 +1,6 @@
-# Seed job queue
+# Cast job queue
 
-Run in Supabase SQL editor so Admin → Seeds can queue bulk demos and keep running after you close the tab.
+Run in Supabase SQL editor so Admin → Cast can queue bulk portraits and keep running after you close the tab.
 
 ```sql
 create table if not exists seed_jobs (

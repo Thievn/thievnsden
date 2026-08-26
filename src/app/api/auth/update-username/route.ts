@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { claimUsername, isUsernameTaken } from "@/lib/usernames";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,14 +17,8 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServiceClient();
 
-    // Case-insensitive uniqueness check
-    const { data: existing } = await supabase
-      .from("profiles")
-      .select("id")
-      .ilike("username", trimmed)
-      .maybeSingle();
-
-    if (existing && existing.id !== userId) {
+    const taken = await isUsernameTaken(supabase, trimmed, userId);
+    if (taken) {
       return NextResponse.json({ error: "That username is already taken." }, { status: 409 });
     }
 
@@ -34,6 +29,12 @@ export async function POST(req: NextRequest) {
 
     if (profileError) {
       return NextResponse.json({ error: profileError.message }, { status: 500 });
+    }
+
+    try {
+      await claimUsername(supabase, trimmed, userId, "user");
+    } catch (err) {
+      console.error("Username ledger error:", err);
     }
 
     // Update auth metadata too

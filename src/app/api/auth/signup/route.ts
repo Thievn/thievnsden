@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createServiceClient } from "@/lib/supabase/server";
+import { claimUsername, isUsernameTaken } from "@/lib/usernames";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,14 +24,8 @@ export async function POST(req: NextRequest) {
 
     const service = createServiceClient();
 
-    // Case-insensitive uniqueness check
-    const { data: existing } = await service
-      .from("profiles")
-      .select("id")
-      .ilike("username", trimmedUsername)
-      .maybeSingle();
-
-    if (existing) {
+    const taken = await isUsernameTaken(service, trimmedUsername);
+    if (taken) {
       return NextResponse.json({ error: "That username is already taken." }, { status: 409 });
     }
 
@@ -61,10 +56,17 @@ export async function POST(req: NextRequest) {
       id: data.user.id,
       username: trimmedUsername,
       display_name: trimmedUsername,
+      is_demo: false,
     });
 
     if (profileError) {
       console.error("Profile insert error:", profileError);
+    } else {
+      try {
+        await claimUsername(service, trimmedUsername, data.user.id, "user");
+      } catch (err) {
+        console.error("Username ledger error:", err);
+      }
     }
 
     return NextResponse.json({

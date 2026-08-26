@@ -8,6 +8,7 @@ import { BarList, ActivityBars, RarityRing, ScoreBars } from "@/components/admin
 import { AnalyticsTab } from "@/app/admin/AnalyticsTab";
 import { GalleryTab } from "@/app/admin/GalleryTab";
 import { SeedsTab } from "@/app/admin/SeedsTab";
+import { HouseTab } from "@/app/admin/HouseTab";
 import { GamingTab } from "@/app/admin/GamingTab";
 import { WyrTab } from "@/app/admin/WyrTab";
 import type { User } from "@supabase/supabase-js";
@@ -17,6 +18,7 @@ type Tab =
   | "traffic"
   | "gallery"
   | "seeds"
+  | "house"
   | "gaming"
   | "wyr"
   | "users"
@@ -130,6 +132,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     const t = searchParams.get("tab");
     if (t === "wyr") setTab("wyr");
+    if (t === "seeds" || t === "cast") setTab("seeds");
+    if (t === "house") setTab("house");
+    if (t === "users") setTab("users");
   }, [searchParams]);
 
   useEffect(() => {
@@ -150,7 +155,7 @@ export default function AdminDashboard() {
     if (res.ok) setStats(await res.json());
   };
   const loadUsers = async () => {
-    const res = await fetch("/api/admin/users");
+    const res = await fetch("/api/admin/users?kind=real");
     if (res.ok) setUsers((await res.json()).users || []);
   };
   const loadJudgments = async () => {
@@ -404,7 +409,8 @@ export default function AdminDashboard() {
     { id: "overview" as const, label: "Overview" },
     { id: "traffic" as const, label: "Traffic" },
     { id: "gallery" as const, label: "Gallery" },
-    { id: "seeds" as const, label: "Seeds" },
+    { id: "seeds" as const, label: "Cast" },
+    { id: "house" as const, label: "House" },
     { id: "gaming" as const, label: "Gaming" },
     { id: "wyr" as const, label: "WYR" },
     { id: "users" as const, label: "Users" },
@@ -498,11 +504,13 @@ export default function AdminDashboard() {
       {tab === "traffic" && <AnalyticsTab />}
       {tab === "gallery" && <GalleryTab />}
       {tab === "seeds" && <SeedsTab />}
+      {tab === "house" && <HouseTab />}
       {tab === "gaming" && <GamingTab />}
       {tab === "wyr" && <WyrTab />}
 
       {tab === "users" && (
         <div className="space-y-4">
+          <p className="text-xs text-neutral-500">Real signups only. House accounts are in House.</p>
           <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search username or email" className="w-full sm:w-72 px-4 py-2.5 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600" />
           <div className="rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden">
             {filteredUsers.length === 0 ? (

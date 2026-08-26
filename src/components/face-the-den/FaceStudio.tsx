@@ -24,6 +24,7 @@ import {
   type Style,
 } from "@/lib/face-the-den";
 import { DenChips, DenField } from "@/components/face-the-den/DenChips";
+import { RarityFrame } from "@/components/RarityFrame";
 
 type Panel = "voice" | "heat" | "target";
 
@@ -435,10 +436,10 @@ export function FaceStudio({
                   <span className={`text-sm font-bold tabular-nums ${rarity.text}`}>{score.toFixed(1)}/10</span>
                 </div>
                 <div className="px-3">
-                  <div className={`relative aspect-[3/4] w-full rounded-xl overflow-hidden border ${rarity.border} bg-black`}>
+                  <RarityFrame slug={rarity.slug} className="relative aspect-[3/4] w-full rounded-xl">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={image} alt="" className="absolute inset-0 w-full h-full object-cover object-[center_18%]" />
-                  </div>
+                  </RarityFrame>
                 </div>
                 <div className="px-3 pt-2.5 pb-4">
                   <p className="text-[13px] text-neutral-200 leading-relaxed whitespace-pre-wrap">{verdict}</p>

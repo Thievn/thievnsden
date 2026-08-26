@@ -1,8 +1,37 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { SeedQueuePanel } from "@/app/admin/SeedQueuePanel";
+import { DenChips } from "@/components/face-the-den/DenChips";
+import { RarityFrame } from "@/components/RarityFrame";
+import { getRarity } from "@/lib/rarity";
+import {
+  AGE_CHIPS,
+  BODY_CHIPS,
+  CAMERA_CHIPS,
+  CAST_PACKS,
+  CHEST_CHIPS,
+  EMPTY_DRAFT,
+  EXPRESSION_CHIPS,
+  FACE_SHAPE_CHIPS,
+  FILTHY_CHIPS,
+  FOCUS_CHIPS,
+  GENDER_CHIPS,
+  HAIR_COLOR_CHIPS,
+  HEAT_CHIPS,
+  HEIGHT_CHIPS,
+  LOOK_CHIPS,
+  MARK_CHIPS,
+  PLACE_CHIPS,
+  POSE_CHIPS,
+  STYLE_CHIPS,
+  clothesChipsFor,
+  draftToFilters,
+  hairChipsFor,
+  randomizeCastDraft,
+  type CastDraft,
+} from "@/lib/demo-cast-options";
 
 type Demo = {
   id: string;
@@ -18,162 +47,9 @@ type Demo = {
   likes: number;
   dislikes: number;
   created_at: string;
+  heat?: string | null;
+  cast_recipe?: Record<string, unknown> | null;
 };
-
-const GENDERS = [
-  { id: "woman", label: "Woman" },
-  { id: "man", label: "Man" },
-  { id: "random", label: "Random" },
-];
-
-const AGES = [
-  "18-20",
-  "21-24",
-  "25-29",
-  "30-34",
-  "35-39",
-  "40-44",
-  "45-50",
-];
-
-const ETHNICITIES = [
-  "random",
-  "white / european",
-  "black / african descent",
-  "latina / hispanic",
-  "east asian",
-  "south asian",
-  "middle eastern",
-  "mixed",
-];
-
-const BODY_TYPES = [
-  "slim",
-  "athletic",
-  "curvy",
-  "soft / average",
-  "stocky",
-  "tall and lean",
-  "short and compact",
-];
-
-const HEIGHTS = ["short", "average height", "tall"];
-
-const EXPRESSIONS = [
-  "neutral face",
-  "soft smile",
-  "big smile / laughing",
-  "pouty lips",
-  "smirk",
-  "bored / deadpan",
-  "flirty look",
-  "confident stare",
-  "shy glance away",
-  "mid-laugh",
-  "biting lip slightly",
-  "raised eyebrow",
-];
-
-const HAIR = [
-  "short hair",
-  "shoulder-length hair",
-  "long hair",
-  "loose waves",
-  "straight hair",
-  "curly hair",
-  "bun / updo",
-  "ponytail",
-  "messy bed hair",
-  "under cut / fade (men)",
-];
-
-const CAMERAS = [
-  { id: "mirror_selfie", label: "Mirror selfie (self)" },
-  { id: "self_held", label: "Self-held phone selfie" },
-  { id: "other_person", label: "Someone else took the photo" },
-];
-
-const POSES = [
-  { id: "front", label: "Front facing" },
-  { id: "three_quarter", label: "Three-quarter angle" },
-  { id: "side", label: "Side profile" },
-  { id: "over_shoulder", label: "Looking over shoulder" },
-  { id: "back_ass", label: "Back / ass focus" },
-  { id: "full_body", label: "Full body mirror" },
-  { id: "close_face", label: "Close-up face" },
-  { id: "overhead", label: "Overhead / looking down" },
-  { id: "lying_down", label: "Lying down" },
-  { id: "sitting", label: "Sitting" },
-  { id: "leaning", label: "Leaning on something" },
-];
-
-const SETTINGS = [
-  "bedroom, soft warm lamp light",
-  "bedroom, dim evening light",
-  "bathroom mirror, overhead light",
-  "bathroom, soft natural window light",
-  "car interior, night dashboard glow",
-  "car interior, daytime",
-  "standing against a car outside",
-  "beach, natural daylight",
-  "poolside, bright sun",
-  "gym locker mirror",
-  "coffee shop near a window",
-  "balcony, soft city lights",
-  "hotel room, warm ambient light",
-  "living room couch",
-  "kitchen counter area",
-  "bar / club bathroom mirror",
-  "outdoor night street",
-  "rooftop, golden hour",
-  "stairwell / hallway",
-  "closet mirror full-length",
-];
-
-const OUTFITS_WOMAN = [
-  "casual fitted t-shirt",
-  "simple tank top",
-  "crop top and jeans",
-  "oversized hoodie",
-  "sundress",
-  "off-shoulder top",
-  "satin camisole",
-  "workout leggings and sports bra",
-  "bikini",
-  "lingerie set",
-  "panties only",
-  "panties and a loose open shirt",
-  "bra and panties",
-  "going-out tight dress",
-  "club top and skirt",
-  "sleep shirt",
-];
-
-const OUTFITS_MAN = [
-  "casual fitted t-shirt",
-  "hoodie",
-  "button-up shirt",
-  "tank top",
-  "gym shirt",
-  "open jacket over plain tee",
-  "henley shirt",
-  "simple black tee",
-  "swim trunks",
-  "shirtless",
-  "open unbuttoned shirt",
-  "low-rise shorts only",
-  "sweatpants no shirt",
-];
-
-const CHEST = [
-  { id: "covered", label: "Covered" },
-  { id: "low_cut", label: "Low-cut / cleavage" },
-  { id: "bare", label: "Bare / topless" },
-];
-
-const STYLES = ["honest", "unhinged", "filthy", "petty", "deadpan"];
-const FOCUSES = ["overall", "face", "body", "tits", "ass", "vibe"];
-const FILTHY = ["degrade", "worship", "mixed"];
 
 export function SeedsTab() {
   const [demos, setDemos] = useState<Demo[]>([]);
@@ -183,29 +59,24 @@ export function SeedsTab() {
   const [msg, setMsg] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [makePublic, setMakePublic] = useState(true);
+  const [advanced, setAdvanced] = useState(false);
+  const [draft, setDraft] = useState<CastDraft>(EMPTY_DRAFT);
 
-  const [gender, setGender] = useState("woman");
-  const [ageBand, setAgeBand] = useState("21-24");
-  const [ethnicity, setEthnicity] = useState("random");
-  const [bodyType, setBodyType] = useState("athletic");
-  const [height, setHeight] = useState("average height");
-  const [expression, setExpression] = useState("soft smile");
-  const [hair, setHair] = useState("long hair");
-  const [camera, setCamera] = useState("mirror_selfie");
-  const [pose, setPose] = useState("front");
-  const [setting, setSetting] = useState(SETTINGS[0]);
-  const [outfit, setOutfit] = useState(OUTFITS_WOMAN[0]);
-  const [chest, setChest] = useState("covered");
-  const [style, setStyle] = useState("unhinged");
-  const [focus, setFocus] = useState("overall");
-  const [filthyMode, setFilthyMode] = useState("mixed");
+  const set = <K extends keyof CastDraft>(key: K, value: CastDraft[K]) => {
+    setDraft((d) => {
+      const next = { ...d, [key]: value };
+      if (key === "gender" || key === "heat") next.outfit = "random";
+      if (key === "style" && value !== "filthy") next.filthyMode = "mixed";
+      return next;
+    });
+  };
 
-  const outfits =
-    gender === "man"
-      ? OUTFITS_MAN
-      : gender === "woman"
-        ? OUTFITS_WOMAN
-        : [...OUTFITS_WOMAN, ...OUTFITS_MAN];
+  const clothes = useMemo(
+    () => clothesChipsFor(draft.gender, draft.heat),
+    [draft.gender, draft.heat]
+  );
+  const hair = useMemo(() => hairChipsFor(draft.gender), [draft.gender]);
+  const filters = useMemo(() => draftToFilters(draft), [draft]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -215,7 +86,7 @@ export function SeedsTab() {
       if (!res.ok) throw new Error(data.error || "Failed");
       setDemos(data.demos || []);
     } catch (err: any) {
-      setMsg(err.message || "Could not load demos");
+      setMsg(err.message || "Could not load cast");
       setFailed(true);
     } finally {
       setLoading(false);
@@ -226,37 +97,10 @@ export function SeedsTab() {
     load();
   }, [load]);
 
-  useEffect(() => {
-    if (gender === "man") {
-      setOutfit(OUTFITS_MAN[0]);
-      setChest("covered");
-    } else if (gender === "woman") {
-      setOutfit(OUTFITS_WOMAN[0]);
-    }
-  }, [gender]);
-
-  const queueFilters = {
-    gender: gender === "random" ? undefined : gender,
-    ageBand,
-    ethnicity: ethnicity === "random" ? undefined : ethnicity,
-    bodyType,
-    height,
-    expression,
-    hair,
-    camera,
-    pose,
-    setting,
-    outfit,
-    chest,
-    style,
-    focus,
-    filthyMode: style === "filthy" ? filthyMode : null,
-  };
-
-  const createCustom = async () => {
+  const createOne = async (mode: "draft" | "random") => {
     setBusy(true);
     setFailed(false);
-    setMsg("Creating custom demo (30–90s)…");
+    setMsg(mode === "random" ? "Rolling a random portrait…" : "Creating portrait…");
     try {
       const res = await fetch("/api/admin/seeds", {
         method: "POST",
@@ -264,7 +108,7 @@ export function SeedsTab() {
         body: JSON.stringify({
           count: 1,
           makePublic,
-          custom: queueFilters,
+          custom: mode === "draft" ? filters : undefined,
         }),
       });
       const data = await res.json();
@@ -273,7 +117,8 @@ export function SeedsTab() {
         setMsg(`FAILED: ${data.error || data.errors?.[0] || "Create failed"}`);
         return;
       }
-      setMsg("OK — custom demo created" + (makePublic ? " · Gallery" : ""));
+      const name = data.results?.[0]?.username || "someone";
+      setMsg(`${name} is in${makePublic ? " · posted to the stack" : " · hidden"}`);
       await load();
     } catch (err: any) {
       setFailed(true);
@@ -283,61 +128,17 @@ export function SeedsTab() {
     }
   };
 
-  const seedRandom = async () => {
-    setBusy(true);
+  const act = async (id: string, action: string, extra?: Record<string, unknown>) => {
+    setRowBusy(`${id}:${action}`);
     setFailed(false);
-    setMsg("Random demo (one at a time)…");
-    try {
-      const res = await fetch("/api/admin/seeds", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count: 1, makePublic }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setFailed(true);
-        setMsg(`FAILED: ${data.error || data.errors?.[0] || "Seed failed"}`);
-        return;
-      }
-      setMsg("OK — random demo created");
-      await load();
-    } catch (err: any) {
-      setFailed(true);
-      setMsg(`FAILED: ${err.message || "timeout"}`);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const purge = async () => {
-    if (!confirm("Delete ALL demos?")) return;
-    setBusy(true);
-    try {
-      const res = await fetch("/api/admin/seeds", { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Purge failed");
-      setMsg(`Purged ${data.purgedJudgments}`);
-      await load();
-    } catch (err: any) {
-      setFailed(true);
-      setMsg(`FAILED: ${err.message}`);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const regen = async (id: string, action: "image" | "verdict") => {
-    setRowBusy(id + ":" + action);
-    setFailed(false);
-    setMsg(action === "image" ? "Regen pic…" : "Regen judgment…");
     try {
       const res = await fetch(`/api/admin/seeds/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, ...extra }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Regen failed");
+      if (!res.ok) throw new Error(data.error || "Failed");
       setMsg("Updated.");
       await load();
     } catch (err: any) {
@@ -349,13 +150,13 @@ export function SeedsTab() {
   };
 
   const deleteOne = async (id: string, username: string) => {
-    if (!confirm(`Delete ${username}?`)) return;
+    if (!confirm(`Remove ${username}'s card? The handle stays reserved.`)) return;
     setRowBusy(id + ":del");
     try {
       const res = await fetch(`/api/admin/seeds/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Delete failed");
-      setMsg(`Deleted ${username}`);
+      setMsg(`Removed ${username}'s card`);
       await load();
     } catch (err: any) {
       setFailed(true);
@@ -366,242 +167,199 @@ export function SeedsTab() {
   };
 
   const anyBusy = busy || !!rowBusy;
-  const field =
-    "w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200";
 
   return (
-    <div className="space-y-5">
-      <SeedQueuePanel
-        makePublic={makePublic}
-        filters={queueFilters}
-        onDemosMaybeChanged={load}
-      />
-
+    <div className="space-y-5 min-w-0">
       <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-4">
-        <div>
-          <p className="text-sm text-neutral-200 font-medium mb-1">Custom demo creator</p>
-          <p className="text-xs text-neutral-500 leading-relaxed">
-            Full control over one demo. Same filters feed the bulk queue when “Use filters” is on.
-          </p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-sm text-neutral-100 font-medium">Cast</p>
+            <p className="text-xs text-neutral-500 leading-relaxed mt-1 max-w-xl">
+              Fill Face The Den with people. Visitors never see that these are house accounts.
+              Lock only what you care about — everything else randomizes into a unique face.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-neutral-400">
+            <input
+              type="checkbox"
+              checked={makePublic}
+              onChange={(e) => setMakePublic(e.target.checked)}
+              className="accent-rose-600"
+            />
+            Post to the stack
+          </label>
         </div>
 
-        <label className="flex items-center justify-between gap-3">
-          <span className="text-sm text-neutral-300">Auto-post to Gallery</span>
-          <input
-            type="checkbox"
-            checked={makePublic}
-            onChange={(e) => setMakePublic(e.target.checked)}
-            className="w-4 h-4 accent-purple-600"
+        <DenChips
+          label="Heat"
+          hint="Clothes and how far the photo goes."
+          options={HEAT_CHIPS}
+          value={draft.heat}
+          onChange={(id) => set("heat", id as CastDraft["heat"])}
+          variant="card"
+        />
+        <DenChips
+          label="Who"
+          options={GENDER_CHIPS}
+          value={draft.gender}
+          onChange={(id) => set("gender", id as CastDraft["gender"])}
+          variant="heat"
+        />
+        <DenChips
+          label="Age"
+          hint="Faces are age-locked so 45 doesn't come out looking 22."
+          options={AGE_CHIPS}
+          value={draft.ageBand}
+          onChange={(id) => set("ageBand", id)}
+        />
+        <DenChips
+          label="Look"
+          options={LOOK_CHIPS}
+          value={draft.ethnicity}
+          onChange={(id) => set("ethnicity", id)}
+        />
+        <DenChips
+          label="Body"
+          options={BODY_CHIPS}
+          value={draft.bodyType}
+          onChange={(id) => set("bodyType", id)}
+        />
+        <DenChips
+          label="Hair"
+          options={hair}
+          value={draft.hair}
+          onChange={(id) => set("hair", id)}
+        />
+        <DenChips
+          label="Face"
+          options={EXPRESSION_CHIPS}
+          value={draft.expression}
+          onChange={(id) => set("expression", id)}
+        />
+        <DenChips
+          label="Camera"
+          options={CAMERA_CHIPS}
+          value={draft.camera}
+          onChange={(id) => set("camera", id)}
+          variant="heat"
+        />
+        <DenChips
+          label="Pose"
+          options={POSE_CHIPS}
+          value={draft.pose}
+          onChange={(id) => set("pose", id)}
+        />
+        <DenChips
+          label="Place"
+          options={PLACE_CHIPS}
+          value={draft.setting}
+          onChange={(id) => set("setting", id)}
+        />
+        <DenChips
+          label="Clothes"
+          options={clothes}
+          value={draft.outfit}
+          onChange={(id) => set("outfit", id)}
+        />
+        <DenChips
+          label="Roast"
+          options={STYLE_CHIPS}
+          value={draft.style}
+          onChange={(id) => set("style", id)}
+        />
+        <DenChips
+          label="Look at"
+          options={FOCUS_CHIPS}
+          value={draft.focus}
+          onChange={(id) => set("focus", id)}
+        />
+        {draft.style === "filthy" && (
+          <DenChips
+            label="Filth"
+            options={FILTHY_CHIPS}
+            value={draft.filthyMode}
+            onChange={(id) => set("filthyMode", id)}
+            variant="heat"
           />
-        </label>
+        )}
 
-        <p className="text-[10px] uppercase tracking-wide text-neutral-600 pt-1">Identity</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label className="text-xs text-neutral-500 space-y-1">
-            <span>Gender</span>
-            <select value={gender} onChange={(e) => setGender(e.target.value)} className={field}>
-              {GENDERS.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            <span>Age</span>
-            <select value={ageBand} onChange={(e) => setAgeBand(e.target.value)} className={field}>
-              {AGES.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            <span>Ethnicity / look</span>
-            <select
-              value={ethnicity}
-              onChange={(e) => setEthnicity(e.target.value)}
-              className={field}
-            >
-              {ETHNICITIES.map((e) => (
-                <option key={e} value={e}>
-                  {e}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            <span>Body type</span>
-            <select value={bodyType} onChange={(e) => setBodyType(e.target.value)} className={field}>
-              {BODY_TYPES.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            <span>Height vibe</span>
-            <select value={height} onChange={(e) => setHeight(e.target.value)} className={field}>
-              {HEIGHTS.map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            <span>Hair</span>
-            <select value={hair} onChange={(e) => setHair(e.target.value)} className={field}>
-              {HAIR.map((h) => (
-                <option key={h} value={h}>
-                  {h}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        <button
+          type="button"
+          onClick={() => setAdvanced((v) => !v)}
+          className="text-[11px] uppercase tracking-[0.18em] text-neutral-500 hover:text-neutral-300"
+        >
+          {advanced ? "Hide extras" : "More control"}
+        </button>
 
-        <p className="text-[10px] uppercase tracking-wide text-neutral-600 pt-2">Face & shot</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label className="text-xs text-neutral-500 space-y-1">
-            <span>Expression</span>
-            <select
-              value={expression}
-              onChange={(e) => setExpression(e.target.value)}
-              className={field}
-            >
-              {EXPRESSIONS.map((e) => (
-                <option key={e} value={e}>
-                  {e}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            <span>Camera</span>
-            <select value={camera} onChange={(e) => setCamera(e.target.value)} className={field}>
-              {CAMERAS.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-neutral-500 space-y-1 sm:col-span-2">
-            <span>Pose / framing</span>
-            <select value={pose} onChange={(e) => setPose(e.target.value)} className={field}>
-              {POSES.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <p className="text-[10px] uppercase tracking-wide text-neutral-600 pt-2">Scene & clothes</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label className="text-xs text-neutral-500 space-y-1 sm:col-span-2">
-            <span>Environment</span>
-            <select value={setting} onChange={(e) => setSetting(e.target.value)} className={field}>
-              {SETTINGS.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-neutral-500 space-y-1 sm:col-span-2">
-            <span>Outfit</span>
-            <select value={outfit} onChange={(e) => setOutfit(e.target.value)} className={field}>
-              {outfits.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-neutral-500 space-y-1 sm:col-span-2">
-            <span>Chest visibility</span>
-            <select value={chest} onChange={(e) => setChest(e.target.value)} className={field}>
-              {CHEST.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <p className="text-[10px] uppercase tracking-wide text-neutral-600 pt-2">Judgment</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label className="text-xs text-neutral-500 space-y-1">
-            <span>Style</span>
-            <select value={style} onChange={(e) => setStyle(e.target.value)} className={field}>
-              {STYLES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-neutral-500 space-y-1">
-            <span>Focus</span>
-            <select value={focus} onChange={(e) => setFocus(e.target.value)} className={field}>
-              {FOCUSES.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
-          </label>
-          {style === "filthy" && (
-            <label className="text-xs text-neutral-500 space-y-1 sm:col-span-2">
-              <span>Filthy mode</span>
-              <select
-                value={filthyMode}
-                onChange={(e) => setFilthyMode(e.target.value)}
-                className={field}
-              >
-                {FILTHY.map((f) => (
-                  <option key={f} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
+        {advanced && (
+          <div className="space-y-5 pt-1">
+            <DenChips
+              label="Height"
+              options={HEIGHT_CHIPS}
+              value={draft.height}
+              onChange={(id) => set("height", id)}
+            />
+            <DenChips
+              label="Hair color"
+              options={HAIR_COLOR_CHIPS}
+              value={draft.hairColor}
+              onChange={(id) => set("hairColor", id)}
+            />
+            <DenChips
+              label="Face shape"
+              options={FACE_SHAPE_CHIPS}
+              value={draft.faceShape}
+              onChange={(id) => set("faceShape", id)}
+            />
+            <DenChips
+              label="Mark"
+              hint="Keeps faces from cloning each other."
+              options={MARK_CHIPS}
+              value={draft.mark}
+              onChange={(id) => set("mark", id)}
+            />
+            <DenChips
+              label="Chest"
+              options={CHEST_CHIPS}
+              value={draft.chest}
+              onChange={(id) => set("chest", id)}
+              variant="heat"
+            />
+          </div>
+        )}
 
         <div className="flex flex-wrap gap-2 pt-1">
           <button
-            onClick={createCustom}
+            type="button"
+            onClick={() => createOne("draft")}
             disabled={anyBusy}
-            className="px-4 py-2.5 rounded-xl text-sm border border-purple-800/50 text-purple-300 hover:bg-purple-950/30 disabled:opacity-40"
+            className="px-4 py-2.5 rounded-xl text-sm bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white disabled:opacity-40"
           >
-            {busy ? "Creating…" : "Create custom demo"}
+            {busy ? "Creating…" : "Create one"}
           </button>
           <button
-            onClick={seedRandom}
+            type="button"
+            onClick={() => setDraft(randomizeCastDraft())}
             disabled={anyBusy}
             className="px-4 py-2.5 rounded-xl text-sm border border-neutral-800 text-neutral-300 disabled:opacity-40"
           >
-            Random one
+            Randomize look
           </button>
           <button
-            onClick={purge}
-            disabled={anyBusy || demos.length === 0}
-            className="px-4 py-2.5 rounded-xl text-sm border border-red-900/50 text-red-400/90 disabled:opacity-40"
+            type="button"
+            onClick={() => {
+              setDraft(EMPTY_DRAFT);
+            }}
+            disabled={anyBusy}
+            className="px-4 py-2.5 rounded-xl text-sm border border-neutral-800 text-neutral-500 disabled:opacity-40"
           >
-            Purge all
+            Reset
           </button>
           <Link
-            href="/playground"
+            href="/playground/face-the-den"
             className="px-4 py-2.5 rounded-xl text-sm border border-neutral-800 text-neutral-400"
           >
-            Playground
+            Face The Den
           </Link>
         </div>
 
@@ -618,70 +376,109 @@ export function SeedsTab() {
         )}
       </div>
 
+      <SeedQueuePanel
+        makePublic={makePublic}
+        filters={filters}
+        onDemosMaybeChanged={load}
+        packs={CAST_PACKS}
+      />
+
       <div>
         <p className="text-xs uppercase tracking-wide text-neutral-500 mb-3">
-          Demo library ({demos.length})
+          House library ({demos.length})
         </p>
         {loading ? (
           <p className="text-sm text-neutral-500">Loading…</p>
         ) : demos.length === 0 ? (
           <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-8 text-center">
-            <p className="text-sm text-neutral-500">No demos yet.</p>
+            <p className="text-sm text-neutral-500">Nothing in the cast yet.</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {demos.map((d) => (
-              <div
-                key={d.id}
-                className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4 space-y-3"
-              >
-                <div className="flex gap-3">
-                  <div className="w-14 h-[74px] rounded-lg overflow-hidden border border-neutral-800 bg-black shrink-0">
-                    {d.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={d.image_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[9px] text-red-400/80">
-                        no img
+            {demos.map((d) => {
+              const rarity = getRarity(Number(d.score));
+              return (
+                <div
+                  key={d.id}
+                  className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4 space-y-3 min-w-0"
+                >
+                  <div className="flex gap-3 min-w-0">
+                    <RarityFrame
+                      slug={rarity.slug}
+                      compact
+                      className="w-16 h-[86px] rounded-xl shrink-0"
+                    >
+                      {d.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={d.image_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[9px] text-red-400/80">
+                          no img
+                        </div>
+                      )}
+                    </RarityFrame>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-neutral-500 mb-1">
+                        <span className="text-neutral-200">{d.username}</span>
+                        <span className={rarity.text}>{d.rarity}</span>
+                        <span>{Number(d.score).toFixed(1)}/10</span>
+                        <span>
+                          {d.likes} mark · {d.dislikes} cut
+                        </span>
+                        <span className={d.is_public ? "text-purple-300/80" : "text-neutral-600"}>
+                          {d.is_public ? "on stack" : "hidden"}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-neutral-500 mb-1">
-                      <span className="text-neutral-300">{d.username}</span>
-                      <span>·</span>
-                      <span>{d.rarity}</span>
-                      <span>·</span>
-                      <span>{Number(d.score).toFixed(1)}/10</span>
+                      <p className="text-sm text-neutral-300 line-clamp-2">{d.verdict}</p>
                     </div>
-                    <p className="text-sm text-neutral-300 line-clamp-2">{d.verdict}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => act(d.id, "image")}
+                      disabled={anyBusy}
+                      className="px-3 py-1.5 rounded-lg text-[11px] border border-purple-900/40 text-purple-300/90 disabled:opacity-40"
+                    >
+                      Regen pic
+                    </button>
+                    <button
+                      onClick={() => act(d.id, "image", { keepLook: false })}
+                      disabled={anyBusy}
+                      className="px-3 py-1.5 rounded-lg text-[11px] border border-neutral-800 text-neutral-400 disabled:opacity-40"
+                    >
+                      New face
+                    </button>
+                    <button
+                      onClick={() => act(d.id, "verdict")}
+                      disabled={anyBusy || !d.image_url}
+                      className="px-3 py-1.5 rounded-lg text-[11px] border border-neutral-800 text-neutral-400 disabled:opacity-40"
+                    >
+                      Regen roast
+                    </button>
+                    <button
+                      onClick={() => act(d.id, "votes")}
+                      disabled={anyBusy}
+                      className="px-3 py-1.5 rounded-lg text-[11px] border border-neutral-800 text-neutral-400 disabled:opacity-40"
+                    >
+                      Reroll votes
+                    </button>
+                    <button
+                      onClick={() => act(d.id, "visibility", { is_public: !d.is_public })}
+                      disabled={anyBusy}
+                      className="px-3 py-1.5 rounded-lg text-[11px] border border-neutral-800 text-neutral-400 disabled:opacity-40"
+                    >
+                      {d.is_public ? "Hide" : "Post"}
+                    </button>
+                    <button
+                      onClick={() => deleteOne(d.id, d.username)}
+                      disabled={anyBusy}
+                      className="px-3 py-1.5 rounded-lg text-[11px] border border-red-900/40 text-red-400/90 disabled:opacity-40"
+                    >
+                      Remove
+                    </button>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => regen(d.id, "image")}
-                    disabled={anyBusy}
-                    className="px-3 py-1.5 rounded-lg text-[11px] border border-purple-900/40 text-purple-300/90 disabled:opacity-40"
-                  >
-                    Regen pic
-                  </button>
-                  <button
-                    onClick={() => regen(d.id, "verdict")}
-                    disabled={anyBusy || !d.image_url}
-                    className="px-3 py-1.5 rounded-lg text-[11px] border border-neutral-800 text-neutral-400 disabled:opacity-40"
-                  >
-                    Regen judgment
-                  </button>
-                  <button
-                    onClick={() => deleteOne(d.id, d.username)}
-                    disabled={anyBusy}
-                    className="px-3 py-1.5 rounded-lg text-[11px] border border-red-900/40 text-red-400/90 disabled:opacity-40"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

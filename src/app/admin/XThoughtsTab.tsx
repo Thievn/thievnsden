@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { XDropPanel } from "@/app/admin/XDropPanel";
 import { TOPICS } from "@/lib/thoughts-packs";
 import { EMOTE_PACKS, SIGNOFFS, X_HEATS, X_LENGTHS, X_OUTLOOKS, X_PREMIUM_CAP } from "@/lib/x-thoughts";
 import { readJson } from "@/lib/read-json";
@@ -23,6 +24,7 @@ type DupHit = {
 };
 
 export function XThoughtsTab() {
+  const [pane, setPane] = useState<"drop" | "thoughts">("drop");
   const [topic, setTopic] = useState(TOPICS[2]?.id || TOPICS[0].id);
   const [outlook, setOutlook] = useState("honest");
   const [heat, setHeat] = useState("sharp");
@@ -223,6 +225,29 @@ export function XThoughtsTab() {
 
   return (
     <div className="space-y-4 pb-28">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setPane("drop")}
+          className={`px-3 py-1.5 rounded-lg text-xs border ${
+            pane === "drop" ? "border-amber-400/50 text-amber-100" : "border-neutral-800 text-neutral-500"
+          }`}
+        >
+          Drop for X
+        </button>
+        <button
+          type="button"
+          onClick={() => setPane("thoughts")}
+          className={`px-3 py-1.5 rounded-lg text-xs border ${
+            pane === "thoughts" ? "border-sky-500/50 text-sky-100" : "border-neutral-800 text-neutral-500"
+          }`}
+        >
+          Write a thought
+        </button>
+      </div>
+
+      {pane === "drop" ? <XDropPanel /> : (
+      <>
       <div className="rounded-2xl border border-sky-900/30 bg-gradient-to-b from-sky-950/20 to-[#111] p-4 sm:p-5 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -382,6 +407,8 @@ export function XThoughtsTab() {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

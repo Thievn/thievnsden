@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { nextFromLocation } from "@/lib/safe-next";
 
 export default function JoinPage() {
   const router = useRouter();
@@ -15,8 +16,10 @@ export default function JoinPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [loginHref, setLoginHref] = useState("/login");
 
   useEffect(() => {
+    setLoginHref(`/login${window.location.search}`);
     const handler = (e: KeyboardEvent) => {
       setCapsOn(e.getModifierState?.("CapsLock") ?? false);
     };
@@ -77,7 +80,7 @@ export default function JoinPage() {
       }
 
       setSuccess(true);
-      setTimeout(() => router.push("/playground"), 1200);
+      setTimeout(() => router.push(nextFromLocation("/playground")), 1200);
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Could not create account.");
@@ -166,7 +169,7 @@ export default function JoinPage() {
 
         <p className="text-xs text-neutral-600 text-center pt-1">
           Already have an account?{" "}
-          <Link href="/login" className="text-neutral-400 hover:text-neutral-200 underline underline-offset-2">
+          <Link href={loginHref} className="text-neutral-400 hover:text-neutral-200 underline underline-offset-2">
             Log in
           </Link>
         </p>

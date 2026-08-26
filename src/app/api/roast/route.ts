@@ -1,45 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
+import { userFromRequest } from "@/lib/auth-request";
+import { buildRoastPrompts, roastMaxTokens } from "@/lib/face-the-den-prompts";
+import { createServiceClient } from "@/lib/supabase/server";
+import type { Angle, FilthyMode, Focus, Heat, Intensity, RoastLength, Style, Target } from "@/lib/face-the-den";
 
 export const runtime = "edge";
 
-const STYLE_PROMPTS: Record<string, string> = {
-  honest: `You are a blunt, observant judge in Thievn's Den. You can see the photo. Give an honest, human rating based on what you actually see. Be direct. Short and sharp — 1 to 2 sentences max.`,
-
-  unhinged: `You are the unhinged resident of Thievn's Den. You can see the photo. Full permission to swear, be dark, crude, and mean based on what is actually in the image. 1 to 2 short sentences. Make it hit.`,
-
-  filthy: `You are the filthy, explicit judge of Thievn's Den. You can see the photo. Rate the body and sexual energy with zero restraint based on what you see. You can be degrading, objectifying, or worshipful. Use real sexual language. Sound human. 1 to 2 short sentences max.`,
-
-  petty: `You are petty and specific. You can see the photo. Focus on small details visible in the image. Allow swearing. 1 to 2 short sentences.`,
-
-  deadpan: `You are completely flat and cold. You can see the photo. Deliver judgment based on what is visible with zero emotion. 1 to 2 sentences.`,
-};
-
-const FILTHY_SUB: Record<string, string> = {
-  degrade: `Lean hard into degradation and objectification based on the actual body and appearance in the photo.`,
-  worship: `Be explicitly positive and objectifying about what you see. Still filthy and direct.`,
-  mixed: `Mix degradation and desire based on what is actually in the photo.`,
-};
-
-const FOCUS_HINTS: Record<string, string> = {
-  overall: "Judge the whole package — face, body, and sexual energy together.",
-  face: "Focus mainly on the face, expression, and how it lands sexually.",
-  body: "Focus on overall body shape, proportions, and presence.",
-  tits: "Focus specifically on their chest/tits. Be direct about what you see.",
-  ass: "Focus specifically on their ass and lower body. Be direct about what you see.",
-  vibe: "Focus on the sexual energy and vibe they give off more than pure looks.",
-};
-
 export async function POST(req: NextRequest) {
   try {
+    const user = await userFromRequest(req);
+    if (!user) {
+      return NextResponse.json({ error: "Log in to face the Den." }, { status: 401 });
+    }
+
+    const supabase = createServiceClient();
+    const { data: settings } = await supabase
+      .from("site_settings")
+      .select("roast_enabled")
+      .eq("id", 1)
+      .maybeSingle();
+    if (settings && settings.roast_enabled === false) {
+      return NextResponse.json({ error: "The Den is closed right now." }, { status: 503 });
+    }
+
     const body = await req.json();
     const {
       style = "unhinged",
       focus = "overall",
       filthyMode = "mixed",
+      intensity = "sharp",
+      length = "standard",
+      heat = "explicit",
+      angle = "roast",
+      target = "they",
+      note = "",
       followUp = false,
       previous = [],
       image,
-    } = body;
+    } = body as {
+      style?: Style;
+      focus?: Focus;
+      filthyMode?: FilthyMode;
+      intensity?: Intensity;
+      length?: RoastLength;
+      heat?: Heat;
+      angle?: Angle;
+      target?: Target;
+      note?: string;
+      followUp?: boolean;
+      previous?: string[];
+      image?: string;
+    };
 
     const apiKey = process.env.XAI_API_KEY;
     if (!apiKey) {
@@ -50,34 +61,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
 
-    let system = STYLE_PROMPTS[style] || STYLE_PROMPTS.unhinged;
+    const prompts = buildRoastPrompts({
+      style,
+      intensity,
+      length,
+      heat,
+      angle,
+      focus,
+      filthyMode,
+      target,
+      note: typeof note === "string" ? note : "",
+      followUp: !!followUp,
+      previous: Array.isArray(previous) ? previous.slice(-6) : [],
+    });
 
-    if (style === "filthy" && FILTHY_SUB[filthyMode]) {
-      system += " " + FILTHY_SUB[filthyMode];
-    }
-
-    system += ` Always end your response with a score on a new line in this exact format: SCORE: X.X (where X.X is a number from 1.0 to 10.0). The score should match how positive or negative your judgment was. You are looking at a real photo — never say there is no photo.`;
-
-    let textPrompt = `Focus: ${FOCUS_HINTS[focus] || FOCUS_HINTS.overall}\n\nJudge the person in this photo. Keep it short and human.`;
-
-    if (followUp && previous.length > 0) {
-      textPrompt = `Previous judgments this session:\n${previous
-        .map((r: string, i: number) => `${i + 1}. ${r}`)
-        .join("\n")}\n\nLook at the photo again. Go harder or more specific on the same focus. Still 1-2 short sentences. Do not repeat yourself. End with SCORE: X.X`;
-    }
-
-    // Build multimodal message
-    const userContent: any[] = [
+    const userContent: Array<Record<string, unknown>> = [
       {
         type: "image_url",
         image_url: {
           url: image.startsWith("data:") ? image : `data:image/jpeg;base64,${image}`,
         },
       },
-      {
-        type: "text",
-        text: textPrompt,
-      },
+      { type: "text", text: prompts.user },
     ];
 
     const response = await fetch("https://api.x.ai/v1/chat/completions", {
@@ -89,11 +94,11 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: "grok-4.3",
         messages: [
-          { role: "system", content: system },
+          { role: "system", content: prompts.system },
           { role: "user", content: userContent },
         ],
-        temperature: 1.05,
-        max_tokens: 180,
+        temperature: 1.12,
+        max_tokens: roastMaxTokens(length),
       }),
     });
 

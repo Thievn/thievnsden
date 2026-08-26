@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Gallery",
   description:
-    "Face The Den gallery — public judgments from the void. Swipe, like, and move on.",
+    "Face The Den gallery — public judgments from the void. Swipe, Mark, Cut.",
   alternates: { canonical: "/gallery" },
 };
 

@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       const { data, error } = await supabase
         .from("judgments")
         .select(
-          "id, user_id, style, focus, filthy_mode, score, rarity, verdict, image_url, is_public, is_demo, likes, dislikes, created_at"
+          "id, user_id, style, focus, filthy_mode, score, rarity, verdict, image_url, is_public, is_demo, likes, dislikes, created_at, intensity, roast_length, heat, angle"
         )
         .eq("is_public", true)
         .order("created_at", { ascending: false })
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await supabase
       .from("judgments")
       .select(
-        "id, style, focus, filthy_mode, score, rarity, verdict, image_url, is_public, is_demo, likes, dislikes, created_at"
+        "id, style, focus, filthy_mode, score, rarity, verdict, image_url, is_public, is_demo, likes, dislikes, created_at, intensity, roast_length, heat, angle"
       )
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
@@ -79,6 +79,10 @@ export async function POST(req: NextRequest) {
       userId = null,
       imageUrl = null,
       isDemo = false,
+      intensity = null,
+      roastLength = null,
+      heat = null,
+      angle = null,
     } = body;
 
     if (!userId) {
@@ -114,6 +118,10 @@ export async function POST(req: NextRequest) {
         is_demo: !!isDemo,
         likes: 0,
         dislikes: 0,
+        intensity: intensity || null,
+        roast_length: roastLength || null,
+        heat: heat || null,
+        angle: angle || null,
       })
       .select()
       .single();

@@ -1,27 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
+import { userFromRequest } from "@/lib/auth-request";
 import { createServiceClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await userFromRequest(req);
+    if (!user) {
+      return NextResponse.json({ error: "Log in to Mark or Cut." }, { status: 401 });
+    }
+
     const body = await req.json();
     const judgmentId = body.judgmentId as string;
-    const voterKey = (body.voterKey as string)?.slice(0, 120);
     const value = body.value as number;
 
-    if (!judgmentId || !voterKey || (value !== 1 && value !== -1)) {
+    if (!judgmentId || (value !== 1 && value !== -1)) {
       return NextResponse.json({ error: "Invalid vote" }, { status: 400 });
     }
 
+    const voterKey = user.id;
     const supabase = createServiceClient();
 
     const { data: judgment } = await supabase
       .from("judgments")
-      .select("id, is_public, likes, dislikes")
+      .select("id, is_public, likes, dislikes, user_id")
       .eq("id", judgmentId)
       .maybeSingle();
 
     if (!judgment || !judgment.is_public) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    if (judgment.user_id && judgment.user_id === user.id) {
+      return NextResponse.json({ error: "You cannot vote on your own card." }, { status: 400 });
     }
 
     const { data: existing } = await supabase
@@ -38,16 +48,12 @@ export async function POST(req: NextRequest) {
       if (existing.value === value) {
         return NextResponse.json({ likes, dislikes, already: true });
       }
-      // Switch vote
       if (existing.value === 1) likes = Math.max(0, likes - 1);
       if (existing.value === -1) dislikes = Math.max(0, dislikes - 1);
       if (value === 1) likes += 1;
       if (value === -1) dislikes += 1;
 
-      await supabase
-        .from("gallery_votes")
-        .update({ value })
-        .eq("id", existing.id);
+      await supabase.from("gallery_votes").update({ value }).eq("id", existing.id);
     } else {
       if (value === 1) likes += 1;
       else dislikes += 1;
@@ -59,14 +65,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    await supabase
-      .from("judgments")
-      .update({ likes, dislikes })
-      .eq("id", judgmentId);
+    await supabase.from("judgments").update({ likes, dislikes }).eq("id", judgmentId);
 
     return NextResponse.json({ likes, dislikes, success: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(err);
-    return NextResponse.json({ error: err.message || "Vote failed" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Vote failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

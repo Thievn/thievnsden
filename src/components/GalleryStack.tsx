@@ -4,15 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { getRarity, type GalleryJudgment } from "@/lib/gallery";
 import { supabase } from "@/lib/supabase/client";
-
-function getVoterKey(): string {
-  if (typeof window === "undefined") return "anon";
-  const existing = localStorage.getItem("den_voter_key");
-  if (existing) return existing;
-  const key = `v_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
-  localStorage.setItem("den_voter_key", key);
-  return key;
-}
+import { VOTE } from "@/lib/face-the-den";
 
 type Props = {
   compact?: boolean;
@@ -20,7 +12,7 @@ type Props = {
 
 /**
  * Gallery stack — swipe left/right only navigates (no silent vote).
- * Explicit Nope / Fire buttons handle votes.
+ * Explicit Mark / Cut buttons handle votes. Account required to vote.
  */
 export function GalleryStack({ compact = false }: Props) {
   const [cards, setCards] = useState<GalleryJudgment[]>([]);
@@ -42,6 +34,12 @@ export function GalleryStack({ compact = false }: Props) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserId(session?.user?.id ?? null);
     });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -80,15 +78,24 @@ export function GalleryStack({ compact = false }: Props) {
       setBusy(true);
       setExitDir(value === 1 ? "right" : "left");
 
-      const voterKey = userId || getVoterKey();
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) {
+        setBusy(false);
+        setExitDir(null);
+        window.location.href = "/login?next=/playground/face-the-den";
+        return;
+      }
 
       try {
         const res = await fetch("/api/gallery/vote", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({
             judgmentId: current.id,
-            voterKey,
             value,
           }),
         });
@@ -194,13 +201,13 @@ export function GalleryStack({ compact = false }: Props) {
               Face The Den
             </p>
             <h1 className="text-2xl font-semibold text-neutral-50 tracking-tight">Gallery</h1>
-            <p className="text-neutral-500 text-sm mt-1">Swipe to browse · Nope or Fire to vote</p>
+            <p className="text-neutral-500 text-sm mt-1">Swipe to browse · Mark or Cut to vote</p>
           </div>
         )}
 
         {compact && (
           <p className="text-center text-xs text-neutral-500 mb-3">
-            Swipe to browse · Nope / Fire to vote
+            Swipe to browse · Mark / Cut to vote
           </p>
         )}
 
@@ -278,10 +285,10 @@ export function GalleryStack({ compact = false }: Props) {
                   <div className="flex items-center gap-2.5">
                     <span className="text-[10px] text-neutral-500 tabular-nums">
                       <span className="text-purple-400/90">{current.likes || 0}</span>
-                      <span className="text-neutral-600 mx-1">fire</span>
+                      <span className="text-neutral-600 mx-1">mark</span>
                       <span className="text-neutral-600">·</span>
                       <span className="text-red-400/80 ml-1">{current.dislikes || 0}</span>
-                      <span className="text-neutral-600 ml-1">nope</span>
+                      <span className="text-neutral-600 ml-1">cut</span>
                     </span>
                     <div
                       className={`flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/40 border ${rarity.border}`}
@@ -348,9 +355,10 @@ export function GalleryStack({ compact = false }: Props) {
               <button
                 onClick={() => vote(-1)}
                 disabled={busy}
-                className="group flex-1 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-red-900/60 bg-gradient-to-b from-[#2a0a0a] via-[#1a0808] to-[#0c0c0c] text-red-200 shadow-[0_0_24px_-4px_rgba(220,38,38,0.45)] hover:shadow-[0_0_28px_-2px_rgba(220,38,38,0.55)] hover:border-red-700/70 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
+                className="group flex-1 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-slate-600/50 bg-gradient-to-b from-[#1a1518] via-[#121014] to-[#0c0c0c] text-slate-100 shadow-[0_0_24px_-4px_rgba(148,163,184,0.28)] hover:shadow-[0_0_28px_-2px_rgba(248,113,113,0.35)] hover:border-red-700/50 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
               >
-                <span className="text-[14px] font-bold tracking-[0.12em] uppercase">Nope</span>
+                <span className="text-[14px] font-bold tracking-[0.12em] uppercase">{VOTE.dislike.verb}</span>
+                <span className="text-[10px] text-slate-500 mt-0.5">{VOTE.dislike.hint}</span>
               </button>
 
               <button
@@ -364,13 +372,14 @@ export function GalleryStack({ compact = false }: Props) {
               <button
                 onClick={() => vote(1)}
                 disabled={busy}
-                className="group flex-1 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-orange-700/50 bg-gradient-to-b from-[#2a1508] via-[#1a0e08] to-[#0c0c0c] text-orange-100 shadow-[0_0_24px_-4px_rgba(234,88,12,0.45)] hover:shadow-[0_0_28px_-2px_rgba(234,88,12,0.55)] hover:border-orange-500/60 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
+                className="group flex-1 max-w-[150px] min-h-[58px] rounded-2xl border-2 border-rose-700/50 bg-gradient-to-b from-[#2a0a14] via-[#1a080e] to-[#0c0c0c] text-rose-100 shadow-[0_0_24px_-4px_rgba(244,63,94,0.45)] hover:shadow-[0_0_28px_-2px_rgba(244,63,94,0.55)] hover:border-rose-500/60 active:scale-95 transition-all disabled:opacity-40 flex flex-col items-center justify-center"
               >
-                <span className="text-[14px] font-bold tracking-[0.12em] uppercase">Fire</span>
+                <span className="text-[14px] font-bold tracking-[0.12em] uppercase">{VOTE.like.verb}</span>
+                <span className="text-[10px] text-rose-300/70 mt-0.5">{VOTE.like.hint}</span>
               </button>
             </div>
             <p className="text-center text-[10px] text-neutral-600 leading-relaxed">
-              Swipe browses only · Nope / Fire vote
+              {userId ? "Swipe browses only · Mark / Cut vote" : "Log in to Mark or Cut · swipe still browses"}
             </p>
           </div>
         )}

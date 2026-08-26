@@ -92,7 +92,7 @@ export default async function ShareCardPage({ params }: Props) {
             </span>
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-neutral-500">
-                ↑ {card.likes || 0} · ↓ {card.dislikes || 0}
+                Mark {card.likes || 0} · Cut {card.dislikes || 0}
               </span>
               <div
                 className={`flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/40 border ${rarity.border}`}
@@ -150,7 +150,7 @@ export default async function ShareCardPage({ params }: Props) {
             Open Gallery →
           </Link>
           <Link
-            href="/playground"
+            href="/playground/face-the-den"
             className="text-sm text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400"
           >
             Face The Den →

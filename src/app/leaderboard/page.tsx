@@ -12,7 +12,7 @@ export default function LeaderboardPage() {
       </div>
 
       <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-        <RanksList showHeader />
+        <RanksList showHeader scroll />
 
         <p className="text-center mt-10 space-x-4">
           <Link href="/playground" className="text-sm text-neutral-500 hover:text-neutral-300">

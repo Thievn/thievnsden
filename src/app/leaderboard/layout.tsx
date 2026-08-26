@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Leaderboard",
-  description: "Top Face The Den scores and most liked public judgments.",
+  description: "The Marked and The Cut — Face The Den boards. Top 10 on each side.",
   alternates: { canonical: "/leaderboard" },
 };
 

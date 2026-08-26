@@ -133,10 +133,10 @@ export default function MyJudgmentsPage() {
         <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-8 text-center">
           <p className="text-neutral-500 text-sm mb-2">No saved judgments yet.</p>
           <p className="text-neutral-600 text-xs mb-4">
-            Face The Den while logged in, then hit Save.
+            Face The Den while logged in, then keep it private or post it to the stack.
           </p>
           <Link
-            href="/playground"
+            href="/playground/face-the-den"
             className="text-sm text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400"
           >
             Face The Den →
@@ -182,7 +182,7 @@ export default function MyJudgmentsPage() {
                   <>
                     <span>·</span>
                     <span>
-                      ↑ {j.likes || 0} · ↓ {j.dislikes || 0}
+                      {j.likes || 0} marks · {j.dislikes || 0} cuts
                     </span>
                   </>
                 )}

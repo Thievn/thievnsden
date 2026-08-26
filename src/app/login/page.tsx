@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { nextFromLocation } from "@/lib/safe-next";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,7 +14,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [joinHref, setJoinHref] = useState("/join");
+
   useEffect(() => {
+    setJoinHref(`/join${window.location.search}`);
     const handler = (e: KeyboardEvent) => {
       setCapsOn(e.getModifierState?.("CapsLock") ?? false);
     };
@@ -55,7 +59,7 @@ export default function LoginPage() {
 
       if (signInError) throw signInError;
 
-      router.push("/playground");
+      router.push(nextFromLocation("/playground"));
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Could not log in.");
@@ -115,7 +119,7 @@ export default function LoginPage() {
 
         <p className="text-xs text-neutral-600 text-center pt-1">
           No account yet?{" "}
-          <Link href="/join" className="text-neutral-400 hover:text-neutral-200 underline underline-offset-2">
+          <Link href={joinHref} className="text-neutral-400 hover:text-neutral-200 underline underline-offset-2">
             Create one
           </Link>
         </p>

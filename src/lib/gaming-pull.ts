@@ -57,7 +57,7 @@ async function fetchImage(url: string) {
   ];
   for (const headers of headersList) {
     try {
-      const res = await fetch(url, { redirect: "follow", headers, cache: "no-store" });
+      const res = await fetch(url, { redirect: "follow", headers: headers as HeadersInit });
       if (!res.ok) continue;
       const bytes = new Uint8Array(await res.arrayBuffer());
       if (bytes.byteLength < 80) continue;

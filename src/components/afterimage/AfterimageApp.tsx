@@ -158,11 +158,10 @@ export function AfterimageApp() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,42rem)_minmax(0,1fr)] gap-6 lg:gap-8 items-start">
-          <div className="hidden lg:block" aria-hidden />
-          <div className="space-y-4">
+        <div className="relative">
+          <div className="max-w-[42rem] mx-auto space-y-4">
             <AfterimageStudio draft={draft} panel={panel} onPanel={setPanel} onDraft={setDraft} />
-            <div className="lg:hidden space-y-3">
+            <div className="xl:hidden space-y-3">
               {printButton}
               {msg ? <p className="text-sm text-amber-100">{msg}</p> : null}
             </div>
@@ -187,7 +186,7 @@ export function AfterimageApp() {
               </div>
             )}
           </div>
-          <aside className="hidden lg:flex flex-col items-center sticky top-24 space-y-4">
+          <aside className="hidden xl:flex flex-col items-center absolute top-0 right-0 w-[220px] space-y-4">
             <button
               type="button"
               disabled={!picked[0]}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import AdminDashboard from "@/app/admin/AdminDashboard";
 import { AfterimageTab } from "@/app/admin/AfterimageTab";
 import { LootTab } from "@/app/admin/LootTab";
@@ -9,8 +10,22 @@ import { XThoughtsTab } from "@/app/admin/XThoughtsTab";
 import { CatalogSeed } from "@/components/afterimage/CatalogSeed";
 import { BulkUpload } from "@/components/afterimage/BulkUpload";
 
+type AdminMode = "main" | "afterimage" | "loot" | "thoughts" | "xthoughts";
+
 function AdminShell() {
-  const [mode, setMode] = useState<"main" | "afterimage" | "loot" | "thoughts" | "xthoughts">("main");
+  const search = useSearchParams();
+  const start = (search.get("mode") || search.get("tab") || "") as string;
+  const initial: AdminMode =
+    start === "xthoughts" || start === "x"
+      ? "xthoughts"
+      : start === "afterimage"
+        ? "afterimage"
+        : start === "loot"
+          ? "loot"
+          : start === "thoughts"
+            ? "thoughts"
+            : "main";
+  const [mode, setMode] = useState<AdminMode>(initial);
   return (
     <div data-admin-shell="xpic-v3">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 flex flex-wrap gap-2">

@@ -255,7 +255,7 @@ export function WyrGame() {
               <button
                 type="button"
                 onClick={nextRound}
-                className="w-full py-4 rounded-2xl bg-gradient-to-b from-amber-500 via-rose-700 to-violet-900 text-white text-base font-semibold shadow-[0_0_30px_-8px_rgba(244,63,94,0.55)]"
+                className="w-full py-4 rounded-2xl border border-amber-500/50 bg-black/40 text-amber-50 text-base font-semibold hover:bg-amber-950/40"
               >
                 {leans.length >= 10 ? "Open the stamp" : "Next round"}
               </button>

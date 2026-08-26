@@ -24,6 +24,28 @@ const PACKS = new Set<string>([
 
 const HOOKUP_RE = /\b(sleep with|hook up|have sex|fuck|one night stand)\b/i;
 
+function contentWords(s: string) {
+  return new Set(
+    s
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter(
+        (w) =>
+          w.length > 3 &&
+          !["with", "your", "their", "that", "this", "from", "have", "them", "about"].includes(w)
+      )
+  );
+}
+
+export function tooSimilar(a: string, b: string) {
+  const A = contentWords(a);
+  const B = contentWords(b);
+  if (!A.size || !B.size) return true;
+  const inter = [...A].filter((x) => B.has(x));
+  const union = new Set([...A, ...B]);
+  return inter.length / union.size >= 0.38;
+}
+
 export function pairFingerprint(a: string, b: string) {
   const n = (s: string) =>
     s
@@ -85,6 +107,7 @@ export function parseGeneratedPairs(
     if (a.toLowerCase() === b.toLowerCase()) continue;
     const bothHookups = HOOKUP_RE.test(a) && HOOKUP_RE.test(b);
     if (bothHookups) continue;
+    if (tooSimilar(a, b)) continue;
     const fp = pairFingerprint(a, b);
     if (seen.has(fp)) continue;
     const topic = asTopic(item.topic, contrast[0]);

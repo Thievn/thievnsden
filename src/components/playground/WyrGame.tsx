@@ -197,14 +197,11 @@ export function WyrGame() {
             <span>
               Round {String(round).padStart(2, "0")} / 10
             </span>
-            <span className="truncate text-rose-200/85">
-              {contrastLine(pair.topic, pair.topicB) || floorName}
-            </span>
             <span className={`floor-heat floor-heat-${pair.heat}`}>{pair.heat}</span>
           </div>
 
-          <p className="floor-chiron text-center text-[10px] sm:text-xs uppercase tracking-[0.28em] text-neutral-500">
-            Tonight · {floorName}
+          <p className="floor-chiron text-center text-[10px] sm:text-xs uppercase tracking-[0.28em] text-neutral-400">
+            Tonight · {contrastLine(pair.topic, pair.topicB) || floorName}
           </p>
 
           <div className="floor-stage relative grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">

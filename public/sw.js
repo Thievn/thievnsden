@@ -1,6 +1,6 @@
 /* Thievn's Den — minimal service worker for installability */
-const CACHE = "den-shell-v1";
-const PRECACHE = ["/", "/manifest.webmanifest"];
+const CACHE = "den-shell-v2";
+const PRECACHE = ["/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

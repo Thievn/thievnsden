@@ -32,39 +32,71 @@ export function HomeDen({
   return (
     <HomeAtmosphere>
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
-        <section className="pt-14 sm:pt-20 md:pt-24 pb-12 sm:pb-16 text-center">
-          <div className="home-reveal home-float mx-auto mb-6 sm:mb-8 w-fit">
-            <DenMarkSplash className="w-12 h-16 sm:w-14 sm:h-[4.5rem] drop-shadow-[0_0_24px_rgba(225,29,72,0.35)]" />
+        <section className="pt-8 sm:pt-12 md:pt-14 pb-10 sm:pb-14">
+          <div className="relative overflow-hidden rounded-[2rem] border border-rose-900/40 bg-[#090509] den-panel">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_20%,rgba(185,28,92,0.22),transparent_45%),radial-gradient(ellipse_at_90%_80%,rgba(124,58,237,0.16),transparent_50%)]" />
+            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-rose-400/70 to-transparent" />
+            <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 p-6 sm:p-10 lg:p-12 items-center">
+              <div className="lg:col-span-7 text-left">
+                <div className="home-float mb-5 w-fit">
+                  <DenMarkSplash className="w-11 h-14 sm:w-14 sm:h-[4.5rem] drop-shadow-[0_0_28px_rgba(225,29,72,0.45)]" />
+                </div>
+                <p className="text-[11px] sm:text-xs uppercase tracking-[0.32em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-300 to-purple-400 mb-4 font-medium">
+                  Thievn&apos;s Den · members&apos; hours · 18+
+                </p>
+                <h1 className="text-[2.6rem] sm:text-5xl md:text-6xl lg:text-[4.6rem] font-semibold tracking-tight text-neutral-50 mb-5 leading-[0.98]">
+                  Come in.
+                  <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-300 via-rose-100 to-purple-300">
+                    The lights stay low.
+                  </span>
+                </h1>
+                <p className="max-w-lg text-neutral-400 text-base sm:text-lg leading-relaxed mb-8">
+                  Essays on the table. Afterimage on the wall. Gaming in the corner. Machines in the back.
+                  This is a den, not a landing page.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Link
+                    href="/thoughts"
+                    className="px-7 py-3.5 rounded-xl bg-gradient-to-b from-red-600 via-red-800 to-purple-900 text-white font-medium text-center shadow-[0_16px_40px_-12px_rgba(185,28,92,0.7)] hover:from-red-500 hover:via-red-700 hover:to-purple-800 transition-all active:scale-[0.98]"
+                  >
+                    Sit with a thought
+                  </Link>
+                  <Link
+                    href="/playground"
+                    className="px-7 py-3.5 rounded-xl border border-white/15 bg-black/30 text-neutral-100 font-medium text-center hover:border-rose-400/50 hover:bg-rose-950/30 transition-all active:scale-[0.98]"
+                  >
+                    Pick a machine
+                  </Link>
+                </div>
+              </div>
+              <div className="lg:col-span-5 relative min-h-[240px] sm:min-h-[320px]">
+                {prints.length ? (
+                  <div className="relative h-[260px] sm:h-[340px]">
+                    {prints.slice(0, 3).map((src, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={src + i}
+                        src={src}
+                        alt=""
+                        className="absolute object-cover rounded-2xl border border-white/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.85)]"
+                        style={{
+                          width: i === 0 ? "68%" : "54%",
+                          height: i === 0 ? "86%" : "70%",
+                          left: i === 0 ? "8%" : i === 1 ? "38%" : "18%",
+                          top: i === 0 ? "6%" : i === 1 ? "22%" : "38%",
+                          transform: `rotate(${[-9, 7, 2][i]}deg)`,
+                          zIndex: i === 0 ? 2 : i === 1 ? 3 : 1,
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="h-[260px] rounded-2xl bg-gradient-to-br from-fuchsia-700/30 via-rose-950/40 to-amber-900/20 border border-white/10" />
+                )}
+              </div>
+            </div>
           </div>
-          <p className="home-reveal text-[11px] sm:text-xs uppercase tracking-[0.28em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-300 to-purple-400 mb-5 font-medium">
-            Members&apos; hours · 18+
-          </p>
-          <h1 className="home-reveal text-[2.35rem] sm:text-5xl md:text-6xl lg:text-[4.35rem] font-semibold tracking-tight text-neutral-50 mb-5 sm:mb-6 leading-[1.08]">
-            Come in.
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-300 via-rose-200 to-purple-300">
-              The lights stay low.
-            </span>
-          </h1>
-          <p className="home-reveal max-w-xl mx-auto text-neutral-400 text-base sm:text-lg leading-relaxed mb-8 sm:mb-10 px-1">
-            Dark essays. Honest loot. Gaming that isn&apos;t a press kit. Afterimage on the wall.
-            Games in the back room. This is Thievn&apos;s Den — not a brand deck.
-          </p>
-          <div className="home-reveal flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-            <Link
-              href="/thoughts"
-              className="px-7 py-3.5 rounded-xl bg-gradient-to-b from-red-600 via-red-800 to-purple-900 text-white font-medium text-center shadow-[0_12px_32px_-12px_rgba(185,28,92,0.55)] hover:from-red-500 hover:via-red-700 hover:to-purple-800 transition-all active:scale-[0.98]"
-            >
-              Sit with a thought
-            </Link>
-            <Link
-              href="/playground"
-              className="px-7 py-3.5 rounded-xl border border-white/10 bg-white/[0.03] text-neutral-100 font-medium text-center hover:border-rose-500/40 hover:bg-rose-950/20 transition-all active:scale-[0.98]"
-            >
-              Pick a machine
-            </Link>
-          </div>
-          <div className="home-line mx-auto mt-12 sm:mt-16 h-px w-full max-w-md rounded-full" />
         </section>
 
           <nav className="home-reveal flex gap-2 overflow-x-auto pb-2 mb-8 sm:mb-10 -mx-4 px-4 sm:mx-0 sm:px-0" aria-label="Rooms in the Den">

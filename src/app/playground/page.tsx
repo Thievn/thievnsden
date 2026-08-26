@@ -17,7 +17,7 @@ const GAMES = [
     href: "/playground/would-you-rather",
     title: "Would You Rather",
     tag: "Live",
-    line: "Two bad options. Pick anyway. Get clocked.",
+    line: "Lights on. Ten rounds. Pick a cost.",
     accent: "from-violet-600/30 via-fuchsia-900/20 to-transparent",
     chip: "border-violet-500/40 text-violet-200",
   },

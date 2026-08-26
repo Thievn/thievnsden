@@ -8,7 +8,7 @@ export async function GET() {
     const supabase = createServiceClient();
     const { data, error } = await supabase
       .from("wyr_pairs")
-      .select("id, a, b, heat, packs, a_lean, b_lean, active")
+      .select("id, a, b, heat, packs, a_lean, b_lean, topic, topic_b, a_sting, b_sting, active")
       .eq("active", true)
       .order("id", { ascending: true });
 

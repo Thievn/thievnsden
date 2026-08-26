@@ -1,7 +1,7 @@
-import type { WyrHeat, WyrLean, WyrPack, WyrPair } from "@/lib/wyr-data";
+import type { WyrHeat, WyrLean, WyrPack, WyrPair } from "./wyr-data";
 
 const HEATS: WyrHeat[] = ["clean", "spicy", "nasty"];
-const PACKS: WyrPack[] = [
+export const WYR_PACKS: WyrPack[] = [
   "bodies",
   "reputation",
   "money",
@@ -9,6 +9,10 @@ const PACKS: WyrPack[] = [
   "celebs",
   "people",
   "internet",
+  "power",
+  "family",
+  "work",
+  "chaos",
 ];
 
 export const DEFAULT_LEAN: WyrLean = { appetite: 1, image: 1, stay: 1 };
@@ -27,7 +31,7 @@ export function rowToPair(row: any): WyrPair | null {
   if (!row?.id || !row?.a || !row?.b) return null;
   const heat = HEATS.includes(row.heat) ? row.heat : "spicy";
   const packs = (Array.isArray(row.packs) ? row.packs : []).filter((p: string) =>
-    PACKS.includes(p as WyrPack)
+    WYR_PACKS.includes(p as WyrPack)
   ) as WyrPack[];
   return {
     id: String(row.id),
@@ -37,10 +41,14 @@ export function rowToPair(row: any): WyrPair | null {
     packs: packs.length ? packs : ["people"],
     aLean: leanOf(row.a_lean),
     bLean: leanOf(row.b_lean),
+    topic: row.topic ? String(row.topic) : undefined,
+    topicB: row.topic_b ? String(row.topic_b) : undefined,
+    aSting: row.a_sting ? String(row.a_sting) : undefined,
+    bSting: row.b_sting ? String(row.b_sting) : undefined,
   };
 }
 
-export function pairToRow(p: WyrPair) {
+export function pairToRow(p: WyrPair, source = "grok") {
   return {
     id: p.id,
     a: p.a,
@@ -49,6 +57,11 @@ export function pairToRow(p: WyrPair) {
     packs: p.packs,
     a_lean: p.aLean,
     b_lean: p.bLean,
+    topic: p.topic || null,
+    topic_b: p.topicB || null,
+    a_sting: p.aSting || null,
+    b_sting: p.bSting || null,
+    source,
     active: true,
     updated_at: new Date().toISOString(),
   };

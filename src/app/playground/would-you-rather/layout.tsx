@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Would You Rather",
+  title: "The Floor · Would You Rather",
   description:
-    "Two real costs. Pick one. See the split. Get a scorecard. 18+ game in Thievn's Den.",
+    "Late-night 18+ Would You Rather. Ten rounds. Two costs. The room splits. Get stamped.",
   alternates: { canonical: "/playground/would-you-rather" },
   openGraph: {
-    title: "Would You Rather · Thievn's Den",
-    description: "Human, nasty, no magic. Pick a side and see how the room splits.",
+    title: "The Floor · Would You Rather · Thievn's Den",
+    description: "Ten rounds. Two costs. Pick anyway. See how the room splits.",
     url: "https://thievnsden.com/playground/would-you-rather",
   },
 };

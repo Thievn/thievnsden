@@ -412,7 +412,7 @@ export default function AdminDashboard() {
     { id: "seeds" as const, label: "Cast" },
     { id: "house" as const, label: "House" },
     { id: "gaming" as const, label: "Gaming" },
-    { id: "wyr" as const, label: "WYR" },
+    { id: "wyr" as const, label: "Floor" },
     { id: "users" as const, label: "Users" },
     { id: "judgments" as const, label: "Judgments" },
     { id: "controls" as const, label: "Controls" },

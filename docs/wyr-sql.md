@@ -1,34 +1,30 @@
-# Would You Rather tables
+# The Floor (Would You Rather)
 
-## Votes (live %)
+Play deals **10 random pairs** from `wyr_pairs`. Live Grok is not used per round.
+Host stings are stored on each pair (`a_sting`, `b_sting`). If the active pool
+drops below ~460, a background refill adds a small batch.
 
 ```sql
-create table if not exists wyr_votes (
-  pair_id text primary key,
-  picks_a int not null default 0,
-  picks_b int not null default 0,
+alter table wyr_pairs add column if not exists topic text;
+alter table wyr_pairs add column if not exists topic_b text;
+alter table wyr_pairs add column if not exists a_sting text;
+alter table wyr_pairs add column if not exists b_sting text;
+alter table wyr_pairs add column if not exists source text not null default 'bank';
+
+create index if not exists wyr_pairs_topic_idx on wyr_pairs (topic) where active;
+create index if not exists wyr_pairs_source_idx on wyr_pairs (source);
+
+create table if not exists wyr_meta (
+  key text primary key,
+  value jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
 ```
 
-## Questions (source of truth)
+Votes stay in `wyr_votes`. Rebuild the 500-question pool with:
 
-```sql
-create table if not exists wyr_pairs (
-  id text primary key,
-  a text not null,
-  b text not null,
-  heat text not null default 'spicy',
-  packs text[] not null default '{}',
-  a_lean jsonb not null default '{"appetite":1,"image":1,"stay":1}'::jsonb,
-  b_lean jsonb not null default '{"appetite":1,"image":1,"stay":1}'::jsonb,
-  active boolean not null default true,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create index if not exists wyr_pairs_active_idx on wyr_pairs (active);
+```
+npx tsx scripts/generate-wyr-pool.ts --replace --count=500
 ```
 
-After this exists, open **Admin → WYR** and hit **Seed built-in bank** once.
-The game reads this table. Code bank is only a fallback + seed source.
+Admin → WYR can refill 16 without wiping the table.

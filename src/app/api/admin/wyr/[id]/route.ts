@@ -18,6 +18,10 @@ export async function PATCH(
     if (typeof body.active === "boolean") patch.active = body.active;
     if (body.aLean) patch.a_lean = body.aLean;
     if (body.bLean) patch.b_lean = body.bLean;
+    if (typeof body.topic === "string") patch.topic = body.topic.trim();
+    if (typeof body.topicB === "string") patch.topic_b = body.topicB.trim();
+    if (typeof body.aSting === "string") patch.a_sting = body.aSting.trim();
+    if (typeof body.bSting === "string") patch.b_sting = body.bSting.trim();
 
     const { error } = await supabase.from("wyr_pairs").update(patch).eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

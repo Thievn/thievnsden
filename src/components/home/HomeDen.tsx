@@ -162,8 +162,8 @@ export function HomeDen({
           <Link href="/playground/would-you-rather" className="home-room rounded-3xl border border-amber-900/40 bg-[#120e08] p-6 min-h-[200px] flex flex-col">
             <p className="text-[11px] uppercase tracking-[0.18em] text-amber-300/85 mb-3">Playground</p>
             <h2 className="text-xl font-semibold text-neutral-50 mb-2">Would You Rather</h2>
-            <p className="text-sm text-neutral-500 flex-1">Two bad options. Pick anyway. Get clocked.</p>
-            <p className="mt-5 text-sm text-amber-300">Deal the cards →</p>
+            <p className="text-sm text-neutral-500 flex-1">Ten rounds. Two costs. The room splits.</p>
+            <p className="mt-5 text-sm text-amber-300">Lights on →</p>
           </Link>
           <Link href="/playground/highway-hunter" className="home-room rounded-3xl border border-orange-900/35 bg-[#120a08] p-6 min-h-[200px] flex flex-col">
             <p className="text-[11px] uppercase tracking-[0.18em] text-orange-300/85 mb-3">Playground</p>

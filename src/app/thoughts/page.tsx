@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ThoughtsBoard } from "@/components/thoughts/ThoughtsBoard";
+import { DenHero } from "@/components/den/DenHero";
 
 export const metadata: Metadata = {
   title: "Thoughts",
@@ -16,19 +17,18 @@ export const metadata: Metadata = {
 
 export default function ThoughtsPage() {
   return (
-    <div className="relative">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] h-[300px] bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.05)_0%,_transparent_70%)] pointer-events-none" />
-      <div className="relative max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-        <div className="mb-8 sm:mb-10">
-          <p className="text-[11px] uppercase tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 mb-3 font-medium">
-            From the Den
-          </p>
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-50 mb-3">Thoughts</h1>
-          <p className="text-neutral-400 text-sm sm:text-base max-w-lg leading-relaxed">
-            Things people usually keep to themselves. Written without the usual polish.
-          </p>
+    <div className="home-den relative">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] h-[300px] bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.08)_0%,_transparent_70%)] pointer-events-none" />
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pb-16">
+        <DenHero
+          kicker="Thoughts · on the table"
+          title="Things people keep quiet."
+          accent="Written without the polish."
+          body="Short essays. No TED-talk cadence. Sit down, read one, leave a little meaner or a little honest."
+        />
+        <div className="max-w-3xl">
+          <ThoughtsBoard />
         </div>
-        <ThoughtsBoard />
       </div>
     </div>
   );

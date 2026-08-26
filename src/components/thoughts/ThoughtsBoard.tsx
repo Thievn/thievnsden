@@ -92,7 +92,7 @@ export function ThoughtsBoard() {
           <Link
             key={thought.slug}
             href={`/thoughts/${thought.slug}`}
-            className="group block rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden hover:border-rose-900/50 transition-colors"
+            className="group home-room block rounded-2xl border border-rose-900/20 bg-[#111] overflow-hidden"
           >
             <Cover src={thought.cover_url} />
             <div className="p-5 sm:p-6">

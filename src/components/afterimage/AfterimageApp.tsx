@@ -12,6 +12,7 @@ import { AfterimagePeek, PeekThumb } from "@/components/afterimage/AfterimagePee
 import { CatalogPick } from "@/components/afterimage/CatalogPick";
 import { SearchSelect } from "@/components/afterimage/SearchSelect";
 import { isAdmin } from "@/lib/admin";
+import { DenHero } from "@/components/den/DenHero";
 
 type Print = { id: string; image_url: string; want?: string; style_id?: string; username?: string };
 
@@ -115,12 +116,14 @@ export function AfterimageApp() {
         <div className="ai-orb ai-orb-c" />
         <div className="den-grain" />
       </div>
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-14 pb-20">
-        <div className="text-center mb-8">
-          <p className="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full border border-fuchsia-500/30 bg-black/40 text-[10px] uppercase tracking-[0.28em] text-fuchsia-200">Afterimage</p>
-          <h1 className="ai-title text-4xl sm:text-6xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-rose-200 to-amber-200">Print a wallpaper</h1>
-          <p className="mt-3 text-neutral-400 max-w-lg mx-auto text-sm">Pick the shot. Empty menus stay out of the prompt. Nothing sneaks in a rooftop.</p>
-        </div>
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pb-20">
+        <DenHero
+          tone="fuchsia"
+          kicker="Afterimage"
+          title="Print a lock screen."
+          accent="Not stock. Yours."
+          body="Pick the shot. Empty menus stay out of the prompt. Take something you'd actually keep on the phone."
+        />
         <div className="grid lg:grid-cols-[minmax(0,1fr)_260px] gap-8 items-start">
           <div className="space-y-4">
             <div className="rounded-3xl border border-fuchsia-500/20 bg-black/55 backdrop-blur-md p-4 sm:p-5 space-y-4 shadow-[0_0_80px_-24px_rgba(217,70,239,0.55)]">

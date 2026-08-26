@@ -42,20 +42,31 @@ function eraKind(era: PullEra): { kind: GamingKind; status: GamingStatus } {
 }
 
 async function fetchImage(url: string) {
-  const res = await fetch(url, {
-    redirect: "follow",
-    headers: {
+  const headersList = [
+    {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
       Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
       Referer: url.includes("rawg") ? "https://rawg.io/" : "https://store.steampowered.com/",
     },
-    cache: "no-store",
-  });
-  if (!res.ok) return null;
-  const bytes = new Uint8Array(await res.arrayBuffer());
-  if (bytes.byteLength < 80) return null;
-  return bytes;
+    {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      Accept: "image/*",
+    },
+  ];
+  for (const headers of headersList) {
+    try {
+      const res = await fetch(url, { redirect: "follow", headers, cache: "no-store" });
+      if (!res.ok) continue;
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      if (bytes.byteLength < 80) continue;
+      return bytes;
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
 }
 
 export async function mirrorCover(url?: string | null) {

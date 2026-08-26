@@ -17,7 +17,11 @@ function keyOf(title: string) {
 }
 
 function wantsCover(item: GamingItem) {
-  return ["playing", "radar", "season", "watchlist", "library"].includes(item.kind);
+  return ["playing", "radar", "season", "watchlist", "library", "drama", "article"].includes(item.kind);
+}
+
+function hasCover(item: GamingItem) {
+  return Boolean(item.cover && String(item.cover).trim());
 }
 
 async function steamSearch(title: string): Promise<string | null> {
@@ -50,15 +54,19 @@ async function rawgSearch(title: string, key: string): Promise<string | null> {
   }
 }
 
+export async function lookupGameCover(title: string, rawgKey = "") {
+  const known = KNOWN[keyOf(title)];
+  return known || (await steamSearch(title)) || (rawgKey ? await rawgSearch(title, rawgKey) : null);
+}
+
 export async function fillGamingCovers(items: GamingItem[], rawgKey = "") {
   const out: GamingItem[] = [];
   for (const item of items) {
-    if (item.cover || !wantsCover(item)) {
+    if (hasCover(item) || !wantsCover(item)) {
       out.push(item);
       continue;
     }
-    const known = KNOWN[keyOf(item.title)];
-    const cover = known || (await steamSearch(item.title)) || (rawgKey ? await rawgSearch(item.title, rawgKey) : null);
+    const cover = await lookupGameCover(item.title, rawgKey);
     out.push(cover ? { ...item, cover } : item);
   }
   return out;

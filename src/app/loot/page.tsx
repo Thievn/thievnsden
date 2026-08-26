@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { LOOT_SECTIONS, SEED_PICKS, sectionLabel, type LootPick } from "@/lib/loot-data";
+import { DenHero } from "@/components/den/DenHero";
 
 function Cover({ name, src }: { name: string; src?: string | null }) {
   const [ok, setOk] = useState(false);
@@ -70,17 +71,17 @@ export default function LootPage() {
   }, [picks]);
 
   return (
-    <div className="relative">
-      <div className="loot-hero-orb pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[900px] h-[280px] sm:h-[380px] bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.08)_0%,_transparent_65%)]" />
+    <div className="home-den relative">
+      <div className="loot-hero-orb pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[900px] h-[280px] sm:h-[380px] bg-[radial-gradient(ellipse_at_center,_rgba(245,158,11,0.08)_0%,_transparent_65%)]" />
 
-      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-        <div className="mb-10 sm:mb-14 rounded-2xl overflow-hidden border border-neutral-800/80 bg-[#0d0d0d]">
-          <div className="relative py-10 sm:py-14 px-5 text-center">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 mb-2.5 font-medium">From the Den</p>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-neutral-50 mb-2">Loot</h1>
-            <p className="text-neutral-500 text-sm max-w-sm mx-auto">Things that earned a place. Scroll the pile.</p>
-          </div>
-        </div>
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pb-16">
+        <DenHero
+          tone="amber"
+          kicker="Loot · from the shelf"
+          title="Things that earned a place."
+          accent="No fake roundups."
+          body="Gear, merch, tools. If it is here, it actually got used in the Den."
+        />
 
         <div className="flex gap-2 overflow-x-auto pb-4 mb-8 sticky top-14 z-20 bg-[#070707]/80 backdrop-blur-md py-2 -mx-4 px-4 sm:mx-0 sm:px-0">
           {groups.map((g) => (
@@ -99,7 +100,7 @@ export default function LootPage() {
               {g.items.map((item, i) => (
                 <article
                   key={item.id}
-                  className="loot-card group rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden flex flex-col"
+                  className="loot-card home-room group rounded-2xl border border-amber-900/25 bg-[#11100c] overflow-hidden flex flex-col"
                   style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
                 >
                   <Cover name={item.name} src={item.image_url} />

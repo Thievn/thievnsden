@@ -4,14 +4,19 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 function allowed(host: string) {
+  const h = host.toLowerCase();
   return (
-    host.endsWith("rawg.io") ||
-    host.includes("steamstatic") ||
-    host.includes("steamcdn") ||
-    host.includes("akamaihd.net") ||
-    host.includes("cloudfront.net") ||
-    host.endsWith("igdb.com") ||
-    host.includes("supabase.co")
+    h === "rawg.io" ||
+    h.endsWith(".rawg.io") ||
+    h.includes("steamstatic") ||
+    h.includes("steamcdn") ||
+    h.includes("akamaihd.net") ||
+    h.includes("cloudfront.net") ||
+    h.endsWith("igdb.com") ||
+    h.includes("supabase.co") ||
+    h.includes("steamcommunity") ||
+    h.includes("xboxlive.com") ||
+    h.includes("epicgames.com")
   );
 }
 

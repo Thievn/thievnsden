@@ -10,6 +10,7 @@ import {
   DEFAULT_GAMING_CONFIG,
 } from "@/lib/gaming-data";
 import { GameCard } from "@/components/gaming/GameCard";
+import { DenHero } from "@/components/den/DenHero";
 
 function sectionTitle(id: FilterId | string) {
   switch (id) {
@@ -123,37 +124,31 @@ export function GamingHub() {
       : [{ kind: filter, items: visible }];
 
   return (
-    <div className="relative min-h-[70vh]">
+    <div className="home-den relative min-h-[70vh]">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="den-ember absolute left-1/2 top-0 h-[420px] w-[720px] max-w-[140%] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.14)_0%,_transparent_70%)] blur-2xl" />
+        <div className="den-ember absolute left-1/2 top-0 h-[420px] w-[720px] max-w-[140%] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,_rgba(124,58,237,0.16)_0%,_transparent_70%)] blur-2xl" />
         <div className="den-grain" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_transparent_0%,_#070707_70%)]" />
       </div>
 
-      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
-        <header className="mb-10 sm:mb-12">
-          <p className="text-[11px] uppercase tracking-[0.28em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 mb-3">
-            Gaming
-          </p>
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-neutral-50 den-title-glow mb-3">
-            In the Den
-          </h1>
-          <p className="text-neutral-500 max-w-xl text-sm sm:text-base leading-relaxed">
-            {config.hero_line}
-          </p>
-          <p className="mt-3 text-sm text-neutral-400">{currently}</p>
-        </header>
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
+        <DenHero
+          tone="violet"
+          kicker="Gaming · now playing"
+          title="What's on the plate."
+          accent="No press kits."
+          body={`${config.hero_line || "Builds, rants, radar, and whatever is actually eating the hours."} ${currently}`}
+        />
 
-        <div className="sticky top-14 z-20 -mx-4 sm:mx-0 px-4 sm:px-0 py-3 mb-8 backdrop-blur-md bg-[#070707]/85 border-b border-neutral-900/80">
+        <div className="sticky top-14 z-20 -mx-4 sm:mx-0 px-4 sm:px-0 py-3 mb-8 backdrop-blur-md bg-[#070707]/85">
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {FILTERS.map((f) => (
               <button
                 key={f.id}
                 type="button"
                 onClick={() => setFilter(f.id)}
-                className={`shrink-0 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
+                className={`shrink-0 px-3.5 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
                   filter === f.id
-                    ? "bg-gradient-to-r from-red-900/50 to-purple-900/50 text-neutral-100 border border-red-900/40"
+                    ? "border border-violet-500/40 bg-violet-950/40 text-violet-100"
                     : "border border-neutral-800 text-neutral-500 hover:text-neutral-200 hover:border-neutral-700"
                 }`}
               >

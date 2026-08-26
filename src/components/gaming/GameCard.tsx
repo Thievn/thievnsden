@@ -116,7 +116,7 @@ export function GameCard({
 
   return (
     <article
-      className={`rounded-2xl border border-neutral-800/80 bg-[#111] overflow-hidden flex flex-col ${
+      className={`home-room rounded-2xl border border-violet-900/25 bg-[#0d0b12] overflow-hidden flex flex-col ${
         featured ? "sm:col-span-2" : ""
       }`}
     >
@@ -127,7 +127,7 @@ export function GameCard({
             className="absolute inset-0"
             imgClassName="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-500"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/20 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0d0b12] via-[#0d0b12]/25 to-transparent pointer-events-none" />
         </div>
 
         <div className="p-5">

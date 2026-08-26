@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function normalizeCoverUrl(url: string | null | undefined): string | null {
   if (!url || typeof url !== "string") return null;
@@ -32,6 +32,11 @@ export function CoverImage({
   const normalized = normalizeCoverUrl(src);
   const [failed, setFailed] = useState(false);
   const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    setFailed(false);
+    setTick(0);
+  }, [normalized]);
 
   if (!normalized || (failed && tick > 1)) {
     return (

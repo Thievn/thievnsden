@@ -64,7 +64,7 @@ export function findXPick<T extends { id: string }>(list: T[], id: string, fallb
 
 export function emptyXRecipe(): XRecipe {
   return {
-    topic: TOPICS[2]?.id || TOPICS[0].id,
+    topic: "",
     outlook: "honest",
     heat: "sharp",
     form: "essay",
@@ -80,7 +80,7 @@ export function surpriseXRecipe(avoid?: Partial<XRecipe>): XRecipe {
   let next = emptyXRecipe();
   for (let i = 0; i < 8; i++) {
     next = {
-      topic: pick(TOPICS).id,
+      topic: "",
       outlook: pick(OUTLOOKS).id,
       heat: pick(HEATS).id,
       form: pick(FORMS).id,
@@ -90,12 +90,7 @@ export function surpriseXRecipe(avoid?: Partial<XRecipe>): XRecipe {
       signoff: pick(SIGNOFFS).id,
       seed: "",
     };
-    const same =
-      avoid &&
-      next.topic === avoid.topic &&
-      next.outlook === avoid.outlook &&
-      next.heat === avoid.heat &&
-      next.form === avoid.form;
+    const same = avoid && next.outlook === avoid.outlook && next.heat === avoid.heat && next.form === avoid.form;
     if (!same) break;
   }
   return next;

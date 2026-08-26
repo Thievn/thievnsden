@@ -1,16 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ADDRESSEES,
-  CATEGORIES,
   CLASSICS,
   FORMS,
   HEATS,
   LENGTHS,
   OUTLOOKS,
-  TOPICS,
-  packOfTopic,
   type ThoughtPick,
 } from "@/lib/thoughts-packs";
 import { describeRecipe, emptyRecipe, surpriseRecipe, thoughtFingerprint, type ThoughtRecipe } from "@/lib/thought-studio";
@@ -94,7 +91,6 @@ function Chips({
 
 export function ThoughtsTab() {
   const [recipe, setRecipe] = useState<ThoughtRecipe>(emptyRecipe);
-  const [pack, setPack] = useState("all");
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [body, setBody] = useState("");
@@ -110,11 +106,6 @@ export function ThoughtsTab() {
 
   const setField = (key: keyof ThoughtRecipe, value: string) =>
     setRecipe((prev) => ({ ...prev, [key]: value }));
-
-  const topics = useMemo(
-    () => (pack === "all" ? TOPICS : TOPICS.filter((t) => t.pack === pack)),
-    [pack],
-  );
 
   const load = async () => {
     const res = await fetch("/api/admin/thoughts");
@@ -134,9 +125,7 @@ export function ThoughtsTab() {
   });
 
   const surprise = () => {
-    const next = surpriseRecipe(recipe);
-    setRecipe(next);
-    setPack(packOfTopic(next.topic));
+    setRecipe(surpriseRecipe(recipe));
   };
 
   const blank = () => {
@@ -257,7 +246,7 @@ export function ThoughtsTab() {
           outlook: recipe.outlook,
           heat: recipe.heat,
           form: recipe.form,
-          topic: packOfTopic(recipe.topic),
+          topic: recipe.topic || null,
           recipe,
           fingerprint: thoughtFingerprint(title, excerpt, body),
           published,
@@ -285,7 +274,7 @@ export function ThoughtsTab() {
     setLook("");
     const stored = row.recipe || {};
     setRecipe({
-      topic: stored.topic || recipe.topic,
+      topic: stored.topic || "",
       outlook: stored.outlook || row.outlook || "honest",
       heat: stored.heat || row.heat || "sharp",
       form: stored.form || row.form || "essay",
@@ -293,7 +282,6 @@ export function ThoughtsTab() {
       addressee: stored.addressee || "nobody",
       seed: stored.seed || "",
     });
-    if (stored.topic) setPack(packOfTopic(stored.topic));
     setHits([]);
     setMsg(`Loaded ${row.slug}`);
   };
@@ -328,33 +316,6 @@ export function ThoughtsTab() {
         <Chips label="Shape" options={FORMS} value={recipe.form} onChange={(id) => setField("form", id)} variant="card" />
         <Chips label="Length" options={LENGTHS} value={recipe.length} onChange={(id) => setField("length", id)} />
         <Chips label="Who it's to" options={ADDRESSEES} value={recipe.addressee} onChange={(id) => setField("addressee", id)} />
-
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.22em] text-rose-200/70 mb-2">Topic</p>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => {
-                  setPack(c.id);
-                  const first = c.id === "all" ? TOPICS[0] : TOPICS.find((t) => t.pack === c.id);
-                  if (first) setField("topic", first.id);
-                }}
-                className={cx("shrink-0 px-3 py-1.5 rounded-full text-xs border", pack === c.id ? SELECTED : IDLE)}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-          <select value={recipe.topic} onChange={(e) => setField("topic", e.target.value)} className={field}>
-            {topics.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
 
         <textarea
           value={recipe.seed}

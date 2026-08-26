@@ -37,7 +37,7 @@ export function findPick(list: ThoughtPick[], id: string, fallback = 0) {
 
 export function emptyRecipe(): ThoughtRecipe {
   return {
-    topic: TOPICS[0].id,
+    topic: "",
     outlook: "honest",
     heat: "sharp",
     form: "essay",
@@ -51,7 +51,7 @@ export function surpriseRecipe(avoid?: Partial<ThoughtRecipe>): ThoughtRecipe {
   let next = emptyRecipe();
   for (let i = 0; i < 8; i++) {
     next = {
-      topic: pick(TOPICS).id,
+      topic: "",
       outlook: pick(OUTLOOKS).id,
       heat: pick(HEATS).id,
       form: pick(FORMS).id,
@@ -59,12 +59,7 @@ export function surpriseRecipe(avoid?: Partial<ThoughtRecipe>): ThoughtRecipe {
       addressee: pick(ADDRESSEES).id,
       seed: "",
     };
-    const same =
-      avoid &&
-      next.topic === avoid.topic &&
-      next.outlook === avoid.outlook &&
-      next.heat === avoid.heat &&
-      next.form === avoid.form;
+    const same = avoid && next.outlook === avoid.outlook && next.heat === avoid.heat && next.form === avoid.form;
     if (!same) break;
   }
   return next;

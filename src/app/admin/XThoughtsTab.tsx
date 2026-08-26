@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { XDropPanel } from "@/app/admin/XDropPanel";
 import {
   ADDRESSEES,
-  CATEGORIES,
   FORMS,
   HEATS,
   OUTLOOKS,
-  TOPICS,
-  packOfTopic,
   type ThoughtPick,
 } from "@/lib/thoughts-packs";
 import {
@@ -120,7 +117,6 @@ function Chips({
 export function XThoughtsTab() {
   const [pane, setPane] = useState<"drop" | "thoughts">("drop");
   const [recipe, setRecipe] = useState<XRecipe>(emptyXRecipe);
-  const [pack, setPack] = useState("all");
   const [fromSlug, setFromSlug] = useState("");
   const [rows, setRows] = useState<any[]>([]);
   const [post, setPost] = useState("");
@@ -139,11 +135,6 @@ export function XThoughtsTab() {
 
   const setField = (key: keyof XRecipe, value: string) =>
     setRecipe((prev) => ({ ...prev, [key]: value }));
-
-  const topics = useMemo(
-    () => (pack === "all" ? TOPICS : TOPICS.filter((t) => t.pack === pack)),
-    [pack],
-  );
 
   const loadLedger = async () => {
     const res = await fetch("/api/admin/x-posts");
@@ -184,9 +175,7 @@ export function XThoughtsTab() {
   };
 
   const surprise = () => {
-    const next = surpriseXRecipe(recipe);
-    setRecipe(next);
-    setPack(packOfTopic(next.topic));
+    setRecipe(surpriseXRecipe(recipe));
   };
 
   const blank = () => {
@@ -331,7 +320,7 @@ export function XThoughtsTab() {
     setLook("");
     const stored = row.recipe || {};
     const next: XRecipe = {
-      topic: stored.topic || recipe.topic,
+      topic: stored.topic || "",
       outlook: stored.outlook || "honest",
       heat: stored.heat || "sharp",
       form: stored.form || "essay",
@@ -342,7 +331,6 @@ export function XThoughtsTab() {
       seed: stored.seed || "",
     };
     setRecipe(next);
-    if (stored.topic) setPack(packOfTopic(stored.topic));
     setHits([]);
     setMsg(row.posted_at ? "Loaded posted post" : "Loaded draft");
   };
@@ -425,33 +413,6 @@ export function XThoughtsTab() {
         <Chips label="Who it's to" options={ADDRESSEES} value={recipe.addressee} onChange={(next) => setField("addressee", next)} />
         <Chips label="Emotes" options={EMOTE_PACKS} value={recipe.pack} onChange={(next) => setField("pack", next)} />
         <Chips label="Sign-off" options={SIGNOFFS} value={recipe.signoff} onChange={(next) => setField("signoff", next)} />
-
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.22em] text-sky-200/70 mb-2">Topic</p>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => {
-                  setPack(c.id);
-                  const first = c.id === "all" ? TOPICS[0] : TOPICS.find((t) => t.pack === c.id);
-                  if (first) setField("topic", first.id);
-                }}
-                className={cx("shrink-0 px-3 py-1.5 rounded-full text-xs border", pack === c.id ? SELECTED : IDLE)}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-          <select value={recipe.topic} onChange={(e) => setField("topic", e.target.value)} className={field}>
-            {topics.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-        </div>
 
         <label className="text-xs text-neutral-500 space-y-1 block">
           Cut from a site thought

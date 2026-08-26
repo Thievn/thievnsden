@@ -39,8 +39,7 @@ export async function GET(req: NextRequest) {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
       Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
       Referer: target.hostname.includes("rawg") ? "https://rawg.io/" : "https://store.steampowered.com/",
-    },
-    cache: "no-store",
+    } as HeadersInit,
   });
   if (!upstream.ok) return new NextResponse("cover missing", { status: 502 });
   const bytes = new Uint8Array(await upstream.arrayBuffer());

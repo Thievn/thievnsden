@@ -13,8 +13,7 @@ export function normalizeCoverUrl(url: string | null | undefined): string | null
 
 export function displayCoverSrc(url: string) {
   if (url.startsWith("/")) return url;
-  if (url.includes("thievnsden.com")) return url;
-  if (url.includes("supabase.co") && url.includes("/storage/v1/object/public/")) return url;
+  if (url.includes("/api/gaming/cover?")) return url;
   return `/api/gaming/cover?u=${encodeURIComponent(url)}`;
 }
 
@@ -22,47 +21,43 @@ export function CoverImage({
   src,
   alt = "",
   className = "",
-  imgClassName = "absolute inset-0 w-full h-full object-cover",
+  imgClassName = "h-full w-full object-cover",
+  eager = false,
 }: {
   src?: string | null;
   alt?: string;
   className?: string;
   imgClassName?: string;
+  eager?: boolean;
 }) {
   const normalized = normalizeCoverUrl(src);
   const [failed, setFailed] = useState(false);
-  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     setFailed(false);
-    setTick(0);
   }, [normalized]);
 
-  if (!normalized || (failed && tick > 1)) {
+  if (!normalized || failed) {
     return (
-      <div className={`relative bg-gradient-to-br from-red-950/40 via-[#111] to-purple-950/30 ${className}`}>
+      <div className={`relative overflow-hidden bg-gradient-to-br from-violet-950/70 via-[#111] to-rose-950/40 ${className}`}>
         <div className="absolute inset-0 flex items-end p-5">
-          <span className="text-xs uppercase tracking-widest text-neutral-600">Thievn's Den</span>
+          <span className="text-xs uppercase tracking-widest text-neutral-600">Thievn&apos;s Den</span>
         </div>
       </div>
     );
   }
 
-  const shown = failed ? normalized : displayCoverSrc(normalized);
-
   return (
-    <div className={`relative bg-neutral-900 overflow-hidden ${className}`}>
+    <div className={`relative overflow-hidden bg-neutral-900 ${className}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={shown}
+        key={normalized}
+        src={displayCoverSrc(normalized)}
         alt={alt}
         referrerPolicy="no-referrer"
-        loading="lazy"
+        loading={eager ? "eager" : "lazy"}
         decoding="async"
-        onError={() => {
-          if (!failed) setFailed(true);
-          else setTick((n) => n + 1);
-        }}
+        onError={() => setFailed(true)}
         className={imgClassName}
       />
     </div>

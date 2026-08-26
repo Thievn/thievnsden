@@ -41,7 +41,7 @@ export function GamingCoverField({
   return (
     <div className="space-y-2">
       {item.cover ? (
-        <CoverImage src={item.cover} className="h-32 rounded-xl border border-neutral-800" imgClassName="absolute inset-0 w-full h-full object-cover" />
+        <CoverImage src={item.cover} className="h-32 w-full rounded-xl border border-neutral-800" imgClassName="h-full w-full object-cover" />
       ) : (
         <div className="h-24 rounded-xl border border-dashed border-neutral-800 bg-[#0a0a0a] flex items-center justify-center text-[11px] text-neutral-600">
           No cover yet

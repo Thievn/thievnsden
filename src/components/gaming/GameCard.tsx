@@ -121,11 +121,12 @@ export function GameCard({
       }`}
     >
       <Link href={href} className="group block">
-        <div className={`relative ${coverAspect}`}>
+        <div className={`relative w-full overflow-hidden ${coverAspect}`}>
           <CoverImage
             src={item.cover}
-            className="absolute inset-0"
-            imgClassName="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-500"
+            className="absolute inset-0 h-full w-full"
+            imgClassName="h-full w-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-500"
+            eager={featured}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0d0b12] via-[#0d0b12]/25 to-transparent pointer-events-none" />
         </div>

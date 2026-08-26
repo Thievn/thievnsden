@@ -294,8 +294,12 @@ body {
 }
 .home-reveal { animation: homeReveal 0.85s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
+.home-room:active {
+  transform: scale(0.985);
+}
 @media (hover: none) {
   .home-room:hover { transform: none; box-shadow: none; }
+  .home-room:active { transform: scale(0.985); }
   .home-room::after { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -308,5 +312,5 @@ body {
 }
 
 @media (max-width: 640px) {
-  button, a { min-height: 44px; }
+  button, .hit-44 { min-height: 44px; }
 }

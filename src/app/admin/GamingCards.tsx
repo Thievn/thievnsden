@@ -52,8 +52,34 @@ export function GamingCards() {
   return (
     <div className="space-y-4">
       {msg ? <p className="text-sm text-neutral-300">{msg}</p> : null}
+      <button
+        type="button"
+        onClick={async () => {
+          setBusy(true);
+          setMsg("");
+          try {
+            const res = await fetch("/api/admin/gaming/fill-covers", { method: "POST" });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Fill failed");
+            if (Array.isArray(data.items)) setItems(data.items);
+            setMsg(`Covers saved (${data.filled || 0} with art).`);
+          } catch (e: any) {
+            setMsg(e.message || "Fill failed");
+          } finally {
+            setBusy(false);
+          }
+        }}
+        disabled={busy}
+        className="w-full py-3 rounded-xl border border-violet-800/60 text-violet-200 text-sm disabled:opacity-50"
+      >
+        {busy ? "Working…" : "Fill missing covers from RAWG / Steam"}
+      </button>
       {items.map((item) => (
-        <div key={item.id} className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4 space-y-2">
+        <div key={item.id} className="rounded-2xl border border-neutral-800/80 bg-[#111] p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">{item.kind}</p>
+            <p className="text-[10px] text-neutral-600 truncate max-w-[60%]">{item.cover ? "Cover set" : "No cover"}</p>
+          </div>
           <input
             value={item.title}
             onChange={(e) =>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CLASSICS } from "@/lib/thoughts-packs";
 import { createServiceClient } from "@/lib/supabase/server";
-import { HomeDen, type HomeThought } from "@/components/home/HomeDen";
+import { HomeDen, type HomeThought, type HomeGameCover } from "@/components/home/HomeDen";
 
 export const metadata: Metadata = {
   title: { absolute: "Thievn's Den — Dark humor, AI art, and unfiltered thoughts" },
@@ -37,7 +37,7 @@ async function loadHome() {
         .eq("is_public", true)
         .eq("rejected", false)
         .order("created_at", { ascending: false })
-        .limit(4),
+        .limit(24),
       supabase.from("site_settings").select("gaming_items").eq("id", 1).maybeSingle(),
     ]);
 
@@ -46,17 +46,34 @@ async function loadHome() {
       .map((row) => String(row.image_url || ""))
       .filter(Boolean);
     const items = Array.isArray(settingsRes.data?.gaming_items) ? settingsRes.data.gaming_items : [];
-    const withCover = items.find((row: { cover?: string; title?: string }) => row?.cover);
+    const gamingCovers: HomeGameCover[] = items
+      .filter((row: { cover?: string; title?: string }) => row?.cover && row?.title)
+      .map((row: { cover: string; title: string; kind?: string }) => ({
+        cover: String(row.cover),
+        title: String(row.title),
+        kind: row.kind,
+      }));
+    const prefer =
+      gamingCovers.find((g) => g.kind === "playing") ||
+      gamingCovers[0] ||
+      null;
     return {
       thoughts: thoughts.length ? thoughts : fallback,
       prints,
-      gamingCover: withCover?.cover ? String(withCover.cover) : null,
-      gamingTitle: withCover?.title ? String(withCover.title) : null,
+      gamingCovers,
+      gamingTitle: prefer?.title || null,
     };
   } catch {
-    return { thoughts: fallback, prints: [] as string[], gamingCover: null, gamingTitle: null };
+    return {
+      thoughts: fallback,
+      prints: [] as string[],
+      gamingCovers: [] as HomeGameCover[],
+      gamingTitle: null,
+    };
   }
 }
+
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const home = await loadHome();
@@ -64,7 +81,7 @@ export default async function HomePage() {
     <HomeDen
       thoughts={home.thoughts}
       prints={home.prints}
-      gamingCover={home.gamingCover}
+      gamingCovers={home.gamingCovers}
       gamingTitle={home.gamingTitle}
     />
   );

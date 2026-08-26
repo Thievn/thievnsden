@@ -75,11 +75,9 @@ export default function GamingArticlePage() {
         ← Back to Gaming
       </Link>
 
-      {item.cover ? (
-        <div className="rounded-2xl overflow-hidden mb-8 border border-neutral-800/80">
-          <CoverImage src={item.cover} className="aspect-[16/9]" />
-        </div>
-      ) : null}
+      <div className="rounded-2xl overflow-hidden mb-8 border border-neutral-800/80 aspect-[16/9]">
+        <CoverImage src={item.cover} className="h-full w-full" imgClassName="h-full w-full object-cover" eager />
+      </div>
 
       <header className="mb-8">
         <div className="flex flex-wrap items-center gap-2 mb-3">

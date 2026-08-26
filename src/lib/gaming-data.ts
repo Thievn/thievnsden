@@ -100,6 +100,7 @@ export const SEED_GAMING_ITEMS: GamingItem[] = [
     meta: "PC · live",
     sort: 10,
     published: true,
+    cover: "https://cdn.cloudflare.steamstatic.com/steam/apps/1808500/header.jpg",
   },
   {
     id: "play-poe2",
@@ -112,6 +113,7 @@ export const SEED_GAMING_ITEMS: GamingItem[] = [
     meta: "PC · early access",
     sort: 20,
     published: true,
+    cover: "https://cdn.cloudflare.steamstatic.com/steam/apps/2694490/header.jpg",
   },
   {
     id: "season-finals",
@@ -124,6 +126,7 @@ export const SEED_GAMING_ITEMS: GamingItem[] = [
     meta: "Season live",
     sort: 30,
     published: true,
+    cover: "https://cdn.cloudflare.steamstatic.com/steam/apps/2073850/header.jpg",
   },
   {
     id: "drama-2",
@@ -173,6 +176,7 @@ export const SEED_GAMING_ITEMS: GamingItem[] = [
     meta: "Installed",
     sort: 80,
     published: true,
+    cover: "https://cdn.cloudflare.steamstatic.com/steam/apps/2344520/header.jpg",
   },
   {
     id: "lib-2",
@@ -185,6 +189,7 @@ export const SEED_GAMING_ITEMS: GamingItem[] = [
     meta: "Installed",
     sort: 90,
     published: true,
+    cover: "https://cdn.cloudflare.steamstatic.com/steam/apps/2073850/header.jpg",
   },
   {
     id: "radar-placeholder",

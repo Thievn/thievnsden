@@ -17,7 +17,7 @@ function keyOf(title: string) {
 }
 
 function wantsCover(item: GamingItem) {
-  return ["playing", "radar", "season", "watchlist", "library", "drama", "article"].includes(item.kind);
+  return ["playing", "radar", "season", "watchlist", "library"].includes(item.kind);
 }
 
 function hasCover(item: GamingItem) {

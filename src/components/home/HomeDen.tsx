@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { DenMarkSplash } from "@/components/DenMark";
 import { HomeAtmosphere } from "@/components/home/HomeAtmosphere";
-
-function coverSrc(url: string) {
-  if (url.startsWith("/")) return url;
-  if (url.includes("thievnsden.com")) return url;
-  if (url.includes("supabase.co") && url.includes("/storage/v1/object/public/")) return url;
-  return `/api/gaming/cover?u=${encodeURIComponent(url)}`;
-}
+import { HomeGamingRoom, HomePolaroids, HomePrintStrip } from "@/components/home/HomePolaroids";
 
 export type HomeThought = {
   title: string;
@@ -15,15 +9,21 @@ export type HomeThought = {
   slug: string;
 };
 
+export type HomeGameCover = {
+  cover: string;
+  title: string;
+  kind?: string;
+};
+
 export function HomeDen({
   thoughts,
   prints,
-  gamingCover,
+  gamingCovers,
   gamingTitle,
 }: {
   thoughts: HomeThought[];
   prints: string[];
-  gamingCover: string | null;
+  gamingCovers: HomeGameCover[];
   gamingTitle: string | null;
 }) {
   const featured = thoughts[0];
@@ -70,30 +70,8 @@ export function HomeDen({
                   </Link>
                 </div>
               </div>
-              <div className="lg:col-span-5 relative min-h-[240px] sm:min-h-[320px]">
-                {prints.length ? (
-                  <div className="relative h-[260px] sm:h-[340px]">
-                    {prints.slice(0, 3).map((src, i) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        key={src + i}
-                        src={src}
-                        alt=""
-                        className="absolute object-cover rounded-2xl border border-white/20 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.85)]"
-                        style={{
-                          width: i === 0 ? "68%" : "54%",
-                          height: i === 0 ? "86%" : "70%",
-                          left: i === 0 ? "8%" : i === 1 ? "38%" : "18%",
-                          top: i === 0 ? "6%" : i === 1 ? "22%" : "38%",
-                          transform: `rotate(${[-9, 7, 2][i]}deg)`,
-                          zIndex: i === 0 ? 2 : i === 1 ? 3 : 1,
-                        }}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="h-[260px] rounded-2xl bg-gradient-to-br from-fuchsia-700/30 via-rose-950/40 to-amber-900/20 border border-white/10" />
-                )}
+              <div className="lg:col-span-5 relative">
+                <HomePolaroids prints={prints} />
               </div>
             </div>
           </div>
@@ -159,20 +137,7 @@ export function HomeDen({
           <Link href="/afterimage" className="home-room rounded-3xl border border-fuchsia-900/40 bg-[#100810] min-h-[280px] flex flex-col">
             <div className="relative h-40 sm:h-48 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-600/35 via-rose-900/25 to-amber-800/20" />
-              {prints.length ? (
-                <div className="absolute inset-0 flex items-end justify-center gap-2 px-8 pb-3">
-                  {prints.slice(0, 4).map((src, i) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      key={src + i}
-                      src={src}
-                      alt=""
-                      className="h-[78%] w-[22%] object-cover rounded-md border border-white/15 shadow-2xl"
-                      style={{ transform: `rotate(${[-8, -2, 3, 9][i] || 0}deg) translateY(${i % 2 ? 8 : 0}px)` }}
-                    />
-                  ))}
-                </div>
-              ) : null}
+              <HomePrintStrip prints={prints} />
             </div>
             <div className="p-6 sm:p-7 flex-1 flex flex-col">
               <p className="text-[11px] uppercase tracking-[0.2em] text-fuchsia-300/85 mb-2">Afterimage</p>
@@ -183,28 +148,7 @@ export function HomeDen({
           </Link>
 
           <Link href="/gaming" className="home-room rounded-3xl border border-violet-900/40 bg-[#0c0a12] min-h-[280px] flex flex-col overflow-hidden">
-            <div className="relative h-40 sm:h-48 bg-[#0a0a0e]">
-              {gamingCover ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={coverSrc(gamingCover)}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover opacity-80"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-700/30 via-purple-950/40 to-[#0c0a12]" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0c0a12] via-[#0c0a12]/30 to-transparent" />
-            </div>
-            <div className="p-6 sm:p-7 flex-1 flex flex-col">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-violet-300/85 mb-2">Gaming</p>
-              <h2 className="text-2xl font-semibold text-neutral-50 mb-2">
-                {gamingTitle || "Builds, rants, radar"}
-              </h2>
-              <p className="text-sm text-neutral-500 flex-1">What&apos;s on the plate, what&apos;s broken, what is actually worth the hours.</p>
-              <p className="mt-5 text-sm text-violet-300">Enter the hub →</p>
-            </div>
+            <HomeGamingRoom covers={gamingCovers} fallbackTitle={gamingTitle} />
           </Link>
         </section>
 

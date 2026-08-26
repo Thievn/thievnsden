@@ -7,7 +7,7 @@ import {
   type GamingItem,
 } from "@/lib/gaming-data";
 import { fillGamingCovers } from "@/lib/gaming-covers";
-import { mirrorItemCovers, runDailyPull } from "@/lib/gaming-pull";
+import { mirrorItemCovers } from "@/lib/gaming-pull";
 
 export const maxDuration = 60;
 
@@ -31,19 +31,11 @@ export async function GET() {
       items = settings.gaming_items as GamingItem[];
     }
 
-    try {
-      const pulled = await runDailyPull(config, items, false);
-      config = pulled.config;
-      items = pulled.items;
-    } catch {
-      /* keep existing cards */
-    }
-
     const published = items.filter((i) => i.published !== false);
     const filled = await fillGamingCovers(published, config.rawg_api_key);
     const mirrored = await mirrorItemCovers(filled);
 
-    if (mirrored.changed || items.length !== (settings?.gaming_items || []).length || config.auto_last_date) {
+    if (mirrored.changed) {
       const byId = new Map(items.map((i) => [i.id, i]));
       for (const row of mirrored.items) byId.set(row.id, { ...(byId.get(row.id) || row), cover: row.cover });
       const savedItems = Array.from(byId.values());

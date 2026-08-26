@@ -160,7 +160,7 @@ export function GamingHub() {
                       src={item.cover}
                       alt={item.title}
                       className="h-full w-full"
-                      imgClassName="absolute inset-0 w-full h-full object-cover"
+                      imgClassName="h-full w-full object-cover"
                     />
                   </div>
                 ))
@@ -172,13 +172,13 @@ export function GamingHub() {
         />
 
         <div className="sticky top-14 z-20 -mx-4 sm:mx-0 px-4 sm:px-0 py-3 mb-8 backdrop-blur-md bg-[#070707]/85">
-          <div className="flex gap-1.5 overflow-x-auto pb-1">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 snap-x snap-mandatory">
             {FILTERS.map((f) => (
               <button
                 key={f.id}
                 type="button"
                 onClick={() => setFilter(f.id)}
-                className={`shrink-0 px-3.5 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                className={`snap-start shrink-0 px-3.5 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
                   filter === f.id
                     ? "border border-violet-500/40 bg-violet-950/40 text-violet-100"
                     : "border border-neutral-800 text-neutral-500 hover:text-neutral-200 hover:border-neutral-700"
@@ -217,9 +217,11 @@ export function GamingHub() {
                     {rest.length}
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex sm:grid sm:grid-cols-2 gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
                   {rest.map((item) => (
-                    <GameCard key={item.id} item={item} />
+                    <div key={item.id} className="min-w-[85%] sm:min-w-0 snap-start">
+                      <GameCard item={item} />
+                    </div>
                   ))}
                 </div>
               </section>
@@ -237,9 +239,11 @@ export function GamingHub() {
                     {g.items.length}
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex sm:grid sm:grid-cols-2 gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
                   {g.items.map((item) => (
-                    <GameCard key={item.id} item={item} />
+                    <div key={item.id} className="min-w-[85%] sm:min-w-0 snap-start">
+                      <GameCard item={item} />
+                    </div>
                   ))}
                 </div>
               </section>

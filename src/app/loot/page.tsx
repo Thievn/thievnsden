@@ -83,9 +83,9 @@ export default function LootPage() {
           body="Gear, merch, tools. If it is here, it actually got used in the Den."
         />
 
-        <div className="flex gap-2 overflow-x-auto pb-4 mb-8 sticky top-14 z-20 bg-[#070707]/80 backdrop-blur-md py-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-8 sticky top-14 z-20 bg-[#070707]/80 backdrop-blur-md py-2 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory">
           {groups.map((g) => (
-            <a key={g.id} href={`#${g.id}`} className="shrink-0 px-3 py-1.5 rounded-full border border-neutral-800 text-xs text-neutral-300 hover:border-red-800/50">
+            <a key={g.id} href={`#${g.id}`} className="hit-44 shrink-0 snap-start px-3 py-1.5 rounded-full border border-neutral-800 text-xs text-neutral-300 hover:border-red-800/50 flex items-center">
               {sectionLabel(g.id)}
             </a>
           ))}

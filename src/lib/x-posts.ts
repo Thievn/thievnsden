@@ -7,6 +7,7 @@ export type XPostRow = {
   source: string;
   posted_at: string | null;
   metrics: Record<string, number>;
+  recipe?: Record<string, unknown> | null;
   created_at: string;
 };
 
@@ -52,8 +53,9 @@ export function similarity(a: string, b: string) {
   return contained ? Math.max(jaccard, 0.72) : jaccard;
 }
 
-export function findDuplicates(draft: string, rows: XPostRow[], limit = 5): DupHit[] {
+export function findDuplicates(draft: string, rows: XPostRow[], limit = 5, skipId?: string): DupHit[] {
   const scored = rows
+    .filter((row) => row.id !== skipId)
     .map((row) => ({
       id: row.id,
       score: similarity(draft, row.body),

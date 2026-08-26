@@ -36,10 +36,11 @@ export async function POST(req: NextRequest) {
 
     if (action === "check") {
       const draft = String(body.body || "").trim();
+      const skipId = String(body.skip_id || body.id || "").trim() || undefined;
       if (!draft) return NextResponse.json({ hits: [] });
       const { data, error } = await supabase.from("x_posts").select("*").limit(120);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ hits: findDuplicates(draft, asRows(data)) });
+      return NextResponse.json({ hits: findDuplicates(draft, asRows(data), 5, skipId) });
     }
 
     if (action === "sync") {
@@ -80,21 +81,37 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const currentId = String(body.id || "").trim();
     const text = String(body.body || "").trim();
     const rawUrl = String(body.url || "").trim();
     const postId = parseStatusId(rawUrl) || parseStatusId(text);
-    if (!text && !postId) {
+    if (!text && !postId && !currentId) {
       return NextResponse.json({ error: "Paste the post text or an X status link." }, { status: 400 });
     }
     const url = rawUrl || (postId ? postUrl(xHandle(), postId) : null);
     const row = {
-      post_id: postId,
+      post_id: postId || null,
       url,
       body: text || `(posted ${postId})`,
       body_norm: normalizePost(text || postId || ""),
       source: "manual",
       posted_at: body.posted_at || new Date().toISOString(),
     };
+    if (currentId) {
+      const patch: Record<string, unknown> = {
+        source: "manual",
+        posted_at: row.posted_at,
+      };
+      if (text) {
+        patch.body = row.body;
+        patch.body_norm = row.body_norm;
+      }
+      if (url) patch.url = url;
+      if (postId) patch.post_id = postId;
+      const { data, error } = await supabase.from("x_posts").update(patch).eq("id", currentId).select("*").single();
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ row: data });
+    }
     const write = postId
       ? supabase.from("x_posts").upsert(row, { onConflict: "post_id" }).select("*").single()
       : supabase.from("x_posts").insert({ ...row, post_id: null }).select("*").single();

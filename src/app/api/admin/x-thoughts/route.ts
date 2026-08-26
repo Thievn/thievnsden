@@ -2,20 +2,29 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { TOPICS } from "@/lib/thoughts-packs";
 import { EMOTE_PACKS, SIGNOFFS, X_HEATS, X_LENGTHS, X_OUTLOOKS, X_PREMIUM_CAP } from "@/lib/x-thoughts";
+import { normalizePost } from "@/lib/x-posts";
 
-async function recentPostedLines() {
+const TWEAKS: Record<string, string> = {
+  shorter: "cut it down",
+  meaner: "sharper / meaner",
+  softer: "softer, still honest",
+  funnier: "funnier, still specific",
+  filthier: "filthier and more adult, keep the idea",
+};
+
+async function alreadyWritten() {
   try {
     const supabase = createServiceClient();
-    const { data } = await supabase
-      .from("x_posts")
-      .select("body,posted_at")
-      .order("posted_at", { ascending: false })
-      .limit(12);
-    const lines = (data || [])
-      .map((row) => String(row.body || "").replace(/\s+/g, " ").trim().slice(0, 220))
-      .filter(Boolean);
+    const [{ data: posts }, { data: thoughts }] = await Promise.all([
+      supabase.from("x_posts").select("body").order("created_at", { ascending: false }).limit(24),
+      supabase.from("den_thoughts").select("title,excerpt").order("updated_at", { ascending: false }).limit(24),
+    ]);
+    const lines = [
+      ...(posts || []).map((row) => String(row.body || "").replace(/\s+/g, " ").trim().slice(0, 220)),
+      ...(thoughts || []).map((row) => `${row.title}${row.excerpt ? ` — ${row.excerpt}` : ""}`.slice(0, 220)),
+    ].filter(Boolean);
     if (!lines.length) return "";
-    return `\nAlready posted — do not repeat these ideas:\n${lines.map((l, i) => `${i + 1}. ${l}`).join("\n")}`;
+    return `\nAlready written — do not repeat these ideas:\n${lines.map((l, i) => `${i + 1}. ${l}`).join("\n")}`;
   } catch {
     return "";
   }
@@ -26,8 +35,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const seed = String(body.seed || "").trim();
     const source = String(body.source || "").trim();
-    const outlook = X_OUTLOOKS.find((o) => o.id === body.outlook)?.id || "honest";
-    const heat = X_HEATS.find((h) => h.id === body.heat)?.label || "Sharp";
+    const outlook = X_OUTLOOKS.find((o) => o.id === body.outlook) || X_OUTLOOKS[0];
+    const heat = X_HEATS.find((h) => h.id === body.heat) || X_HEATS[2];
     const topic = TOPICS.find((t) => t.id === body.topic);
     const pack = EMOTE_PACKS.find((p) => p.id === body.pack) || EMOTE_PACKS[0];
     const sign = SIGNOFFS.find((s) => s.id === body.signoff) || SIGNOFFS[0];
@@ -38,23 +47,23 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.XAI_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "XAI_API_KEY missing" }, { status: 500 });
 
-    const posted = await recentPostedLines();
+    const posted = await alreadyWritten();
     const system = `You write posts for the X account @Thievn / Thievn's Den. X Premium — long posts allowed.
 Voice: human, adult-ok, not a brand intern. No hashtags. No URLs. No http. No thievnsden. No @mentions unless in the seed. Never use 👇.
 Aim for about ${length.target} characters before the sign-off. Hard max ${X_PREMIUM_CAP}.
 Short = tight lines. Medium = a few beats. Long/Premium = real thought with short paragraphs and blank lines.
 Emotes: at most 2 from ${pack.emotes || "(none)"}.
-Outlook: ${outlook}. Heat: ${heat}.
+Outlook: ${outlook.label}. ${outlook.guide || ""}
+Heat: ${heat.label}.
+Funny, filthy, tender, and unhinged are all allowed when they match the outlook. Stay specific.
 Do not write "link in bio" yourself. Return plain text only.${posted}`;
 
     let user = "";
     if (tweak !== "fresh" && existing) {
-      const how =
-        tweak === "shorter" ? "cut it down" : tweak === "meaner" ? "sharper / meaner" : "softer, still honest";
-      user = `Rewrite this X post. Tweak: ${how}. Keep the idea.\n\n${existing}`;
+      user = `Rewrite this X post. Tweak: ${TWEAKS[tweak] || "keep the idea, make it sharper"}. Keep the idea.\n\n${existing}`;
     } else {
       const bits = [
-        topic ? `Topic: ${topic.label}` : "",
+        topic ? `Topic: ${topic.label}` : "Invent a real human topic that is not already written.",
         seed ? `Seed: ${seed}` : "",
         source ? `Essay to cut down:\n${source.slice(0, 2500)}` : "",
       ].filter(Boolean);
@@ -73,7 +82,7 @@ Do not write "link in bio" yourself. Return plain text only.${posted}`;
           { role: "system", content: system },
           { role: "user", content: user },
         ],
-        temperature: tweak === "fresh" ? 0.95 : 0.7,
+        temperature: tweak === "fresh" ? 1.05 : 0.8,
         max_tokens: length.tokens,
       }),
     });
@@ -89,7 +98,22 @@ Do not write "link in bio" yourself. Return plain text only.${posted}`;
     post = post.replace(/https?:\/\/\S+/gi, "").replace(/thievnsden\.com/gi, "").trim();
     if (sign.line) post = `${post.replace(/\s+$/, "")}\n\n${sign.line}`;
     if (post.length > X_PREMIUM_CAP) post = post.slice(0, X_PREMIUM_CAP - 1).trimEnd();
-    return NextResponse.json({ post, chars: post.length });
+
+    const supabase = createServiceClient();
+    const { data: saved } = await supabase
+      .from("x_posts")
+      .insert({
+        post_id: null,
+        url: null,
+        body: post,
+        body_norm: normalizePost(post),
+        source: "draft",
+        posted_at: null,
+      })
+      .select("id")
+      .maybeSingle();
+
+    return NextResponse.json({ post, chars: post.length, draft_id: saved?.id || null });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Draft failed" }, { status: 500 });
   }

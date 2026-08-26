@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 export async function GET() {
   try {
     const supabase = createServiceClient();
-    const { data, error } = await supabase.from("den_thoughts").select("*").order("created_at", { ascending: false }).limit(80);
+    const { data, error } = await supabase.from("den_thoughts").select("*").order("updated_at", { ascending: false }).limit(80);
     if (error) return NextResponse.json({ rows: [], error: error.message });
     return NextResponse.json({ rows: data || [] });
   } catch (err: any) {
@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
       outlook: body.outlook || null,
       topic: body.topic || null,
       heat: body.heat || null,
+      form: body.form || null,
+      fingerprint: body.fingerprint || null,
+      recipe: body.recipe || {},
       published: body.published !== false,
       updated_at: new Date().toISOString(),
     };
@@ -54,6 +57,11 @@ export async function PATCH(req: NextRequest) {
     if (body.excerpt !== undefined) patch.excerpt = body.excerpt;
     if (body.body) patch.body = body.body;
     if (body.topic) patch.topic = body.topic;
+    if (body.form) patch.form = body.form;
+    if (body.heat) patch.heat = body.heat;
+    if (body.outlook) patch.outlook = body.outlook;
+    if (body.recipe) patch.recipe = body.recipe;
+    if (body.fingerprint) patch.fingerprint = body.fingerprint;
     let q = supabase.from("den_thoughts").update(patch);
     if (body.id) q = q.eq("id", body.id);
     else if (body.slug) q = q.eq("slug", body.slug);

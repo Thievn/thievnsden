@@ -15,7 +15,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from("x_posts")
       .select("*")
-      .order("posted_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
       .limit(80);
     if (error) return NextResponse.json({ rows: [], error: error.message, connected: xApiReady() });
     return NextResponse.json({

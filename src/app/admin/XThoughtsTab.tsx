@@ -104,6 +104,7 @@ export function XThoughtsTab() {
       const next = data.post || "";
       setPost(next);
       await checkDupes(next);
+      await loadLedger();
     } catch (err: any) {
       setMsg(err.message);
     } finally {
@@ -255,7 +256,7 @@ export function XThoughtsTab() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-sm text-neutral-100 font-medium">X Thoughts</p>
-            <p className="text-xs text-neutral-500 mt-1">Private drafts, duplicate check, and a log of what you already posted. Pics follow the draft in a new art style each time. Not shown to visitors.</p>
+            <p className="text-xs text-neutral-500 mt-1">Private drafts land in Supabase so the next one cannot copy them. Pics follow the writing in a new art style each time.</p>
           </div>
           <button type="button" onClick={roll} className="px-3 py-1.5 rounded-lg text-xs border border-sky-500/40 text-sky-200">Random</button>
         </div>
@@ -322,6 +323,8 @@ export function XThoughtsTab() {
           <button type="button" onClick={() => run("shorter")} disabled={busy || !post} className={btn}>Shorter</button>
           <button type="button" onClick={() => run("meaner")} disabled={busy || !post} className={btn}>Meaner</button>
           <button type="button" onClick={() => run("softer")} disabled={busy || !post} className={btn}>Softer</button>
+          <button type="button" onClick={() => run("funnier")} disabled={busy || !post} className={btn}>Funnier</button>
+          <button type="button" onClick={() => run("filthier")} disabled={busy || !post} className={btn}>Filthier</button>
           <button type="button" onClick={() => setAspect("16:9")} className={`${btn} ${aspect === "16:9" ? "border-sky-400 text-sky-100" : ""}`}>16:9</button>
           <button type="button" onClick={() => setAspect("9:16")} className={`${btn} ${aspect === "9:16" ? "border-sky-400 text-sky-100" : ""}`}>9:16</button>
           <button type="button" onClick={makeImage} disabled={imaging || (!post && !seed)} className="px-3 py-2 rounded-lg bg-sky-400 text-black text-xs font-semibold disabled:opacity-40">
@@ -340,7 +343,7 @@ export function XThoughtsTab() {
                     open on X
                   </a>
                 ) : (
-                  <span>manual log</span>
+                  <span>already stored</span>
                 )}
                 <p className="mt-1 text-neutral-300 line-clamp-3">{hit.body}</p>
               </div>
@@ -394,7 +397,7 @@ export function XThoughtsTab() {
               <div key={row.id} className="rounded-xl border border-neutral-800 p-3 space-y-1">
                 <div className="flex items-center justify-between gap-2 text-[11px] text-neutral-500">
                   <span>
-                    {row.posted_at ? new Date(row.posted_at).toLocaleString() : "undated"} · {row.source}
+                    {row.posted_at ? new Date(row.posted_at).toLocaleString() : "draft"} · {row.source}
                   </span>
                   <button type="button" onClick={() => dropRow(row.id)} className="text-neutral-600 hover:text-red-300">
                     Remove

@@ -1,22 +1,13 @@
+import { HEATS, OUTLOOKS } from "@/lib/thoughts-packs";
+
 export const X_PREMIUM_CAP = 25000;
 
-export const X_OUTLOOKS = [
-  { id: "honest", label: "Plain honest" },
-  { id: "cynical", label: "Cynical" },
-  { id: "dry-positive", label: "Dry positive" },
-  { id: "unhinged", label: "Unhinged" },
-  { id: "naughty", label: "Naughty" },
-];
-
-export const X_HEATS = [
-  { id: "quiet", label: "Quiet" },
-  { id: "sharp", label: "Sharp" },
-  { id: "mean-funny", label: "Mean-funny" },
-  { id: "filthy", label: "Filthy" },
-];
+export const X_OUTLOOKS = OUTLOOKS;
+export const X_HEATS = HEATS;
 
 export const EMOTE_PACKS = [
   { id: "quiet", label: "Quiet", emotes: "🖤 🌹" },
+  { id: "funny", label: "Funny", emotes: "😂" },
   { id: "sharp", label: "Sharp", emotes: "😐 🔪" },
   { id: "dry", label: "Dry", emotes: "💀" },
   { id: "filthy", label: "Filthy", emotes: "😏 🔥" },

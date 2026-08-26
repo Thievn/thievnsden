@@ -27,74 +27,37 @@ type Props = {
 
 type BoardKind = "mark" | "cut";
 
-const MARK_TOP = [
-  "bg-gradient-to-br from-amber-300 to-orange-500 text-black shadow-[0_0_14px_-2px_rgba(251,191,36,0.7)] border-amber-200/80",
-  "bg-gradient-to-br from-rose-200 to-pink-400 text-black shadow-[0_0_12px_-2px_rgba(251,113,133,0.5)] border-rose-200/70",
-  "bg-gradient-to-br from-fuchsia-400 to-purple-600 text-white shadow-[0_0_12px_-2px_rgba(192,38,211,0.5)] border-fuchsia-300/60",
-  "bg-rose-950/70 text-rose-200 border-rose-500/40",
-  "bg-pink-950/60 text-pink-200 border-pink-700/40",
-  "bg-fuchsia-950/60 text-fuchsia-200 border-fuchsia-700/40",
-  "bg-purple-950/60 text-purple-200 border-purple-700/40",
-  "bg-violet-950/60 text-violet-200 border-violet-700/40",
-  "bg-red-950/60 text-red-200 border-red-800/40",
-  "bg-[#2a0b18] text-rose-300/80 border-rose-900/50",
+type RankPaint = { bg: string; color: string; row: string; thumb: string };
+
+const MARK_TOP: RankPaint[] = [
+  { bg: "linear-gradient(135deg,#fbbf24,#ea580c)", color: "#111", row: "border-amber-400/70 bg-gradient-to-r from-amber-950/50 via-[#111] to-[#111]", thumb: "border-amber-400/50" },
+  { bg: "linear-gradient(135deg,#fb7185,#be123c)", color: "#fff", row: "border-rose-400/70 bg-gradient-to-r from-rose-950/45 via-[#111] to-[#111]", thumb: "border-rose-400/50" },
+  { bg: "linear-gradient(135deg,#c084fc,#6d28d9)", color: "#fff", row: "border-fuchsia-400/70 bg-gradient-to-r from-fuchsia-950/45 via-[#111] to-[#111]", thumb: "border-fuchsia-400/50" },
+  { bg: "#0ea5e9", color: "#04151c", row: "border-sky-500/50 bg-gradient-to-r from-sky-950/40 via-[#111] to-[#111]", thumb: "border-sky-500/40" },
+  { bg: "#22c55e", color: "#052e16", row: "border-green-500/50 bg-gradient-to-r from-green-950/35 via-[#111] to-[#111]", thumb: "border-green-500/40" },
+  { bg: "#eab308", color: "#1c1403", row: "border-yellow-500/50 bg-gradient-to-r from-yellow-950/35 via-[#111] to-[#111]", thumb: "border-yellow-500/40" },
+  { bg: "#f97316", color: "#fff", row: "border-orange-500/50 bg-gradient-to-r from-orange-950/40 via-[#111] to-[#111]", thumb: "border-orange-500/40" },
+  { bg: "#ec4899", color: "#fff", row: "border-pink-500/50 bg-gradient-to-r from-pink-950/40 via-[#111] to-[#111]", thumb: "border-pink-500/40" },
+  { bg: "#6366f1", color: "#fff", row: "border-indigo-500/50 bg-gradient-to-r from-indigo-950/40 via-[#111] to-[#111]", thumb: "border-indigo-500/40" },
+  { bg: "#94a3b8", color: "#0b1220", row: "border-slate-400/40 bg-gradient-to-r from-slate-800/40 via-[#111] to-[#111]", thumb: "border-slate-400/40" },
 ];
 
-const CUT_TOP = [
-  "bg-gradient-to-br from-red-400 to-red-700 text-white shadow-[0_0_14px_-2px_rgba(239,68,68,0.65)] border-red-300/70",
-  "bg-gradient-to-br from-slate-200 to-slate-400 text-black shadow-[0_0_12px_-2px_rgba(148,163,184,0.5)] border-slate-300/70",
-  "bg-gradient-to-br from-rose-800 to-stone-800 text-rose-50 shadow-[0_0_12px_-2px_rgba(136,19,55,0.5)] border-rose-700/50",
-  "bg-red-950/70 text-red-200 border-red-700/40",
-  "bg-stone-900 text-stone-200 border-stone-600/40",
-  "bg-slate-900 text-slate-200 border-slate-600/40",
-  "bg-zinc-900 text-zinc-200 border-zinc-600/40",
-  "bg-neutral-900 text-neutral-200 border-neutral-600/40",
-  "bg-[#1a1214] text-rose-200/70 border-rose-950/60",
-  "bg-[#121214] text-slate-300/80 border-slate-800/60",
+const CUT_TOP: RankPaint[] = [
+  { bg: "linear-gradient(135deg,#f87171,#991b1b)", color: "#fff", row: "border-red-400/70 bg-gradient-to-r from-red-950/50 via-[#111] to-[#111]", thumb: "border-red-400/50" },
+  { bg: "linear-gradient(135deg,#e2e8f0,#64748b)", color: "#111", row: "border-slate-300/50 bg-gradient-to-r from-slate-700/40 via-[#111] to-[#111]", thumb: "border-slate-300/40" },
+  { bg: "linear-gradient(135deg,#fb923c,#9a3412)", color: "#fff", row: "border-orange-600/50 bg-gradient-to-r from-orange-950/40 via-[#111] to-[#111]", thumb: "border-orange-600/40" },
+  { bg: "#38bdf8", color: "#082f49", row: "border-sky-400/50 bg-gradient-to-r from-sky-950/40 via-[#111] to-[#111]", thumb: "border-sky-400/40" },
+  { bg: "#a3e635", color: "#1a2e05", row: "border-lime-500/50 bg-gradient-to-r from-lime-950/35 via-[#111] to-[#111]", thumb: "border-lime-500/40" },
+  { bg: "#2dd4bf", color: "#042f2e", row: "border-teal-400/50 bg-gradient-to-r from-teal-950/40 via-[#111] to-[#111]", thumb: "border-teal-400/40" },
+  { bg: "#818cf8", color: "#fff", row: "border-indigo-400/50 bg-gradient-to-r from-indigo-950/40 via-[#111] to-[#111]", thumb: "border-indigo-400/40" },
+  { bg: "#f472b6", color: "#1f0514", row: "border-pink-400/50 bg-gradient-to-r from-pink-950/40 via-[#111] to-[#111]", thumb: "border-pink-400/40" },
+  { bg: "#facc15", color: "#1c1500", row: "border-yellow-400/50 bg-gradient-to-r from-yellow-950/35 via-[#111] to-[#111]", thumb: "border-yellow-400/40" },
+  { bg: "#78716c", color: "#fff", row: "border-stone-500/40 bg-gradient-to-r from-stone-900/50 via-[#111] to-[#111]", thumb: "border-stone-500/40" },
 ];
 
-const MARK_ROW = [
-  "border-amber-500/50 bg-gradient-to-r from-amber-950/40 via-[#111] to-[#111] hover:brightness-110",
-  "border-rose-400/40 bg-gradient-to-r from-rose-950/35 via-[#111] to-[#111] hover:brightness-110",
-  "border-fuchsia-500/40 bg-gradient-to-r from-fuchsia-950/35 via-[#111] to-[#111] hover:brightness-110",
-  "border-rose-800/40 bg-gradient-to-r from-rose-950/25 via-[#111] to-[#111]",
-  "border-pink-800/35 bg-gradient-to-r from-pink-950/22 via-[#111] to-[#111]",
-  "border-fuchsia-800/35 bg-gradient-to-r from-fuchsia-950/22 via-[#111] to-[#111]",
-  "border-purple-800/35 bg-gradient-to-r from-purple-950/22 via-[#111] to-[#111]",
-  "border-violet-800/35 bg-gradient-to-r from-violet-950/22 via-[#111] to-[#111]",
-  "border-red-900/35 bg-gradient-to-r from-red-950/20 via-[#111] to-[#111]",
-  "border-rose-950/50 bg-gradient-to-r from-[#1a0a12] via-[#111] to-[#111]",
-];
-
-const CUT_ROW = [
-  "border-red-500/50 bg-gradient-to-r from-red-950/45 via-[#111] to-[#111] hover:brightness-110",
-  "border-slate-400/40 bg-gradient-to-r from-slate-800/40 via-[#111] to-[#111] hover:brightness-110",
-  "border-rose-800/40 bg-gradient-to-r from-rose-950/35 via-[#111] to-[#111] hover:brightness-110",
-  "border-red-900/35 bg-gradient-to-r from-red-950/22 via-[#111] to-[#111]",
-  "border-stone-700/35 bg-gradient-to-r from-stone-950/30 via-[#111] to-[#111]",
-  "border-slate-700/35 bg-gradient-to-r from-slate-950/30 via-[#111] to-[#111]",
-  "border-zinc-700/35 bg-gradient-to-r from-zinc-950/30 via-[#111] to-[#111]",
-  "border-neutral-700/35 bg-gradient-to-r from-neutral-950/30 via-[#111] to-[#111]",
-  "border-rose-950/40 bg-gradient-to-r from-[#16080c] via-[#111] to-[#111]",
-  "border-slate-900/50 bg-gradient-to-r from-[#101014] via-[#111] to-[#111]",
-];
-
-function rankBadge(i: number, kind: BoardKind) {
-  if (i < 10) {
-    return {
-      label: String(i + 1),
-      className: kind === "mark" ? MARK_TOP[i] : CUT_TOP[i],
-    };
-  }
-  return {
-    label: String(i + 1),
-    className: "bg-[#0a0a0a] text-neutral-500 border-neutral-800",
-  };
-}
-
-function rowShell(i: number, kind: BoardKind) {
-  if (i >= 10) return "border-neutral-800/80 bg-[#111] hover:border-neutral-700";
-  return kind === "mark" ? MARK_ROW[i] : CUT_ROW[i];
+function rankPaint(i: number, kind: BoardKind): RankPaint | null {
+  if (i >= 10) return null;
+  return kind === "mark" ? MARK_TOP[i] : CUT_TOP[i];
 }
 
 function BoardColumn({
@@ -172,32 +135,32 @@ function BoardColumn({
         >
           {shown.map((e, i) => {
             const rarity = getRarity(Number(e.score));
-            const badge = rankBadge(i, kind);
-            const isTop10 = i < 10;
+            const paint = rankPaint(i, kind);
+            const isTop10 = !!paint;
             const metric = kind === "mark" ? e.likes || 0 : e.dislikes || 0;
 
             return (
               <Link
                 key={`${kind}-${e.id}`}
                 href={`/g/${e.id}`}
-                className={`group flex items-center gap-2.5 sm:gap-3 rounded-xl border p-2 sm:p-2.5 transition-all ${rowShell(
-                  i,
-                  kind
-                )}`}
+                className={`group flex items-center gap-2.5 sm:gap-3 rounded-xl border p-2 sm:p-2.5 transition-all ${
+                  paint ? paint.row : "border-neutral-800/80 bg-[#111] hover:border-neutral-700"
+                }`}
               >
                 <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg border flex items-center justify-center text-[11px] sm:text-xs font-bold tabular-nums shrink-0 ${badge.className}`}
+                  className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-black/20 flex items-center justify-center text-[11px] sm:text-xs font-bold tabular-nums shrink-0"
+                  style={
+                    paint
+                      ? { background: paint.bg, color: paint.color }
+                      : { background: "#0a0a0a", color: "#737373", borderColor: "#262626" }
+                  }
                 >
-                  {badge.label}
+                  {i + 1}
                 </div>
 
                 <div
                   className={`w-10 h-12 sm:w-11 sm:h-[52px] rounded-lg overflow-hidden border shrink-0 bg-black ${
-                    isTop10
-                      ? kind === "mark"
-                        ? "border-rose-800/40"
-                        : "border-slate-700/50"
-                      : "border-neutral-800"
+                    paint ? paint.thumb : "border-neutral-800"
                   }`}
                 >
                   {e.image_url ? (

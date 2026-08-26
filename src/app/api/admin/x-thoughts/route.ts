@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { TOPICS } from "@/lib/thoughts-packs";
 import { EMOTE_PACKS, SIGNOFFS, X_HEATS, X_LENGTHS, X_OUTLOOKS, X_PREMIUM_CAP } from "@/lib/x-thoughts";
+
+async function recentPostedLines() {
+  try {
+    const supabase = createServiceClient();
+    const { data } = await supabase
+      .from("x_posts")
+      .select("body,posted_at")
+      .order("posted_at", { ascending: false })
+      .limit(12);
+    const lines = (data || [])
+      .map((row) => String(row.body || "").replace(/\s+/g, " ").trim().slice(0, 220))
+      .filter(Boolean);
+    if (!lines.length) return "";
+    return `\nAlready posted — do not repeat these ideas:\n${lines.map((l, i) => `${i + 1}. ${l}`).join("\n")}`;
+  } catch {
+    return "";
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,13 +38,14 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.XAI_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "XAI_API_KEY missing" }, { status: 500 });
 
+    const posted = await recentPostedLines();
     const system = `You write posts for the X account @Thievn / Thievn's Den. X Premium — long posts allowed.
 Voice: human, adult-ok, not a brand intern. No hashtags. No URLs. No http. No thievnsden. No @mentions unless in the seed. Never use 👇.
 Aim for about ${length.target} characters before the sign-off. Hard max ${X_PREMIUM_CAP}.
 Short = tight lines. Medium = a few beats. Long/Premium = real thought with short paragraphs and blank lines.
 Emotes: at most 2 from ${pack.emotes || "(none)"}.
 Outlook: ${outlook}. Heat: ${heat}.
-Do not write "link in bio" yourself. Return plain text only.`;
+Do not write "link in bio" yourself. Return plain text only.${posted}`;
 
     let user = "";
     if (tweak !== "fresh" && existing) {

@@ -5,6 +5,23 @@ import { TOPICS } from "@/lib/thoughts-packs";
 import { EMOTE_PACKS, SIGNOFFS, X_HEATS, X_LENGTHS, X_OUTLOOKS, X_PREMIUM_CAP } from "@/lib/x-thoughts";
 import { readJson } from "@/lib/read-json";
 
+type LedgerRow = {
+  id: string;
+  post_id: string | null;
+  url: string | null;
+  body: string;
+  source: string;
+  posted_at: string | null;
+};
+
+type DupHit = {
+  id: string;
+  score: number;
+  body: string;
+  url: string | null;
+  posted_at: string | null;
+};
+
 export function XThoughtsTab() {
   const [topic, setTopic] = useState(TOPICS[2]?.id || TOPICS[0].id);
   const [outlook, setOutlook] = useState("honest");
@@ -21,13 +38,44 @@ export function XThoughtsTab() {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [imaging, setImaging] = useState(false);
+  const [ledger, setLedger] = useState<LedgerRow[]>([]);
+  const [hits, setHits] = useState<DupHit[]>([]);
+  const [connected, setConnected] = useState(false);
+  const [handle, setHandle] = useState("Thievn");
+  const [postedUrl, setPostedUrl] = useState("");
+  const [syncing, setSyncing] = useState(false);
+
+  const loadLedger = async () => {
+    const res = await fetch("/api/admin/x-posts");
+    const data = await readJson(res);
+    setLedger(data.rows || []);
+    setConnected(Boolean(data.connected));
+    if (data.handle) setHandle(data.handle);
+  };
 
   useEffect(() => {
     fetch("/api/admin/thoughts")
       .then((r) => r.json())
       .then((d) => setRows(d.rows || []))
       .catch(() => {});
+    loadLedger().catch(() => {});
   }, []);
+
+  const checkDupes = async (draft: string) => {
+    if (!draft.trim()) {
+      setHits([]);
+      return [] as DupHit[];
+    }
+    const res = await fetch("/api/admin/x-posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "check", body: draft }),
+    });
+    const data = await readJson(res);
+    const next = (data.hits || []) as DupHit[];
+    setHits(next);
+    return next;
+  };
 
   const roll = () => {
     setTopic(TOPICS[Math.floor(Math.random() * TOPICS.length)].id);
@@ -50,7 +98,9 @@ export function XThoughtsTab() {
       });
       const data = await readJson(res);
       if (!res.ok) throw new Error(data.error || "Draft failed");
-      setPost(data.post || "");
+      const next = data.post || "";
+      setPost(next);
+      await checkDupes(next);
     } catch (err: any) {
       setMsg(err.message);
     } finally {
@@ -83,8 +133,67 @@ export function XThoughtsTab() {
 
   const copy = async () => {
     if (!post) return;
+    const found = await checkDupes(post);
     await navigator.clipboard.writeText(post);
-    setMsg("Copied");
+    setMsg(found.length ? "Copied — check the near-dupes first" : "Copied");
+  };
+
+  const markPosted = async () => {
+    if (!post && !postedUrl) {
+      setMsg("Draft or paste the live X link first.");
+      return;
+    }
+    setBusy(true);
+    setMsg("");
+    try {
+      const res = await fetch("/api/admin/x-posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "log", body: post, url: postedUrl }),
+      });
+      const data = await readJson(res);
+      if (!res.ok) throw new Error(data.error || "Could not save");
+      setPostedUrl("");
+      setMsg("Saved to your private X log");
+      await loadLedger();
+      await checkDupes(post);
+    } catch (err: any) {
+      setMsg(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const syncFromX = async () => {
+    setSyncing(true);
+    setMsg("");
+    try {
+      const res = await fetch("/api/admin/x-posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync" }),
+      });
+      const data = await readJson(res);
+      if (!res.ok) throw new Error(data.error || "Sync failed");
+      setLedger(data.rows || []);
+      setConnected(true);
+      setMsg(`Pulled ${data.synced || 0} posts from @${data.handle || handle}`);
+      if (post) await checkDupes(post);
+    } catch (err: any) {
+      setMsg(err.message);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const dropRow = async (id: string) => {
+    await fetch("/api/admin/x-posts", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    await loadLedger();
+    if (post) await checkDupes(post);
   };
 
   const downloadPic = async () => {
@@ -118,7 +227,7 @@ export function XThoughtsTab() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-sm text-neutral-100 font-medium">X Thoughts</p>
-            <p className="text-xs text-neutral-500 mt-1">Premium length. No URL. Pick the lanes, then draft.</p>
+            <p className="text-xs text-neutral-500 mt-1">Private drafts, duplicate check, and a log of what you already posted. Not shown to visitors.</p>
           </div>
           <button type="button" onClick={roll} className="px-3 py-1.5 rounded-lg text-xs border border-sky-500/40 text-sky-200">Random</button>
         </div>
@@ -169,7 +278,14 @@ export function XThoughtsTab() {
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
-        <textarea value={post} onChange={(e) => setPost(e.target.value)} rows={7} className={field + " font-medium leading-relaxed"} placeholder="Draft lands here" />
+        <textarea
+          value={post}
+          onChange={(e) => setPost(e.target.value)}
+          onBlur={() => { if (post) checkDupes(post); }}
+          rows={7}
+          className={field + " font-medium leading-relaxed"}
+          placeholder="Draft lands here"
+        />
         <div className="flex items-center justify-between text-xs">
           <span className={over ? "text-red-400" : "text-neutral-500"}>{chars.toLocaleString()} / {X_PREMIUM_CAP.toLocaleString()}</span>
           {msg && <span className="text-amber-200">{msg}</span>}
@@ -185,6 +301,37 @@ export function XThoughtsTab() {
           </button>
           <button type="button" onClick={copy} disabled={!post} className="ml-auto px-4 py-2 rounded-lg bg-neutral-100 text-black text-xs font-medium">Copy</button>
         </div>
+        {hits.length ? (
+          <div className="rounded-xl border border-amber-900/50 bg-amber-950/20 p-3 space-y-2">
+            <p className="text-xs text-amber-200">This draft is close to something you already logged.</p>
+            {hits.map((hit) => (
+              <div key={hit.id} className="text-xs text-neutral-400">
+                <span className="text-amber-100">{Math.round(hit.score * 100)}% · </span>
+                {hit.url ? (
+                  <a href={hit.url} target="_blank" rel="noreferrer" className="text-sky-300 hover:underline">
+                    open on X
+                  </a>
+                ) : (
+                  <span>manual log</span>
+                )}
+                <p className="mt-1 text-neutral-300 line-clamp-3">{hit.body}</p>
+              </div>
+            ))}
+          </div>
+        ) : post ? (
+          <p className="text-xs text-neutral-600">No close match in your log.</p>
+        ) : null}
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 pt-1">
+          <input
+            value={postedUrl}
+            onChange={(e) => setPostedUrl(e.target.value)}
+            className={field}
+            placeholder="After you post: paste https://x.com/Thievn/status/…"
+          />
+          <button type="button" onClick={markPosted} disabled={busy} className="px-3 py-2 rounded-lg border border-sky-500/40 text-sky-100 text-xs">
+            Mark posted
+          </button>
+        </div>
         {image ? (
           <div className="space-y-2 pt-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -194,6 +341,46 @@ export function XThoughtsTab() {
             </button>
           </div>
         ) : null}
+      </div>
+
+      <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm text-neutral-100 font-medium">Your X log</p>
+            <p className="text-xs text-neutral-500 mt-1">
+              {connected
+                ? `Live pull is on for @${handle}. Sync only when you need it — it spends X credits.`
+                : "Add X_BEARER_TOKEN on Vercel to pull live posts. Until then, mark posts by hand."}
+            </p>
+          </div>
+          <button type="button" onClick={syncFromX} disabled={syncing || !connected} className="px-3 py-1.5 rounded-lg text-xs border border-sky-500/40 text-sky-200 disabled:opacity-40">
+            {syncing ? "Pulling…" : "Sync from X"}
+          </button>
+        </div>
+        {!ledger.length ? (
+          <p className="text-xs text-neutral-600">Nothing logged yet. Draft, post on X, then mark posted — or sync if the token is set.</p>
+        ) : (
+          <div className="space-y-2 max-h-[420px] overflow-y-auto">
+            {ledger.map((row) => (
+              <div key={row.id} className="rounded-xl border border-neutral-800 p-3 space-y-1">
+                <div className="flex items-center justify-between gap-2 text-[11px] text-neutral-500">
+                  <span>
+                    {row.posted_at ? new Date(row.posted_at).toLocaleString() : "undated"} · {row.source}
+                  </span>
+                  <button type="button" onClick={() => dropRow(row.id)} className="text-neutral-600 hover:text-red-300">
+                    Remove
+                  </button>
+                </div>
+                <p className="text-sm text-neutral-200 whitespace-pre-wrap line-clamp-4">{row.body}</p>
+                {row.url ? (
+                  <a href={row.url} target="_blank" rel="noreferrer" className="text-xs text-sky-300 hover:underline">
+                    Open on X
+                  </a>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

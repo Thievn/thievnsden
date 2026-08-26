@@ -62,7 +62,7 @@ export function FaceTheDenApp() {
               Face The Den
             </h1>
             <InfoTip label="How Face The Den works">
-              Drop a photo or take one. Pick a voice. The Den looks at the picture and talks back — calm, filthy, or completely unhinged, your call. Mark cards you want to keep around. Cut the ones that should leave. You need an account to play and to vote.
+              Drop a photo or take one. Pick a voice. The Den looks at the picture and talks back — calm, filthy, or completely unhinged, your call. Mark cards you want to keep around. Cut the ones that should leave.
             </InfoTip>
           </div>
           <p className="text-neutral-400 text-sm sm:text-base max-w-xl leading-relaxed">

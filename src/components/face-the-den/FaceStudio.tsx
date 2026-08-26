@@ -309,9 +309,9 @@ export function FaceStudio({
         <div className="relative rounded-[1.55rem] bg-[#0d0d0d]/95 overflow-hidden border border-neutral-800/70 min-h-[380px] sm:min-h-[420px] flex flex-col">
           {locked && !cameraActive && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#0a0708]/88 backdrop-blur-[2px] p-5 sm:p-6 text-center">
-              <p className="text-sm font-medium text-neutral-100">You need an account to face the Den.</p>
+              <p className="text-sm font-medium text-neutral-100">The Den wants a face.</p>
               <p className="text-[12px] text-neutral-500 mt-2 max-w-xs leading-relaxed">
-                Sign in, drop a photo, pick a voice, and let it talk. Gallery Marks and Cuts also need an account.
+                Drop a photo, pick a voice, get notes. Then Mark who stays and Cut who doesn't.
               </p>
               <div className="mt-5 flex flex-wrap justify-center gap-2">
                 <Link href={LOGIN} className="ftd-tap px-4 py-2.5 rounded-xl bg-gradient-to-b from-red-700 via-red-800 to-purple-900 text-white text-sm font-medium">

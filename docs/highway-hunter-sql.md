@@ -15,4 +15,6 @@ create table if not exists highway_runs (
 );
 
 create index if not exists highway_runs_score on highway_runs (score desc);
+
+alter table highway_runs enable row level security;
 ```

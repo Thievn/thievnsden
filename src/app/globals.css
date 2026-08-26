@@ -333,6 +333,11 @@ body {
 }
 
 /* —— Rarity portrait rings —— */
+@property --rarity-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
 .rarity-frame {
   position: relative;
   isolation: isolate;
@@ -343,12 +348,12 @@ body {
 .rarity-frame-sm { padding: 2px; }
 .rarity-frame-spin {
   position: absolute;
-  inset: -2px;
+  inset: -1px;
   border-radius: inherit;
   z-index: 0;
   pointer-events: none;
-  background: conic-gradient(from 0deg, #737373, #a3a3a3, #525252, #737373);
-  animation: rarity-spin 7s linear infinite;
+  background: conic-gradient(from var(--rarity-angle), #737373, #a3a3a3, #525252, #737373);
+  animation: rarity-angle 7s linear infinite;
 }
 .rarity-frame-glow {
   position: absolute;
@@ -370,7 +375,7 @@ body {
   border-radius: inherit;
 }
 .rarity-legendary .rarity-frame-spin {
-  background: conic-gradient(from 0deg, #fbbf24, #fff7ed, #f59e0b, #fde68a, #b45309, #facc15, #fbbf24);
+  background: conic-gradient(from var(--rarity-angle), #fbbf24, #fff7ed, #f59e0b, #fde68a, #b45309, #facc15, #fbbf24);
   animation-duration: 2.8s;
 }
 .rarity-legendary .rarity-frame-glow {
@@ -378,7 +383,7 @@ body {
   animation: rarity-pulse 2.2s ease-in-out infinite;
 }
 .rarity-epic .rarity-frame-spin {
-  background: conic-gradient(from 0deg, #ef4444, #fb7185, #7f1d1d, #f43f5e, #ef4444);
+  background: conic-gradient(from var(--rarity-angle), #ef4444, #fb7185, #7f1d1d, #f43f5e, #ef4444);
   animation-duration: 3.4s;
 }
 .rarity-epic .rarity-frame-glow {
@@ -386,7 +391,7 @@ body {
   animation: rarity-pulse 2.6s ease-in-out infinite;
 }
 .rarity-rare .rarity-frame-spin {
-  background: conic-gradient(from 0deg, #e11d48, #fb7185, #be185d, #f472b6, #e11d48);
+  background: conic-gradient(from var(--rarity-angle), #e11d48, #fb7185, #be185d, #f472b6, #e11d48);
   animation-duration: 4s;
 }
 .rarity-rare .rarity-frame-glow {
@@ -394,27 +399,27 @@ body {
   animation: rarity-pulse 3s ease-in-out infinite;
 }
 .rarity-uncommon .rarity-frame-spin {
-  background: conic-gradient(from 0deg, #7c3aed, #c084fc, #5b21b6, #a855f7, #7c3aed);
+  background: conic-gradient(from var(--rarity-angle), #7c3aed, #c084fc, #5b21b6, #a855f7, #7c3aed);
   animation-duration: 5s;
 }
 .rarity-uncommon .rarity-frame-glow {
   background: radial-gradient(ellipse at center, rgba(124, 58, 237, 0.38), transparent 70%);
 }
 .rarity-common .rarity-frame-spin {
-  background: conic-gradient(from 0deg, #737373, #d4d4d4, #525252, #a3a3a3, #737373);
+  background: conic-gradient(from var(--rarity-angle), #737373, #d4d4d4, #525252, #a3a3a3, #737373);
   animation-duration: 8s;
   opacity: 0.85;
 }
 .rarity-common .rarity-frame-glow { opacity: 0; }
 .rarity-trash .rarity-frame-spin {
-  background: conic-gradient(from 0deg, #3f3f46, #52525b, #27272a, #3f3f46);
+  background: conic-gradient(from var(--rarity-angle), #3f3f46, #52525b, #27272a, #3f3f46);
   animation: none;
   opacity: 0.7;
 }
 .rarity-trash .rarity-frame-glow { opacity: 0; }
 
-@keyframes rarity-spin {
-  to { transform: rotate(360deg); }
+@keyframes rarity-angle {
+  to { --rarity-angle: 360deg; }
 }
 @keyframes rarity-pulse {
   0%, 100% { opacity: 0.45; transform: scale(0.96); }

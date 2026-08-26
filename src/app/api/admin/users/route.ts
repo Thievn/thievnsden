@@ -23,16 +23,19 @@ export async function GET(req: NextRequest) {
 
     const { data: judgments } = await supabase
       .from("judgments")
-      .select("user_id, is_public, image_url");
+      .select("user_id, is_public, image_url, score, rarity, created_at")
+      .order("created_at", { ascending: false });
 
     const counts: Record<string, number> = {};
     const publicCounts: Record<string, number> = {};
     const thumbs: Record<string, string> = {};
+    const scores: Record<string, number> = {};
     (judgments || []).forEach((j) => {
       if (!j.user_id) return;
       counts[j.user_id] = (counts[j.user_id] || 0) + 1;
       if (j.is_public) publicCounts[j.user_id] = (publicCounts[j.user_id] || 0) + 1;
       if (j.image_url && !thumbs[j.user_id]) thumbs[j.user_id] = j.image_url;
+      if (j.score != null && scores[j.user_id] == null) scores[j.user_id] = Number(j.score);
     });
 
     const users = await Promise.all(
@@ -52,6 +55,7 @@ export async function GET(req: NextRequest) {
           judgment_count: counts[p.id] || 0,
           public_count: publicCounts[p.id] || 0,
           avatar_url: p.avatar_url || thumbs[p.id] || null,
+          score: scores[p.id] ?? null,
           is_demo: !!p.is_demo,
         };
       })

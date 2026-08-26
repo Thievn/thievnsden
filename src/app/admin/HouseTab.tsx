@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { RarityFrame } from "@/components/RarityFrame";
+import { getRarity } from "@/lib/rarity";
 
 type HouseUser = {
   id: string;
@@ -11,6 +12,7 @@ type HouseUser = {
   judgment_count: number;
   public_count: number;
   avatar_url: string | null;
+  score: number | null;
   is_demo: boolean;
 };
 
@@ -146,7 +148,11 @@ export function HouseTab() {
                 className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <RarityFrame slug="uncommon" compact className="w-11 h-14 rounded-lg shrink-0">
+                  <RarityFrame
+                    slug={getRarity(u.score ?? 0).slug}
+                    compact
+                    className="w-11 h-14 rounded-lg shrink-0"
+                  >
                     {u.avatar_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={u.avatar_url} alt="" className="w-full h-full object-cover" />

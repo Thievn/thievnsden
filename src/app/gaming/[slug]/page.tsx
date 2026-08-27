@@ -5,7 +5,9 @@ import { ThoughtReactions } from "@/components/ThoughtReactions";
 import { ThoughtComments } from "@/components/ThoughtComments";
 import { ShareBar } from "@/components/ShareBar";
 import { CoverImage } from "@/components/gaming/CoverImage";
+import { LinkedCopy } from "@/components/gaming/LinkedCopy";
 import { loadGamingItem } from "@/lib/gaming-load";
+import { injectShopLinks } from "@/lib/gaming-affiliates";
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +22,9 @@ export default async function GamingArticlePage({
 
   const style = STATUS_STYLES[item.status] || STATUS_STYLES.hype;
   const path = `/gaming/${itemSlug(item)}`;
-  const paragraphs = (item.body || item.note || "")
-    .split(/\n\n+/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .slice(0, 3);
+  const copy = item.body || item.note || "";
+  const mode = shelfOf(item) === "essay" ? "essay" : "game";
+  const showAffiliateNote = /amazon\.com/i.test(injectShopLinks(copy, mode));
 
   return (
     <article className="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
@@ -62,11 +62,10 @@ export default async function GamingArticlePage({
         </div>
       </header>
 
-      <div className="space-y-4 text-[15px] sm:text-base text-neutral-300 leading-relaxed">
-        {paragraphs.map((p, i) => (
-          <p key={i}>{p}</p>
-        ))}
-      </div>
+      <LinkedCopy text={copy} mode={mode} />
+      {showAffiliateNote ? (
+        <p className="mt-6 text-[11px] text-neutral-600">Some product links are Amazon affiliate links.</p>
+      ) : null}
 
       {item.url ? (
         <p className="mt-8">

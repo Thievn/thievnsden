@@ -139,7 +139,15 @@ export function sectionLabel(id: string) {
   return LOOT_SECTIONS.find((s) => s.id === id)?.label || id;
 }
 
-export function affiliateUrl(pick: Partial<LootPick>, defaultTag = "thievnsden-20") {
+export const AMAZON_TAG = "thievnsden-20";
+
+export function amazonSearchUrl(query: string, tag = AMAZON_TAG) {
+  const q = String(query || "").trim();
+  const t = (tag || AMAZON_TAG).trim();
+  return `https://www.amazon.com/s?k=${encodeURIComponent(q)}&tag=${encodeURIComponent(t)}`;
+}
+
+export function affiliateUrl(pick: Partial<LootPick>, defaultTag = AMAZON_TAG) {
   const tag = (pick.tag_override || defaultTag || "thievnsden-20").trim();
   if (pick.asin) return `https://www.amazon.com/dp/${pick.asin.replace(/[^A-Z0-9]/gi, "")}?tag=${encodeURIComponent(tag)}`;
   if (pick.search_query) {

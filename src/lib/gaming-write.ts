@@ -1,3 +1,5 @@
+import { AFFILIATE_WRITE_HINT, injectShopLinks } from "@/lib/gaming-affiliates";
+
 const TONE = `You write for Thievn's Den, a personal gaming site. Honest human voice. Match the internet consensus — do not invent a different verdict. No hashtags. No emoji. No press-kit language. No corporate games journalism. Short paragraphs. If the facts are thin, say so instead of filling space. The current year is 2026. Do not talk like it is still 2024.`;
 
 export function stripHtml(input: string) {
@@ -22,7 +24,11 @@ export function firstParagraphs(text: string, max = 3) {
 
 export function noteFromBody(text: string) {
   const first = text.split(/\n\n+/)[0] || text;
-  return first.replace(/\s+/g, " ").trim().slice(0, 180);
+  return first
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 180);
 }
 
 export async function grokWrite(opts: {
@@ -76,12 +82,12 @@ export async function writeGameTake(opts: {
 
   try {
     const text = await grokWrite({
-      system: `${TONE} Write 2 short paragraphs max, separated by a blank line. ${eraLine} Use the facts below as the internet/player consensus. Do not contradict ratings if they exist. Do not write a recap or a wiki page.`,
+      system: `${TONE} Write 2 short paragraphs max, separated by a blank line. ${eraLine} Use the facts below as the internet/player consensus. Do not contradict ratings if they exist. Do not write a recap or a wiki page. ${AFFILIATE_WRITE_HINT} Do not Amazon-link the game title itself.`,
       user: `Game: ${opts.title}\n\n${facts || "No RAWG facts. Use well-known public consensus only. If you do not know, keep it to one honest sentence."}`,
       maxTokens: 280,
       temperature: 0.65,
     });
-    const body = firstParagraphs(text, 2);
+    const body = injectShopLinks(firstParagraphs(text, 2), "game");
     if (body.length > 40) return { body, note: noteFromBody(body), source: "grok" as const };
   } catch (err) {
     console.error("writeGameTake grok", err);
@@ -98,12 +104,12 @@ export async function writeGameTake(opts: {
 
 export async function writeEssay(topic: string) {
   const text = await grokWrite({
-    system: `${TONE} Write a short Den take, 2-3 short paragraphs, blank lines between them. This is about gaming culture, not a recap of one launch trailer. Stay specific. No TED-talk endings.`,
+    system: `${TONE} Write a short Den take, 2-3 short paragraphs, blank lines between them. This is about gaming culture, not a recap of one launch trailer. Stay specific. No TED-talk endings. ${AFFILIATE_WRITE_HINT}`,
     user: `Topic: ${topic}`,
     maxTokens: 380,
     temperature: 0.8,
   });
-  const body = firstParagraphs(text, 3);
+  const body = injectShopLinks(firstParagraphs(text, 3), "essay");
   const title = topic.split("—")[0]?.split(" vs ")[0]?.trim().slice(0, 72) || "Den take";
   return { title, body, note: noteFromBody(body) };
 }

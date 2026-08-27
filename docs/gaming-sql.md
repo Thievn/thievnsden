@@ -22,7 +22,7 @@ You do not need to sit in admin for the daily drop. Open Gaming when you want to
 ## Manual desk
 
 - Search RAWG by title → click a result → it lands on a shelf with a take
-- Write this take → Grok writes a culture note from the topic list
+- Write this take → Grok writes a culture note from the topic list, with a generated still and underlined Amazon links on shoppable phrases (`tag=thievnsden-20`)
 - Fill empty takes → repairs cards that have covers but no article body
 - Pull today now → runs the same job as the cron
 

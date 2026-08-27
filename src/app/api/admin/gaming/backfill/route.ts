@@ -1,50 +1,47 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import {
   DEFAULT_GAMING_CONFIG,
   SEED_GAMING_ITEMS,
+  cleanGamingItems,
   type GamingConfig,
   type GamingItem,
 } from "@/lib/gaming-data";
-import { runDailyPull } from "@/lib/gaming-pull";
+import { backfillEmptyTakes } from "@/lib/gaming-pull";
 
 export const runtime = "nodejs";
-export const maxDuration = 300;
+export const maxDuration = 180;
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
-    const body = await req.json().catch(() => ({}));
     const supabase = createServiceClient();
     const { data } = await supabase
       .from("site_settings")
       .select("gaming_config, gaming_items")
       .eq("id", 1)
       .maybeSingle();
-
-    let config: GamingConfig = { ...DEFAULT_GAMING_CONFIG, ...(data?.gaming_config || {}) };
-    if (body.era) config.auto_pull_era = body.era;
-    if (body.count) config.auto_pull_per_day = Number(body.count);
-    let items: GamingItem[] =
+    const config: GamingConfig = { ...DEFAULT_GAMING_CONFIG, ...(data?.gaming_config || {}) };
+    const existing: GamingItem[] =
       Array.isArray(data?.gaming_items) && data.gaming_items.length
         ? (data.gaming_items as GamingItem[])
         : SEED_GAMING_ITEMS;
-
-    const result = await runDailyPull(config, items, true);
+    const result = await backfillEmptyTakes({
+      key: config.rawg_api_key,
+      items: cleanGamingItems(existing),
+      limit: 10,
+    });
     await supabase.from("site_settings").upsert({
       id: 1,
-      gaming_config: result.config,
+      gaming_config: config,
       gaming_items: result.items,
       updated_at: new Date().toISOString(),
     });
-
     return NextResponse.json({
-      added: result.added.map((i) => i.title),
-      count: result.added.length,
-      skipped: result.skipped,
+      filled: result.filled,
       items: result.items,
-      config: result.config,
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Pull failed" }, { status: 500 });
+    console.error("gaming backfill", err);
+    return NextResponse.json({ error: err.message || "Backfill failed" }, { status: 500 });
   }
 }

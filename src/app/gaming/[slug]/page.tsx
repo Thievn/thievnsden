@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import type { GamingItem } from "@/lib/gaming-data";
-import { STATUS_STYLES, itemSlug } from "@/lib/gaming-data";
+import { STATUS_STYLES, itemSlug, shelfOf } from "@/lib/gaming-data";
 import { ThoughtReactions } from "@/components/ThoughtReactions";
 import { ThoughtComments } from "@/components/ThoughtComments";
 import { ShareBar } from "@/components/ShareBar";
@@ -75,12 +75,15 @@ export default function GamingArticlePage() {
         ← Back to Gaming
       </Link>
 
-      <div className="rounded-2xl overflow-hidden mb-8 border border-neutral-800/80 aspect-[16/9]">
+      <div className="rounded-2xl overflow-hidden mb-8 border border-neutral-800/80 aspect-[16/10] sm:aspect-[16/9]">
         <CoverImage src={item.cover} className="h-full w-full" imgClassName="h-full w-full object-cover" eager />
       </div>
 
       <header className="mb-8">
         <div className="flex flex-wrap items-center gap-2 mb-3">
+          <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border border-violet-800/50 text-violet-200">
+            {shelfOf(item)}
+          </span>
           <span
             className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${style.className}`}
           >
@@ -99,8 +102,8 @@ export default function GamingArticlePage() {
         </div>
       </header>
 
-      <div className="space-y-5 text-[15px] sm:text-base text-neutral-300 leading-relaxed">
-        {paragraphs.map((p, i) => (
+      <div className="space-y-4 text-[15px] sm:text-base text-neutral-300 leading-relaxed">
+        {paragraphs.slice(0, 3).map((p, i) => (
           <p key={i}>{p}</p>
         ))}
       </div>

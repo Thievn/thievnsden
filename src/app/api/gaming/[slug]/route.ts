@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import {
   DEFAULT_GAMING_CONFIG,
   SEED_GAMING_ITEMS,
+  cleanGamingItems,
   itemSlug,
   type GamingItem,
 } from "@/lib/gaming-data";
@@ -24,7 +25,7 @@ export async function GET(
 
     let items: GamingItem[] = SEED_GAMING_ITEMS;
     if (Array.isArray(settings?.gaming_items) && settings.gaming_items.length > 0) {
-      items = settings.gaming_items as GamingItem[];
+      items = cleanGamingItems(settings.gaming_items as GamingItem[]);
     }
 
     const raw = items.find((i) => itemSlug(i) === slug || i.id === slug);

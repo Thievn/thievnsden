@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
       name: g.name,
       released: g.released,
       background_image: g.background_image,
+      rating: g.rating,
       slug: g.slug,
       url: g.slug ? `https://rawg.io/games/${g.slug}` : null,
     }));

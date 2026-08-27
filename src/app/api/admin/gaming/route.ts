@@ -4,9 +4,15 @@ import { writeAudit } from "@/lib/audit";
 import {
   DEFAULT_GAMING_CONFIG,
   SEED_GAMING_ITEMS,
+  cleanGamingItems,
   type GamingConfig,
   type GamingItem,
 } from "@/lib/gaming-data";
+
+function maskKey(key: string) {
+  if (!key) return "";
+  return `${key.slice(0, 4)}${"•".repeat(12)}`;
+}
 
 export async function GET() {
   try {
@@ -17,17 +23,31 @@ export async function GET() {
       .eq("id", 1)
       .maybeSingle();
 
+    const rawItems =
+      Array.isArray(data?.gaming_items) && data.gaming_items.length > 0
+        ? (data.gaming_items as GamingItem[])
+        : SEED_GAMING_ITEMS;
+    const items = cleanGamingItems(rawItems);
+    const config = { ...DEFAULT_GAMING_CONFIG, ...(data?.gaming_config || {}) };
+    if (items.length !== rawItems.length && data?.gaming_items) {
+      await supabase.from("site_settings").upsert({
+        id: 1,
+        gaming_config: config,
+        gaming_items: items,
+        updated_at: new Date().toISOString(),
+      });
+    }
+
     return NextResponse.json({
-      config: { ...DEFAULT_GAMING_CONFIG, ...(data?.gaming_config || {}) },
-      items:
-        Array.isArray(data?.gaming_items) && data.gaming_items.length > 0
-          ? data.gaming_items
-          : SEED_GAMING_ITEMS,
+      config: { ...config, rawg_api_key: maskKey(config.rawg_api_key) },
+      has_rawg_key: Boolean(config.rawg_api_key),
+      items,
       source: data?.gaming_items ? "db" : "seed",
     });
   } catch (err: any) {
     return NextResponse.json({
       config: DEFAULT_GAMING_CONFIG,
+      has_rawg_key: false,
       items: SEED_GAMING_ITEMS,
       source: "seed",
       error: err?.message,
@@ -61,11 +81,13 @@ export async function PATCH(req: NextRequest) {
         (existing?.gaming_config as GamingConfig | undefined)?.rawg_api_key || "";
     }
 
-    const nextItems: GamingItem[] = Array.isArray(body.items)
-      ? body.items
-      : Array.isArray(existing?.gaming_items)
-        ? existing.gaming_items
-        : SEED_GAMING_ITEMS;
+    const nextItems: GamingItem[] = cleanGamingItems(
+      Array.isArray(body.items)
+        ? body.items
+        : Array.isArray(existing?.gaming_items)
+          ? existing.gaming_items
+          : SEED_GAMING_ITEMS
+    );
 
     const payload: Record<string, unknown> = {
       id: 1,
@@ -106,7 +128,13 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      config: nextConfig,
+      config: {
+        ...nextConfig,
+        rawg_api_key: nextConfig.rawg_api_key
+          ? `${nextConfig.rawg_api_key.slice(0, 4)}${"•".repeat(12)}`
+          : "",
+      },
+      has_rawg_key: Boolean(nextConfig.rawg_api_key),
       items: nextItems,
     });
   } catch (err: any) {

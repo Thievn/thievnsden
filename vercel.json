@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/gaming",
+      "schedule": "0 15 * * *"
+    }
+  ]
+}

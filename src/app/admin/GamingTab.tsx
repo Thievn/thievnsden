@@ -1,13 +1,7 @@
 "use client";
 
-import { GamingAutoPull } from "@/app/admin/GamingAutoPull";
-import { GamingCards } from "@/app/admin/GamingCards";
+import { GamingStudio } from "@/app/admin/GamingStudio";
 
 export function GamingTab() {
-  return (
-    <div className="space-y-6">
-      <GamingAutoPull />
-      <GamingCards />
-    </div>
-  );
+  return <GamingStudio />;
 }

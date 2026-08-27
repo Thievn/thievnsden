@@ -3,11 +3,12 @@ import { createServiceClient } from "@/lib/supabase/server";
 import {
   DEFAULT_GAMING_CONFIG,
   SEED_GAMING_ITEMS,
+  cleanGamingItems,
   type GamingConfig,
   type GamingItem,
 } from "@/lib/gaming-data";
 import { fillGamingCovers } from "@/lib/gaming-covers";
-import { mirrorItemCovers } from "@/lib/gaming-pull";
+import { mirrorItemCovers, publicGamingConfig } from "@/lib/gaming-pull";
 
 export const maxDuration = 60;
 
@@ -21,24 +22,24 @@ export async function GET() {
       .eq("id", 1)
       .maybeSingle();
 
-    let config: GamingConfig = {
+    const config: GamingConfig = {
       ...DEFAULT_GAMING_CONFIG,
       ...(settings?.gaming_config || {}),
     };
 
     let items: GamingItem[] = SEED_GAMING_ITEMS;
     if (Array.isArray(settings?.gaming_items) && settings.gaming_items.length > 0) {
-      items = settings.gaming_items as GamingItem[];
+      items = cleanGamingItems(settings.gaming_items as GamingItem[]);
     }
 
     const published = items.filter((i) => i.published !== false);
     const filled = await fillGamingCovers(published, config.rawg_api_key);
     const mirrored = await mirrorItemCovers(filled);
 
-    if (mirrored.changed) {
+    if (mirrored.changed || items.length !== (settings?.gaming_items || []).length) {
       const byId = new Map(items.map((i) => [i.id, i]));
       for (const row of mirrored.items) byId.set(row.id, { ...(byId.get(row.id) || row), cover: row.cover });
-      const savedItems = Array.from(byId.values());
+      const savedItems = cleanGamingItems(Array.from(byId.values()));
       await supabase.from("site_settings").upsert({
         id: 1,
         gaming_config: config,
@@ -48,22 +49,16 @@ export async function GET() {
       items = savedItems;
     }
 
-    const publicConfig = {
-      ...config,
-      rawg_api_key: config.rawg_api_key ? "configured" : "",
-      auto_seen_ids: [],
-    };
-
     return NextResponse.json({
-      items: mirrored.items.filter((i) => i.published !== false),
-      config: publicConfig,
+      items: (mirrored.changed ? mirrored.items : published).filter((i) => i.published !== false),
+      config: publicGamingConfig(config),
       source: settings?.gaming_items ? "db" : "seed",
     });
   } catch {
     const withCovers = await fillGamingCovers(SEED_GAMING_ITEMS, "");
     return NextResponse.json({
       items: withCovers,
-      config: { ...DEFAULT_GAMING_CONFIG, rawg_api_key: "" },
+      config: publicGamingConfig(DEFAULT_GAMING_CONFIG),
       source: "seed",
     });
   }

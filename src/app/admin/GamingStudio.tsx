@@ -172,8 +172,9 @@ export function GamingStudio() {
         <p className="text-xs uppercase tracking-wide text-neutral-500">Automation</p>
         <p className="text-sm text-neutral-300 leading-relaxed">
           Every day at 15:00 UTC the site pulls five random games mixed across just-out, coming soon,
-          and classics. RAWG supplies facts and JPEG covers. Grok writes a short honest take from
-          that consensus. A Den culture note lands every other day.
+          and classics. RAWG supplies facts and JPEG covers when they exist. Grok only paints a still
+          if RAWG has no art, or if the piece is a Den take / news note. Generated stills save onto
+          the card automatically.
         </p>
         <label className="block space-y-1">
           <span className="text-xs text-neutral-500">RAWG API key {hasKey ? "· saved" : "· missing"}</span>
@@ -397,6 +398,7 @@ export function GamingStudio() {
           <GamingCoverField
             item={item}
             onCover={(cover) => patch(item.id, { cover })}
+            onItems={(next) => setItems(next)}
           />
         </div>
       ))}

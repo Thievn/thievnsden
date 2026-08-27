@@ -9,6 +9,9 @@ import {
   type PullEra,
 } from "@/lib/gaming-data";
 import { stripHtml, writeEssay, writeGameTake } from "@/lib/gaming-write";
+import { generateGrokCover } from "@/lib/gaming-art";
+import { lookupGameCover } from "@/lib/gaming-covers";
+import { shelfOf } from "@/lib/gaming-data";
 
 export type { PullEra };
 
@@ -192,14 +195,21 @@ export async function composeGameItem(opts: {
   if (!looksLikeAGame(detail)) return null;
   const title = String(detail.name || "").trim();
   if (!title) return null;
+  const description = stripHtml(detail.description_raw || detail.description || "");
   const coverSrc =
     detail.background_image ||
     detail.background_image_additional ||
     detail.short_screenshots?.[0]?.image ||
     "";
-  if (!coverSrc) return null;
-  const cover = await mirrorCover(coverSrc);
-  const description = stripHtml(detail.description_raw || detail.description || "");
+  let cover = coverSrc ? await mirrorCover(coverSrc) : "";
+  if (!cover) {
+    try {
+      cover = await generateGrokCover({ title, note: description.slice(0, 220), body: description });
+    } catch (err) {
+      console.error("composeGameItem grok cover", title, err);
+    }
+  }
+  if (!cover) return null;
   const pulse = rawgPulse(detail);
   const take = await writeGameTake({
     title,
@@ -308,6 +318,17 @@ export async function backfillEmptyTakes(opts: {
     });
     let cover = item.cover || "";
     if (!cover && detail?.background_image) cover = await mirrorCover(detail.background_image);
+    if (!cover) {
+      try {
+        cover = await generateGrokCover({
+          title: item.title,
+          note: take.note,
+          body: take.body,
+        });
+      } catch (err) {
+        console.error("backfill cover", item.title, err);
+      }
+    }
     out[i] = {
       ...item,
       note: take.note || item.note,
@@ -320,10 +341,49 @@ export async function backfillEmptyTakes(opts: {
   return { items: out, filled };
 }
 
+export async function fillMissingCovers(items: GamingItem[], rawgKey = "", limit = 8) {
+  const out = [...items];
+  let filled = 0;
+  for (let i = 0; i < out.length && filled < limit; i++) {
+    const item = out[i];
+    if (item.cover && String(item.cover).trim()) continue;
+    let cover = "";
+    if (shelfOf(item) !== "essay" && rawgKey) {
+      const found = await lookupGameCover(item.title, rawgKey);
+      if (found) cover = await mirrorCover(found);
+    }
+    if (!cover) {
+      try {
+        cover = await generateGrokCover({
+          title: item.title,
+          note: item.note,
+          body: item.body || "",
+        });
+      } catch (err) {
+        console.error("fillMissingCovers", item.title, err);
+      }
+    }
+    if (!cover) continue;
+    out[i] = { ...item, cover };
+    filled += 1;
+  }
+  return { items: out, filled };
+}
+
 export async function addEssay(items: GamingItem[], seen: string[], topic?: string) {
   const unused = ESSAY_TOPICS.filter((t) => !seen.includes(t));
   const pick = topic || unused[Math.floor(Math.random() * (unused.length || 1))] || ESSAY_TOPICS[0];
   const written = await writeEssay(pick);
+  let cover = "";
+  try {
+    cover = await generateGrokCover({
+      title: written.title,
+      note: written.note,
+      body: written.body,
+    });
+  } catch (err) {
+    console.error("essay cover", written.title, err);
+  }
   const item: GamingItem = {
     id: `essay-${Date.now().toString(36)}`,
     kind: "article",
@@ -337,7 +397,7 @@ export async function addEssay(items: GamingItem[], seen: string[], topic?: stri
     featured: false,
     sort: 8,
     published: true,
-    cover: "",
+    cover,
   };
   return { item, topic: pick };
 }

@@ -7,9 +7,11 @@ import { CoverImage } from "@/components/gaming/CoverImage";
 export function GamingCoverField({
   item,
   onCover,
+  onItems,
 }: {
   item: GamingItem;
   onCover: (url: string) => void;
+  onItems?: (items: GamingItem[]) => void;
 }) {
   const [busy, setBusy] = useState<"rawg" | "gen" | "">("");
   const [err, setErr] = useState("");
@@ -23,6 +25,7 @@ export function GamingCoverField({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          id: item.id,
           title: item.title,
           note: item.note,
           body: item.body,
@@ -31,6 +34,7 @@ export function GamingCoverField({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Cover failed");
       onCover(data.cover);
+      if (Array.isArray(data.items) && onItems) onItems(data.items);
     } catch (e: any) {
       setErr(e.message || "Cover failed");
     } finally {
@@ -54,6 +58,9 @@ export function GamingCoverField({
         placeholder="Cover URL (RAWG, Steam, or your own)"
         className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-xs text-neutral-300 focus:outline-none focus:border-neutral-600"
       />
+      <p className="text-[10px] text-neutral-600">
+        Games use RAWG art first so you do not spend credits. News / Den takes generate a still automatically and save it onto the card.
+      </p>
       <div className="flex gap-2">
         <button
           type="button"

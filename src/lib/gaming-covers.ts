@@ -17,7 +17,7 @@ function keyOf(title: string) {
 }
 
 function wantsCover(item: GamingItem) {
-  return Boolean(item.title) && (item.shelf ? item.shelf !== "essay" : item.kind !== "article" && item.kind !== "drama");
+  return Boolean(item.title) && item.kind !== "article" && item.kind !== "drama" && item.shelf !== "essay";
 }
 
 function hasCover(item: GamingItem) {

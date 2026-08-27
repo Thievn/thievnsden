@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { DEFAULT_GAMING_CONFIG, type GamingConfig } from "@/lib/gaming-data";
 import { lookupGameCover } from "@/lib/gaming-covers";
 import { mirrorCover } from "@/lib/gaming-pull";
+import { persistItemCover } from "@/lib/gaming-art";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -10,6 +11,7 @@ export const maxDuration = 30;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const id = String(body.id || "").trim();
     const title = String(body.title || "").trim();
     if (!title) return NextResponse.json({ error: "Title first" }, { status: 400 });
 
@@ -28,7 +30,14 @@ export async function POST(req: NextRequest) {
       );
     }
     const cover = await mirrorCover(found);
-    return NextResponse.json({ cover, source: found.includes("rawg") ? "rawg" : "lookup" });
+    let items = null;
+    if (id) items = await persistItemCover(id, cover);
+    return NextResponse.json({
+      cover,
+      items,
+      saved: Boolean(id),
+      source: found.includes("rawg") ? "rawg" : "lookup",
+    });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Cover lookup failed" }, { status: 500 });
   }

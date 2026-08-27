@@ -435,7 +435,11 @@ export async function recategorizeAndExpand(opts: {
         const take = await writeGameTake({
           title: next.title,
           era,
-          pulse: detail ? rawgPulse(detail) : "",
+          pulse:
+            (detail ? rawgPulse(detail) : "") +
+            (era === "current" && shelfFromReleased(released) === "coming"
+              ? "\nStatus: already playable (early access or live). The 1.0 date is not a reason to review it as unreleased."
+              : ""),
           description: detail ? stripHtml(detail.description_raw || detail.description || "") : "",
         });
         if (take.body.trim().length >= SHORT_GAME_BODY_CHARS || take.body.trim().length > body.trim().length) {

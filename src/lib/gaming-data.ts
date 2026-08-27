@@ -155,6 +155,22 @@ export function shelfFromReleased(released?: string | null, now = new Date()): P
   return "current";
 }
 
+/** Early access / live titles often keep a future 1.0 date on RAWG. */
+export function shelfFromRawgSignals(opts: {
+  released?: string | null;
+  ratingsCount?: number;
+  playtime?: number;
+  inRotation?: boolean;
+  now?: Date;
+}): PullEra {
+  let era = shelfFromReleased(opts.released, opts.now);
+  if (era !== "coming") return era;
+  if (opts.inRotation) return "current";
+  if ((opts.ratingsCount || 0) >= 40) return "current";
+  if ((opts.playtime || 0) > 0) return "current";
+  return "coming";
+}
+
 export function formatReleasedLabel(released?: string | null) {
   const iso = String(released || "").trim().slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
@@ -163,9 +179,10 @@ export function formatReleasedLabel(released?: string | null) {
   return `${months[m - 1]} ${d}, ${y}`;
 }
 
-export function eraMeta(era: PullEra, released?: string | null) {
+export function eraMeta(era: PullEra, released?: string | null, earlyAccess = false) {
   const label = formatReleasedLabel(released);
   const year = String(released || "").slice(0, 4);
+  if (earlyAccess) return label ? `Playable now · 1.0 ${label}` : "Playable now";
   if (era === "coming") return label ? `Drops ${label}` : "Coming soon";
   if (era === "classic") return year ? `Classic · ${year}` : "Classic";
   return label ? `Out ${label}` : "Out now";
@@ -178,20 +195,29 @@ export function sortForShelf(shelf: GamingShelf, fallback = 40) {
   return fallback < 40 ? fallback : 25;
 }
 
-export function applyReleaseShelf(item: GamingItem, released?: string | null): GamingItem {
+export function applyReleaseShelf(
+  item: GamingItem,
+  released?: string | null,
+  signals?: { ratingsCount?: number; playtime?: number }
+): GamingItem {
   if (item.kind === "article" || item.kind === "drama" || item.shelf === "essay") return item;
   const date = released || item.released || "";
-  const era = shelfFromReleased(date);
-  const mapped = eraToKind(era);
   const keepKind = item.kind === "playing" || item.kind === "season";
   const keepStatus = item.status === "playing" || item.status === "season";
+  const era = shelfFromRawgSignals({
+    released: date,
+    ratingsCount: signals?.ratingsCount,
+    playtime: signals?.playtime,
+    inRotation: keepKind || keepStatus,
+  });
+  const mapped = eraToKind(era);
   return {
     ...item,
     released: date || item.released || "",
     shelf: mapped.shelf,
     kind: keepKind ? item.kind : mapped.kind,
     status: keepStatus ? item.status : mapped.status,
-    meta: eraMeta(era, date),
+    meta: eraMeta(era, date, shelfFromReleased(date) === "coming" && era === "current"),
     sort: sortForShelf(mapped.shelf, item.sort),
   };
 }

@@ -7,6 +7,7 @@ import {
   cleanGamingItems,
   eraMeta,
   eraToKind,
+  shelfFromRawgSignals,
   shelfFromReleased,
   shelfOf,
   sortForShelf,
@@ -215,7 +216,11 @@ export async function composeGameItem(opts: {
   }
   if (!cover) return null;
   const released = String(detail.released || "").slice(0, 10);
-  const era = shelfFromReleased(released);
+  const era = shelfFromRawgSignals({
+    released,
+    ratingsCount: Number(detail.ratings_count || detail.reviews_count || 0),
+    playtime: Number(detail.playtime || 0),
+  });
   const pulse = rawgPulse(detail);
   const take = await writeGameTake({
     title,
@@ -235,7 +240,7 @@ export async function composeGameItem(opts: {
     status,
     cover,
     released,
-    meta: eraMeta(era, released),
+    meta: eraMeta(era, released, shelfFromReleased(released) === "coming" && era === "current"),
     url: detail.slug ? `https://rawg.io/games/${detail.slug}` : "",
     featured: false,
     sort: sortForShelf(shelf),
@@ -311,7 +316,12 @@ export async function backfillEmptyTakes(opts: {
     if (rawgId && opts.key) {
       detail = await rawgGame(opts.key, rawgId);
     }
-    const era = shelfFromReleased(detail?.released || item.released);
+    const era = shelfFromRawgSignals({
+      released: detail?.released || item.released,
+      ratingsCount: Number(detail?.ratings_count || detail?.reviews_count || 0),
+      playtime: Number(detail?.playtime || 0),
+      inRotation: item.kind === "playing" || item.kind === "season" || item.status === "playing",
+    });
     const take = await writeGameTake({
       title: item.title,
       era,
@@ -339,7 +349,11 @@ export async function backfillEmptyTakes(opts: {
         cover,
         released: String(detail?.released || item.released || "").slice(0, 10),
       },
-      detail?.released || item.released
+      detail?.released || item.released,
+      {
+        ratingsCount: Number(detail?.ratings_count || detail?.reviews_count || 0),
+        playtime: Number(detail?.playtime || 0),
+      }
     );
     filled += 1;
   }
@@ -383,7 +397,11 @@ export async function recategorizeAndExpand(opts: {
     }
 
     const released = String(detail?.released || item.released || "").slice(0, 10);
-    const next = applyReleaseShelf({ ...item, released }, released);
+    const signals = {
+      ratingsCount: Number(detail?.ratings_count || detail?.reviews_count || 0),
+      playtime: Number(detail?.playtime || 0),
+    };
+    const next = applyReleaseShelf({ ...item, released }, released, signals);
     if (next.shelf !== item.shelf) recategorized += 1;
 
     let cover = next.cover || "";
@@ -406,8 +424,13 @@ export async function recategorizeAndExpand(opts: {
 
     let body = next.body || "";
     let note = next.note;
-    const era = shelfFromReleased(released);
-    if (body.trim().length < SHORT_GAME_BODY_CHARS && rewritten < rewriteLimit) {
+    const era = (next.shelf === "coming" ? "coming" : next.shelf === "classic" ? "classic" : "current") as PullEra;
+    const soundsUnreleased = /not (out|playable) yet|is not playable|wait for (launch|reviews)|on the radar/i.test(body);
+    const needsRewrite =
+      body.trim().length < SHORT_GAME_BODY_CHARS ||
+      (era === "current" && soundsUnreleased) ||
+      (era === "coming" && /how it actually plays|boot it tonight/i.test(body));
+    if (needsRewrite && rewritten < rewriteLimit) {
       try {
         const take = await writeGameTake({
           title: next.title,

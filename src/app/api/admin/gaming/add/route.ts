@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import {
   DEFAULT_GAMING_CONFIG,
   SEED_GAMING_ITEMS,
-  shelfFromReleased,
+  shelfFromRawgSignals,
   type GamingConfig,
   type GamingItem,
 } from "@/lib/gaming-data";
@@ -42,7 +42,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "RAWG didn’t return that game" }, { status: 404 });
     }
 
-    const era = shelfFromReleased(game.released);
+    const era = shelfFromRawgSignals({
+      released: game.released,
+      ratingsCount: Number(game.ratings_count || game.reviews_count || 0),
+      playtime: Number(game.playtime || 0),
+    });
     const item = await composeGameItem({
       key: config.rawg_api_key,
       game,

@@ -11,6 +11,8 @@ Admin → Gaming is the desk. The public `/gaming` page is shelves plus a full-p
 
 Hades (2020) and Diablo 4 (2023) belong on Out now in 2026. A title dated September 2026 does not belong on Out now in August 2026.
 
+Early access is a special case: if RAWG still lists a future 1.0 date but the game already has real player ratings (or it is marked playing / season), it stays on **Out now** with a `Playable now · 1.0 …` line. That is why Path of Exile 2 does not sit in Coming soon.
+
 ## What runs by itself
 
 A Vercel cron hits `/api/cron/gaming` every day at **15:00 UTC**.

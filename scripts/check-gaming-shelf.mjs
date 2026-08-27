@@ -32,6 +32,15 @@ function shelfFromReleased(released, now = new Date()) {
   return "current";
 }
 
+function shelfFromRawgSignals(released, extra = {}) {
+  const era = shelfFromReleased(released, extra.now);
+  if (era !== "coming") return era;
+  if (extra.inRotation) return "current";
+  if ((extra.ratingsCount || 0) >= 40) return "current";
+  if ((extra.playtime || 0) > 0) return "current";
+  return "coming";
+}
+
 const now = new Date(Date.UTC(2026, 7, 27));
 const cases = [
   ["The Blood of Dawnwalker", "2026-09-02", "coming"],
@@ -42,6 +51,7 @@ const cases = [
   ["TBA", "", "coming"],
   ["Eight years ago", "2018-08-27", "classic"],
   ["Seven years ago", "2019-08-27", "current"],
+  ["PoE2 1.0 date only", "2026-12-11", "coming"],
 ];
 
 let failed = 0;
@@ -50,6 +60,19 @@ for (const [name, date, expected] of cases) {
   const ok = got === expected;
   if (!ok) failed += 1;
   console.log(`${ok ? "ok" : "FAIL"}  ${name}  ${date || "none"}  → ${got} (want ${expected})`);
+}
+
+const signalCases = [
+  ["PoE2 with ratings", "2026-12-11", { now, ratingsCount: 200 }, "current"],
+  ["Dawnwalker no ratings", "2026-09-02", { now, ratingsCount: 2 }, "coming"],
+  ["Playing override", "2026-12-11", { now, inRotation: true }, "current"],
+];
+
+for (const [name, date, extra, expected] of signalCases) {
+  const got = shelfFromRawgSignals(date, extra);
+  const ok = got === expected;
+  if (!ok) failed += 1;
+  console.log(`${ok ? "ok" : "FAIL"}  ${name}  → ${got} (want ${expected})`);
 }
 
 if (failed) {

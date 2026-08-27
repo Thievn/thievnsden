@@ -2,6 +2,8 @@ import Link from "next/link";
 import { DenMarkSplash } from "@/components/DenMark";
 import { HomeAtmosphere } from "@/components/home/HomeAtmosphere";
 import { HomeGamingRoom, HomePolaroids, HomePrintStrip } from "@/components/home/HomePolaroids";
+import { PlaygroundCardArt } from "@/components/playground/PlaygroundCardArt";
+import { PLAYGROUND_GAMES } from "@/lib/playground-games";
 
 export type HomeThought = {
   title: string;
@@ -27,12 +29,14 @@ export function HomeDen({
   gamingCovers,
   gamingTitle,
   lootCovers = [],
+  playgroundArt = {},
 }: {
   thoughts: HomeThought[];
   prints: string[];
   gamingCovers: HomeGameCover[];
   gamingTitle: string | null;
   lootCovers?: HomeLootCover[];
+  playgroundArt?: Record<string, string>;
 }) {
   const featured = thoughts[0];
   const rest = thoughts.slice(1, 3);
@@ -161,24 +165,21 @@ export function HomeDen({
         </section>
 
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 pb-5">
-          <Link href="/playground/face-the-den" className="home-room rounded-3xl border border-red-800/40 bg-[#14080c] p-6 min-h-[200px] flex flex-col">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-red-300/85 mb-3">Playground</p>
-            <h2 className="text-xl font-semibold text-neutral-50 mb-2">Face The Den</h2>
-            <p className="text-sm text-neutral-500 flex-1">Walk in looking pretty. Leave with notes.</p>
-            <p className="mt-5 text-sm text-red-300">Sit for a roast →</p>
-          </Link>
-          <Link href="/playground/would-you-rather" className="home-room rounded-3xl border border-amber-900/40 bg-[#120e08] p-6 min-h-[200px] flex flex-col">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-amber-300/85 mb-3">Playground</p>
-            <h2 className="text-xl font-semibold text-neutral-50 mb-2">Would You Rather</h2>
-            <p className="text-sm text-neutral-500 flex-1">Ten rounds. Two costs. The room splits.</p>
-            <p className="mt-5 text-sm text-amber-300">Lights on →</p>
-          </Link>
-          <Link href="/playground/highway-hunter" className="home-room rounded-3xl border border-orange-900/35 bg-[#120a08] p-6 min-h-[200px] flex flex-col">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-orange-300/85 mb-3">Playground</p>
-            <h2 className="text-xl font-semibold text-neutral-50 mb-2">Highway Hunter</h2>
-            <p className="text-sm text-neutral-500 flex-1">Night interstate. Soft wrecks. Preview heat.</p>
-            <p className="mt-5 text-sm text-orange-300">Take the on-ramp →</p>
-          </Link>
+          {PLAYGROUND_GAMES.filter((g) => !g.disabled).map((g) => (
+            <Link
+              key={g.id}
+              href={g.href}
+              className={`home-room rounded-3xl border ${g.homeBorder} bg-[#0a0608] p-6 min-h-[200px] flex flex-col overflow-hidden`}
+            >
+              <PlaygroundCardArt url={playgroundArt[g.id]} />
+              <p className={`relative z-[3] text-[11px] uppercase tracking-[0.18em] ${g.homeKicker} mb-3`}>Playground</p>
+              <h2 className="relative z-[3] text-xl font-semibold text-neutral-50 mb-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+                {g.title}
+              </h2>
+              <p className="relative z-[3] text-sm text-neutral-300 flex-1">{g.homeLine}</p>
+              <p className={`relative z-[3] mt-5 text-sm ${g.homeCta}`}>{g.homeEnter}</p>
+            </Link>
+          ))}
         </section>
 
         <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 pb-12 sm:pb-16">

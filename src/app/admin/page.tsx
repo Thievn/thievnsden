@@ -7,10 +7,11 @@ import { AfterimageTab } from "@/app/admin/AfterimageTab";
 import { LootTab } from "@/app/admin/LootTab";
 import { ThoughtsTab } from "@/app/admin/ThoughtsTab";
 import { XThoughtsTab } from "@/app/admin/XThoughtsTab";
+import { PlaygroundArtTab } from "@/app/admin/PlaygroundArtTab";
 import { CatalogSeed } from "@/components/afterimage/CatalogSeed";
 import { BulkUpload } from "@/components/afterimage/BulkUpload";
 
-type AdminMode = "main" | "afterimage" | "loot" | "thoughts" | "xthoughts";
+type AdminMode = "main" | "afterimage" | "loot" | "thoughts" | "xthoughts" | "playground";
 
 function AdminShell() {
   const search = useSearchParams();
@@ -24,7 +25,9 @@ function AdminShell() {
           ? "loot"
           : start === "thoughts"
             ? "thoughts"
-            : "main";
+            : start === "playground"
+              ? "playground"
+              : "main";
   const [mode, setMode] = useState<AdminMode>(initial);
   return (
     <div data-admin-shell="xpic-v3">
@@ -44,6 +47,9 @@ function AdminShell() {
         <button type="button" onClick={() => setMode("xthoughts")} className={`px-3 py-1.5 rounded-lg text-xs border ${
           mode === "xthoughts" ? "border-sky-500/50 text-sky-100" : "border-neutral-800 text-neutral-500"
         }`}>X Thoughts</button>
+        <button type="button" onClick={() => setMode("playground")} className={`px-3 py-1.5 rounded-lg text-xs border ${
+          mode === "playground" ? "border-rose-500/50 text-rose-100" : "border-neutral-800 text-neutral-500"
+        }`}>Playground</button>
       </div>
       {mode === "afterimage" ? (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -62,6 +68,10 @@ function AdminShell() {
       ) : mode === "xthoughts" ? (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
           <XThoughtsTab />
+        </div>
+      ) : mode === "playground" ? (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+          <PlaygroundArtTab />
         </div>
       ) : (
         <AdminDashboard />

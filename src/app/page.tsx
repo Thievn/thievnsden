@@ -38,7 +38,7 @@ async function loadHome() {
         .eq("rejected", false)
         .order("created_at", { ascending: false })
         .limit(24),
-      supabase.from("site_settings").select("gaming_items").eq("id", 1).maybeSingle(),
+      supabase.from("site_settings").select("gaming_items, playground_art").eq("id", 1).maybeSingle(),
       supabase.from("loot_picks").select("id, name, image_url").eq("active", true).not("image_url", "is", null).order("sort_order").limit(6),
     ]);
 
@@ -65,12 +65,20 @@ async function loadHome() {
       gamingCovers.find((g) => g.kind === "playing") ||
       gamingCovers[0] ||
       null;
+    const playgroundArt: Record<string, string> = {};
+    const rawArt = settingsRes.data?.playground_art as Record<string, { url?: string }> | null;
+    if (rawArt && typeof rawArt === "object") {
+      for (const [id, entry] of Object.entries(rawArt)) {
+        if (entry?.url) playgroundArt[id] = String(entry.url);
+      }
+    }
     return {
       thoughts: thoughts.length ? thoughts : fallback,
       prints,
       gamingCovers,
       gamingTitle: prefer?.title || null,
       lootCovers,
+      playgroundArt,
     };
   } catch {
     return {
@@ -79,6 +87,7 @@ async function loadHome() {
       gamingCovers: [] as HomeGameCover[],
       gamingTitle: null,
       lootCovers: [] as HomeLootCover[],
+      playgroundArt: {} as Record<string, string>,
     };
   }
 }
@@ -94,6 +103,7 @@ export default async function HomePage() {
       gamingCovers={home.gamingCovers}
       gamingTitle={home.gamingTitle}
       lootCovers={home.lootCovers}
+      playgroundArt={home.playgroundArt}
     />
   );
 }

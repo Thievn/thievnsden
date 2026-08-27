@@ -314,6 +314,38 @@ body {
 .home-room:active {
   transform: scale(0.985);
 }
+.pg-card-still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 72% center;
+  opacity: 0.4;
+  filter: saturate(0.78) contrast(1.08) brightness(0.62);
+  z-index: 0;
+  pointer-events: none;
+  transform: scale(1.05);
+  transition: opacity 0.4s ease, filter 0.4s ease, transform 0.55s ease;
+}
+.home-room:hover .pg-card-still {
+  opacity: 0.52;
+  filter: saturate(0.92) contrast(1.12) brightness(0.7);
+  transform: scale(1.1);
+}
+.pg-card-disabled .pg-card-still {
+  opacity: 0.22;
+  filter: saturate(0.35) contrast(0.95) brightness(0.45) grayscale(0.25);
+}
+.pg-card-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(108deg, rgba(6, 4, 7, 0.9) 0%, rgba(6, 4, 7, 0.58) 38%, rgba(6, 4, 7, 0.22) 100%),
+    radial-gradient(ellipse at 80% 20%, transparent 20%, rgba(0, 0, 0, 0.35) 100%);
+}
 @media (hover: none) {
   .home-room:hover { transform: none; box-shadow: none; }
   .home-room:active { transform: scale(0.985); }

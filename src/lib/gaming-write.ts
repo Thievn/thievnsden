@@ -74,7 +74,7 @@ export async function writeGameTake(opts: {
       ? "This is not out yet. Do not review it like a finished game. Say that clearly. Cover the wait, the claims, the worries, and what to actually watch for on launch. Do not pretend you have played a finished build."
       : opts.era === "classic"
         ? "This released eight or more years ago. Talk about whether it still holds up, what people still boot it for, and what has aged."
-        : "This is out now. Talk about how it actually plays, who it is for, and the live consensus from the ratings. Do not write like a launch-week recap mill.";
+        : "This is out now, including early access if people are already playing it. Talk about how it actually plays, who it is for, and the live consensus from the ratings. Do not write like the game is still unreleased.";
 
   const facts = [opts.pulse, opts.description ? `Publisher / RAWG copy:\n${opts.description.slice(0, 2400)}` : ""]
     .filter(Boolean)

@@ -425,7 +425,7 @@ export async function recategorizeAndExpand(opts: {
     let body = next.body || "";
     let note = next.note;
     const era = (next.shelf === "coming" ? "coming" : next.shelf === "classic" ? "classic" : "current") as PullEra;
-    const soundsUnreleased = /not (out|playable) yet|is not playable|wait for (launch|reviews)|on the radar/i.test(body);
+    const soundsUnreleased = /not (out|playable) yet|is not playable|wait for (launch|reviews)|on the radar|still feels distant|stretches on even as/i.test(body);
     const needsRewrite =
       body.trim().length < SHORT_GAME_BODY_CHARS ||
       (era === "current" && soundsUnreleased) ||

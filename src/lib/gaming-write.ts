@@ -1,4 +1,4 @@
-const TONE = `You write for Thievn's Den, a personal gaming site. Honest human voice. Match the internet consensus — do not invent a different verdict. No hashtags. No emoji. No press-kit language. No corporate games journalism. Short paragraphs. If the facts are thin, say so instead of filling space.`;
+const TONE = `You write for Thievn's Den, a personal gaming site. Honest human voice. Match the internet consensus — do not invent a different verdict. No hashtags. No emoji. No press-kit language. No corporate games journalism. Short paragraphs. If the facts are thin, say so instead of filling space. The current year is 2026. Do not talk like it is still 2024.`;
 
 export function stripHtml(input: string) {
   return String(input || "")

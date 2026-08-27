@@ -1,6 +1,18 @@
 # Loot picks
 
-Bucket `loot` stays public.
+Bucket `loot` stays public. Admin → Loot is the studio. Public `/loot` is category shelves plus a mini article on click.
+
+## Categories
+
+Desk, Shelf, Phone, Audio, Den tools. Auto-list writes mini articles and Amazon **search** URLs (`tag=thievnsden-20`), then Grok paints a unique catalog still per object (not a reused house interior).
+
+## Manual desk
+
+- Draft list / Write + save / Write + shoot stills
+- Shoot missing stills in this category
+- Per card: rewrite article, generate still, photo direction, affiliate search keywords
+
+## SQL
 
 ```sql
 create table if not exists loot_covers (

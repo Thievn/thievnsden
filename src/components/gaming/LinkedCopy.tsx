@@ -26,10 +26,12 @@ export function LinkedCopy({
   text,
   mode = "essay",
   className = "",
+  shopQuery = "",
 }: {
   text: string;
-  mode?: "essay" | "game";
+  mode?: "essay" | "game" | "loot";
   className?: string;
+  shopQuery?: string;
 }) {
   const paragraphs = text
     .split(/\n\n+/)
@@ -40,7 +42,7 @@ export function LinkedCopy({
     <div className={className || "space-y-5 text-[16px] sm:text-[17px] text-neutral-300 leading-[1.7]"}>
       {paragraphs.map((p, i) => (
         <p key={i}>
-          <Parts parts={splitLinkedCopy(p, mode)} />
+          <Parts parts={splitLinkedCopy(p, mode, undefined, shopQuery)} />
         </p>
       ))}
     </div>

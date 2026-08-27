@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CLASSICS } from "@/lib/thoughts-packs";
 import { createServiceClient } from "@/lib/supabase/server";
-import { HomeDen, type HomeThought, type HomeGameCover } from "@/components/home/HomeDen";
+import { HomeDen, type HomeThought, type HomeGameCover, type HomeLootCover } from "@/components/home/HomeDen";
 
 export const metadata: Metadata = {
   title: { absolute: "Thievn's Den — Dark humor, AI art, and unfiltered thoughts" },
@@ -24,7 +24,7 @@ async function loadHome() {
   }));
   try {
     const supabase = createServiceClient();
-    const [thoughtsRes, printsRes, settingsRes] = await Promise.all([
+    const [thoughtsRes, printsRes, settingsRes, lootRes] = await Promise.all([
       supabase
         .from("den_thoughts")
         .select("title, excerpt, slug")
@@ -39,6 +39,7 @@ async function loadHome() {
         .order("created_at", { ascending: false })
         .limit(24),
       supabase.from("site_settings").select("gaming_items").eq("id", 1).maybeSingle(),
+      supabase.from("loot_picks").select("id, name, image_url").eq("active", true).not("image_url", "is", null).order("sort_order").limit(6),
     ]);
 
     const thoughts = (thoughtsRes.data as HomeThought[] | null)?.filter((t) => t?.slug) || [];
@@ -53,6 +54,13 @@ async function loadHome() {
         title: String(row.title),
         kind: row.kind,
       }));
+    const lootCovers: HomeLootCover[] = (lootRes.data || [])
+      .filter((row: { image_url?: string; name?: string; id?: string }) => row?.image_url && row?.name && row?.id)
+      .map((row: { image_url: string; name: string; id: string }) => ({
+        image_url: String(row.image_url),
+        name: String(row.name),
+        id: String(row.id),
+      }));
     const prefer =
       gamingCovers.find((g) => g.kind === "playing") ||
       gamingCovers[0] ||
@@ -62,6 +70,7 @@ async function loadHome() {
       prints,
       gamingCovers,
       gamingTitle: prefer?.title || null,
+      lootCovers,
     };
   } catch {
     return {
@@ -69,6 +78,7 @@ async function loadHome() {
       prints: [] as string[],
       gamingCovers: [] as HomeGameCover[],
       gamingTitle: null,
+      lootCovers: [] as HomeLootCover[],
     };
   }
 }
@@ -83,6 +93,7 @@ export default async function HomePage() {
       prints={home.prints}
       gamingCovers={home.gamingCovers}
       gamingTitle={home.gamingTitle}
+      lootCovers={home.lootCovers}
     />
   );
 }

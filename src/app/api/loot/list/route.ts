@@ -9,7 +9,7 @@ export async function GET() {
     const supabase = createServiceClient();
     const { data, error } = await supabase
       .from("loot_picks")
-      .select("id, section, name, snippet, body, image_url, status, sort_order, created_at")
+      .select("id, section, name, snippet, body, image_url, status, sort_order, search_query, created_at")
       .eq("active", true)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true });

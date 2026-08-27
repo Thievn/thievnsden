@@ -8,10 +8,12 @@
 }
 .loot-card {
   animation: lootRise 0.55s ease both;
-  transition: transform 0.25s ease, border-color 0.25s ease;
+  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
 }
 .loot-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-5px);
+  border-color: rgba(245, 158, 11, 0.45);
+  box-shadow: 0 24px 50px -28px rgba(245, 158, 11, 0.45);
 }
 .loot-hero-orb {
   animation: lootGlow 7s ease-in-out infinite;

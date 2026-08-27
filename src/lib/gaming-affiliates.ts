@@ -9,6 +9,11 @@ const SHOP: { re: RegExp; query: string }[] = [
   { re: /\bCRT\b/g, query: "CRT monitor" },
   { re: /\bgame manuals\b/gi, query: "retro video game manuals" },
   { re: /\binstruction manuals\b/gi, query: "retro video game manuals" },
+  { re: /\bmonitor arms?\b/gi, query: "monitor arm" },
+  { re: /\bphone cases?\b/gi, query: "phone case" },
+  { re: /\bcable raceways?\b/gi, query: "cable raceway" },
+  { re: /\bgaming mice\b/gi, query: "wireless gaming mouse" },
+  { re: /\bgaming mouse\b/gi, query: "wireless gaming mouse" },
   { re: /\bmechanical keyboards?\b/gi, query: "60 percent mechanical keyboard" },
   { re: /\bgaming headsets?\b/gi, query: "wireless gaming headset" },
   { re: /\bwireless headsets?\b/gi, query: "wireless gaming headset" },
@@ -59,14 +64,14 @@ function isInsideMarkdownLink(text: string, index: number) {
   return mid >= 0 && close >= 0 && open <= index && index <= close;
 }
 
-export function injectShopLinks(body: string, mode: "essay" | "game", tag = AMAZON_TAG) {
+export function injectShopLinks(body: string, mode: "essay" | "game" | "loot", tag = AMAZON_TAG) {
   let text = String(body || "");
   text = text.replace(AMAZON_MD, (_full, label: string, target: string) => {
     const href = resolveAffiliateHref(target, tag);
     return href ? `[${label}](${href})` : label;
   });
 
-  const max = mode === "essay" ? 2 : 1;
+  const max = mode === "game" ? 1 : 3;
   let used = (text.match(/amazon\.com/gi) || []).length;
   if (used >= max) return text;
 
@@ -86,10 +91,30 @@ export function injectShopLinks(body: string, mode: "essay" | "game", tag = AMAZ
   return text;
 }
 
+export function injectLootLinks(body: string, searchQuery = "", tag = AMAZON_TAG) {
+  let text = injectShopLinks(body, "loot", tag);
+  const query = String(searchQuery || "").trim();
+  if (!query) return text;
+  if ((text.match(/amazon\.com/gi) || []).length >= 3) return text;
+  const href = amazonSearchUrl(query, tag);
+  const needle = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(needle, "i");
+  const hit = re.exec(text);
+  if (hit && !isInsideMarkdownLink(text, hit.index)) {
+    return `${text.slice(0, hit.index)}[${hit[0]}](${href})${text.slice(hit.index + hit[0].length)}`;
+  }
+  return text;
+}
+
 export type CopyPart = { type: "text"; text: string } | { type: "link"; text: string; href: string };
 
-export function splitLinkedCopy(body: string, mode: "essay" | "game" = "essay", tag = AMAZON_TAG): CopyPart[] {
-  const text = injectShopLinks(body, mode, tag);
+export function splitLinkedCopy(
+  body: string,
+  mode: "essay" | "game" | "loot" = "essay",
+  tag = AMAZON_TAG,
+  shopQuery = ""
+): CopyPart[] {
+  const text = mode === "loot" ? injectLootLinks(body, shopQuery, tag) : injectShopLinks(body, mode, tag);
   const parts: CopyPart[] = [];
   const re = /\[([^\]]{1,80})\]\((https?:\/\/[^)]+)\)/g;
   let last = 0;
@@ -104,5 +129,7 @@ export function splitLinkedCopy(body: string, mode: "essay" | "game" = "essay", 
   if (last < text.length) parts.push({ type: "text", text: text.slice(last) });
   return parts.length ? parts : [{ type: "text", text }];
 }
+
+export const LOOT_WRITE_HINT = `This is a loot mini-article. Wrap TWO short shoppable phrases in markdown like [wireless headset](amazon:wireless gaming headset) using Amazon SEARCH keywords, not a single ASIN. Do not link the whole sentence. Do not write a shop pitch.`;
 
 export const AFFILIATE_WRITE_HINT = `If the piece names a physical thing people actually buy (CRT, headset, keyboard, controller, GPU, steelbook, figure, retro console, game manuals), wrap ONE short phrase in markdown like [CRT monitor](amazon:CRT monitor). Do not link a whole sentence. Do not add a shop pitch. Zero links is correct if nothing is buyable.`;

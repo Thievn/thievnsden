@@ -1,8 +1,9 @@
 export const LOOT_SECTIONS = [
-  { id: "desk", label: "Desk" },
-  { id: "shelf", label: "Shelf" },
-  { id: "phone", label: "Phone" },
-  { id: "house", label: "House-lite" },
+  { id: "desk", label: "Desk", blurb: "The battlestation that actually stays." },
+  { id: "shelf", label: "Shelf", blurb: "Figures and objects with presence." },
+  { id: "phone", label: "Phone", blurb: "Cases, grips, cables, bricks." },
+  { id: "audio", label: "Audio", blurb: "Headsets, mics, the return-cycle survivors." },
+  { id: "house", label: "Den tools", blurb: "House-lite. Raceways, arms, lamps. No air fryers." },
 ] as const;
 
 export type LootSection = (typeof LOOT_SECTIONS)[number]["id"];
@@ -128,15 +129,36 @@ export function searchTermFromLink(link: string) {
 }
 
 export function slugify(s: string) {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48) || `pick-${Date.now().toString(36)}`;
+  return (
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || `pick-${Date.now().toString(36)}`
+  );
+}
+
+export function uniqueLootId(name: string, existing: LootPick[], skipId?: string) {
+  const base = slugify(name);
+  const taken = new Set(existing.filter((p) => p.id !== skipId).map((p) => p.id));
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
 }
 
 export function sectionLabel(id: string) {
   return LOOT_SECTIONS.find((s) => s.id === id)?.label || id;
+}
+
+export function sectionBlurb(id: string) {
+  return LOOT_SECTIONS.find((s) => s.id === id)?.blurb || "";
+}
+
+export function normalizeLootSection(id?: string | null): LootSection {
+  const raw = String(id || "desk");
+  if (LOOT_SECTIONS.some((s) => s.id === raw)) return raw as LootSection;
+  return "desk";
 }
 
 export const AMAZON_TAG = "thievnsden-20";
@@ -167,42 +189,80 @@ export function affiliateUrl(pick: Partial<LootPick>, defaultTag = AMAZON_TAG) {
 }
 
 const SCENE_TEXT: Record<string, string> = {
-  studio: "seamless dark studio packshot, object floating on a clean void, catalog lighting, no furniture",
-  shelf: "on a dark collector shelf only, spot lit, other objects out of focus",
-  desk: "on a dark desk as the hero, nothing else competing",
-  hand: "worn or held, close crop on the product, no furniture set",
-  wall: "mounted on a dark wall, product is the only subject",
-  floor: "on dark floor or room corner, product fills the frame",
+  studio: "seamless void catalog packshot, the object floating or standing on nothing, cinematic product lighting, zero furniture",
+  shelf: "one collector glass shelf, museum spotlight, the object is the only readable thing, other silhouettes are blur only",
+  desk: "dark aluminum battlestation crop, the product is the hero on a nearly empty desk, RGB rim only as accent",
+  hand: "worn or held in a gloved or anonymous hand, tight crop, no room visible",
+  wall: "mounted on a dark textured wall, product fills the frame",
+  floor: "workshop concrete or rubber mat, utility object isolated, not a staged home",
 };
+
+const LIGHTS = [
+  "cool cyan rim against warm key",
+  "hard side light with a thin gold edge",
+  "soft overhead with a teal bounce",
+  "low hero light, almost black surround",
+  "split amber and steel lighting",
+];
+const BACKS = [
+  "void black seamless",
+  "brushed gunmetal plate",
+  "obsidian acrylic",
+  "dark carbon weave",
+  "matte charcoal cyc",
+];
+const ANGLES = [
+  "three-quarter catalog hero",
+  "slightly low hero angle",
+  "eye-level packshot",
+  "tight 50mm product crop",
+  "top-down with dramatic falloff",
+];
+
+function hashSalt(input: string) {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
 
 export function inferPhotoScene(item: { name?: string; search_query?: string; section?: string }) {
   const t = `${item.name || ""} ${item.search_query || ""}`.toLowerCase();
   if (/(figure|statue|nendoroid|scale|funko|plush)/.test(t)) return "shelf";
-  if (/(headset|headphone|earbuds|watch|ring|wear)/.test(t)) return "hand";
+  if (/(headset|headphone|earbuds|watch|ring|wear|mic)/.test(t)) return "hand";
   if (/(wall mount|monitor arm|pegboard|poster|frame|led strip)/.test(t)) return "wall";
   if (/(vac|filter|lamp|raceway|bin|stand)/.test(t) && item.section === "house") return "floor";
-  if (/(case|gpu|keyboard|mouse|mic|webcam|pc)/.test(t)) return "studio";
+  if (/(case|gpu|keyboard|mouse|webcam|pc)/.test(t)) return "studio";
   if (item.section === "shelf") return "shelf";
   if (item.section === "phone") return "studio";
+  if (item.section === "audio") return "hand";
   return "studio";
 }
 
 export function lootCoverPrompt(
-  item: { name: string; section?: string; search_query?: string; category?: string },
+  item: { name: string; section?: string; search_query?: string; category?: string; id?: string },
   extra = "",
   sceneId = "auto"
 ) {
   const term = item.search_query || item.name;
   const scene = sceneId === "auto" ? inferPhotoScene(item) : sceneId;
   const sceneLine = SCENE_TEXT[scene] || SCENE_TEXT.studio;
+  const salt = hashSalt(`${item.id || ""}|${item.name}|${term}|${scene}|${extra}`);
+  const light = LIGHTS[salt % LIGHTS.length];
+  const back = BACKS[(salt >> 3) % BACKS.length];
+  const angle = ANGLES[(salt >> 7) % ANGLES.length];
+  const section = item.section || "desk";
   return [
-    "Photorealistic single-product catalog photo.",
-    `The only subject is: ${item.name}.`,
-    `Search intent: ${term}.`,
+    "Photorealistic single-product catalog photograph, Amazon listing quality, 4:3.",
+    `The only subject is this exact object: ${item.name}.`,
+    `Search intent / what it is: ${term}.`,
+    `Loot section: ${section}.`,
     sceneLine + ".",
-    "Do not default to a nightstand or random furniture if it does not belong to this object.",
-    "No people faces, no text, no watermark, no collage, no extra products.",
-    "Sharp, 4:3, Amazon listing quality.",
+    `Lighting: ${light}. Background: ${back}. Camera: ${angle}.`,
+    "Make this still unique. Do not reuse a living-room, bedroom, kitchen, sofa, nightstand, house interior, staged home, or furniture set.",
+    "No people faces, no readable text, no watermark, no collage, no extra products competing.",
     extra,
   ]
     .filter(Boolean)

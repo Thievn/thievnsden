@@ -1,70 +1,30 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import type { GamingItem } from "@/lib/gaming-data";
+import { notFound } from "next/navigation";
 import { STATUS_STYLES, itemSlug, shelfOf } from "@/lib/gaming-data";
 import { ThoughtReactions } from "@/components/ThoughtReactions";
 import { ThoughtComments } from "@/components/ThoughtComments";
 import { ShareBar } from "@/components/ShareBar";
 import { CoverImage } from "@/components/gaming/CoverImage";
+import { loadGamingItem } from "@/lib/gaming-load";
 
-export default function GamingArticlePage() {
-  const params = useParams();
-  const slug = String(params?.slug || "");
-  const [item, setItem] = useState<GamingItem | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    if (!slug) return;
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/gaming/${encodeURIComponent(slug)}`);
-        if (!res.ok) {
-          setNotFound(true);
-          return;
-        }
-        const data = await res.json();
-        setItem(data.item);
-      } catch {
-        setNotFound(true);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [slug]);
-
-  if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-20 text-center text-sm text-neutral-500">
-        Loading…
-      </div>
-    );
-  }
-
-  if (notFound || !item) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-20 text-center space-y-4">
-        <p className="text-neutral-300">That piece isn’t in the Den.</p>
-        <Link
-          href="/gaming"
-          className="text-sm text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400"
-        >
-          ← Back to Gaming
-        </Link>
-      </div>
-    );
-  }
+export default async function GamingArticlePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const item = await loadGamingItem(slug);
+  if (!item) notFound();
 
   const style = STATUS_STYLES[item.status] || STATUS_STYLES.hype;
   const path = `/gaming/${itemSlug(item)}`;
   const paragraphs = (item.body || item.note || "")
     .split(/\n\n+/)
     .map((p) => p.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .slice(0, 3);
 
   return (
     <article className="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
@@ -103,7 +63,7 @@ export default function GamingArticlePage() {
       </header>
 
       <div className="space-y-4 text-[15px] sm:text-base text-neutral-300 leading-relaxed">
-        {paragraphs.slice(0, 3).map((p, i) => (
+        {paragraphs.map((p, i) => (
           <p key={i}>{p}</p>
         ))}
       </div>

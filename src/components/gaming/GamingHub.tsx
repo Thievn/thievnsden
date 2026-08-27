@@ -21,12 +21,19 @@ const SECTION: Record<GamingShelf, { title: string; blurb: string }> = {
   essay: { title: "Den takes", blurb: "Short notes on the culture, not recaps." },
 };
 
-export function GamingHub() {
+export function GamingHub({
+  initialItems,
+  initialConfig,
+}: {
+  initialItems?: GamingItem[];
+  initialConfig?: GamingConfig;
+}) {
   const [filter, setFilter] = useState<GamingShelf | "all">("all");
-  const [items, setItems] = useState<GamingItem[]>(SEED_GAMING_ITEMS);
-  const [config, setConfig] = useState<GamingConfig>(DEFAULT_GAMING_CONFIG);
+  const [items, setItems] = useState<GamingItem[]>(initialItems?.length ? initialItems : SEED_GAMING_ITEMS);
+  const [config, setConfig] = useState<GamingConfig>(initialConfig || DEFAULT_GAMING_CONFIG);
 
   useEffect(() => {
+    if (initialItems?.length) return;
     (async () => {
       try {
         const res = await fetch("/api/gaming");
@@ -42,7 +49,7 @@ export function GamingHub() {
         /* seed fallback */
       }
     })();
-  }, []);
+  }, [initialItems]);
 
   const live = useMemo(
     () => items.filter((i) => i.published !== false && i.title),

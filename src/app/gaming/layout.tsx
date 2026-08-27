@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 const title = "Gaming";
 const description =
-  "Now playing, release radar, seasons, watchlist, and Den takes — builds, rants, and whatever is currently on the screen.";
+  "Short takes on just-out games, coming soon, older classics, and Den notes. No press kits.";
 
 export const metadata: Metadata = {
   title,

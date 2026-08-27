@@ -13,7 +13,7 @@ export function stripHtml(input: string) {
     .trim();
 }
 
-export function firstParagraphs(text: string, max = 3) {
+export function firstParagraphs(text: string, max = 10) {
   return text
     .split(/\n\n+/)
     .map((p) => p.trim())
@@ -71,45 +71,45 @@ export async function writeGameTake(opts: {
 }) {
   const eraLine =
     opts.era === "coming"
-      ? "This is not out yet. Do not review it like a finished game. Talk about the wait, the hype, and what people should actually watch for."
+      ? "This is not out yet. Do not review it like a finished game. Say that clearly. Cover the wait, the claims, the worries, and what to actually watch for on launch. Do not pretend you have played a finished build."
       : opts.era === "classic"
-        ? "This is older. Talk about whether it still holds up and why people still boot it."
-        : "This is current or just out. Talk about how it actually plays right now.";
+        ? "This released eight or more years ago. Talk about whether it still holds up, what people still boot it for, and what has aged."
+        : "This is out now. Talk about how it actually plays, who it is for, and the live consensus from the ratings. Do not write like a launch-week recap mill.";
 
-  const facts = [opts.pulse, opts.description ? `Publisher / RAWG copy:\n${opts.description.slice(0, 1200)}` : ""]
+  const facts = [opts.pulse, opts.description ? `Publisher / RAWG copy:\n${opts.description.slice(0, 2400)}` : ""]
     .filter(Boolean)
     .join("\n\n");
 
   try {
     const text = await grokWrite({
-      system: `${TONE} Write 2 short paragraphs max, separated by a blank line. ${eraLine} Use the facts below as the internet/player consensus. Do not contradict ratings if they exist. Do not write a recap or a wiki page. ${AFFILIATE_WRITE_HINT} Do not Amazon-link the game title itself.`,
-      user: `Game: ${opts.title}\n\n${facts || "No RAWG facts. Use well-known public consensus only. If you do not know, keep it to one honest sentence."}`,
-      maxTokens: 280,
+      system: `${TONE} Write a full-page article: 6 to 8 short paragraphs, about 700 to 1000 words, blank line between paragraphs. ${eraLine} Use the facts below as the internet/player consensus. Do not contradict ratings if they exist. Do not write a wiki recap, a feature list, or bullet points. ${AFFILIATE_WRITE_HINT} Do not Amazon-link the game title itself.`,
+      user: `Game: ${opts.title}\n\n${facts || "No RAWG facts. Use well-known public consensus only. If you do not know something, say so instead of inventing it."}`,
+      maxTokens: 1600,
       temperature: 0.65,
     });
-    const body = injectShopLinks(firstParagraphs(text, 2), "game");
-    if (body.length > 40) return { body, note: noteFromBody(body), source: "grok" as const };
+    const body = injectShopLinks(firstParagraphs(text, 10), "game");
+    if (body.length > 200) return { body, note: noteFromBody(body), source: "grok" as const };
   } catch (err) {
     console.error("writeGameTake grok", err);
   }
 
   const fallback =
-    opts.description.slice(0, 420) ||
+    opts.description.slice(0, 1800) ||
     (opts.era === "coming"
-      ? `${opts.title} is on the radar. No honest take until people have actually played it.`
-      : `${opts.title} is in the pile. The numbers are thin, so this stays short until there is something real to say.`);
-  const body = firstParagraphs(fallback, 2);
+      ? `${opts.title} is not playable yet. No honest take until people have actually sat with a finished build.`
+      : `${opts.title} is in the pile. The numbers are thin, so this stays honest until there is something real to say.`);
+  const body = firstParagraphs(fallback, 10);
   return { body, note: noteFromBody(body), source: opts.description ? "rawg" : "fallback" };
 }
 
 export async function writeEssay(topic: string) {
   const text = await grokWrite({
-    system: `${TONE} Write a short Den take, 2-3 short paragraphs, blank lines between them. This is about gaming culture, not a recap of one launch trailer. Stay specific. No TED-talk endings. ${AFFILIATE_WRITE_HINT}`,
+    system: `${TONE} Write a full Den take: 5 to 7 short paragraphs, about 600 to 900 words, blank lines between them. This is about gaming culture, not a recap of one launch trailer. Stay specific. No TED-talk endings. ${AFFILIATE_WRITE_HINT}`,
     user: `Topic: ${topic}`,
-    maxTokens: 380,
+    maxTokens: 1300,
     temperature: 0.8,
   });
-  const body = injectShopLinks(firstParagraphs(text, 3), "essay");
+  const body = injectShopLinks(firstParagraphs(text, 10), "essay");
   const title = topic.split("—")[0]?.split(" vs ")[0]?.trim().slice(0, 72) || "Den take";
   return { title, body, note: noteFromBody(body) };
 }

@@ -115,7 +115,7 @@ export function GamingStudio() {
       if (Array.isArray(data.items)) setItems(data.items);
       setHits([]);
       setQuery("");
-      setMsg(`Added ${data.item?.title || hit.name} with a short take.`);
+      setMsg(`Added ${data.item?.title || hit.name} (${data.item?.shelf || "shelved"}).`);
     } catch (e: any) {
       setMsg(e.message || "Add failed");
     } finally {
@@ -147,6 +147,10 @@ export function GamingStudio() {
         setMsg(`Wrote “${data.item?.title || "Den take"}”.`);
       } else if (label === "backfill") {
         setMsg(data.filled ? `Wrote takes for ${data.filled} empty cards.` : "Every card already has a take.");
+      } else if (label === "refresh") {
+        setMsg(
+          `Moved ${data.recategorized || 0} off the wrong shelf. Expanded ${data.rewritten || 0} articles. Fixed ${data.covers || 0} covers.`
+        );
       } else {
         setMsg("Done.");
       }
@@ -171,10 +175,10 @@ export function GamingStudio() {
       <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-4">
         <p className="text-xs uppercase tracking-wide text-neutral-500">Automation</p>
         <p className="text-sm text-neutral-300 leading-relaxed">
-          Every day at 15:00 UTC the site pulls five random games mixed across just-out, coming soon,
-          and classics. RAWG supplies facts and JPEG covers when they exist. Grok only paints a still
-          if RAWG has no art, or if the piece is a Den take / news note. Generated stills save onto
-          the card automatically.
+          Every day at 15:00 UTC the site pulls five random games mixed across out now, coming soon,
+          and classics, shelved by RAWG release date. Coming soon is future dates only. Classics are
+          eight years or older. RAWG supplies facts and JPEG covers. Grok writes a full-page article
+          and only paints a still if RAWG has no art.
         </p>
         <label className="block space-y-1">
           <span className="text-xs text-neutral-500">RAWG API key {hasKey ? "· saved" : "· missing"}</span>
@@ -243,6 +247,14 @@ export function GamingStudio() {
           >
             {busy === "covers" ? "Mirroring…" : "Fix covers"}
           </button>
+          <button
+            type="button"
+            disabled={!!busy}
+            onClick={() => run("/api/admin/gaming/refresh", "refresh")}
+            className="py-2.5 rounded-xl text-sm border border-amber-800/60 text-amber-200 hover:bg-amber-950/30 disabled:opacity-40 sm:col-span-3"
+          >
+            {busy === "refresh" ? "Rewriting…" : "Recategorize + expand articles"}
+          </button>
         </div>
         {config.auto_last_date ? (
           <p className="text-[11px] text-neutral-600">Last auto pull {config.auto_last_date}</p>
@@ -252,7 +264,7 @@ export function GamingStudio() {
       <div className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 space-y-4">
         <p className="text-xs uppercase tracking-wide text-neutral-500">Search the pool</p>
         <p className="text-[12px] text-neutral-500">
-          Find a game on RAWG, drop it on a shelf, and Grok writes the short take from the ratings.
+          Find a game on RAWG. The shelf comes from the release date, and Grok writes a full-page article.
         </p>
         <div className="flex flex-col sm:flex-row gap-2">
           <input
@@ -268,7 +280,7 @@ export function GamingStudio() {
             className="px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200"
           >
             <option value="auto">Shelf from release date</option>
-            <option value="current">Just out</option>
+            <option value="current">Out now</option>
             <option value="coming">Coming soon</option>
             <option value="classic">Older / classic</option>
           </select>
@@ -391,8 +403,8 @@ export function GamingStudio() {
           <textarea
             value={item.body || ""}
             onChange={(e) => patch(item.id, { body: e.target.value })}
-            rows={5}
-            placeholder="Short article body — this is what the click opens"
+            rows={12}
+            placeholder="Full-page article — this is what the click opens"
             className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200"
           />
           <GamingCoverField

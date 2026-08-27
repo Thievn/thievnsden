@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   DEFAULT_GAMING_CONFIG,
   SEED_GAMING_ITEMS,
+  SHELF_COPY,
   SHELVES,
   shelfOf,
   type GamingConfig,
@@ -14,12 +15,7 @@ import { GameTile } from "@/components/gaming/GameTile";
 import { CoverImage } from "@/components/gaming/CoverImage";
 import { DenHero } from "@/components/den/DenHero";
 
-const SECTION: Record<GamingShelf, { title: string; blurb: string }> = {
-  current: { title: "Just out", blurb: "Current and recently released." },
-  coming: { title: "Coming soon", blurb: "On the radar. Not pre-orders." },
-  classic: { title: "Older & classics", blurb: "The pile that still holds up." },
-  essay: { title: "Den takes", blurb: "Short notes on the culture, not recaps." },
-};
+const SECTION = SHELF_COPY;
 
 export function GamingHub({
   initialItems,
@@ -82,10 +78,10 @@ export function GamingHub({
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
         <DenHero
           tone="violet"
-          kicker="Gaming · short takes"
+          kicker="Gaming · by release date"
           title="What's on the plate."
           accent="No press kits."
-          body={`${config.hero_line || "Small squares. Honest notes. Click through if you want more."} ${currently}`}
+          body={`${config.hero_line || "Small squares. Full-page takes. Click through if you want more."} ${currently}`}
           visual={
             <div className="relative h-[240px] sm:h-[300px]">
               {heroCovers.length ? (

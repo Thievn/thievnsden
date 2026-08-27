@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { STATUS_STYLES, itemSlug, shelfOf } from "@/lib/gaming-data";
+import { STATUS_STYLES, SHELF_COPY, itemSlug, shelfOf } from "@/lib/gaming-data";
 import { ThoughtReactions } from "@/components/ThoughtReactions";
 import { ThoughtComments } from "@/components/ThoughtComments";
 import { ShareBar } from "@/components/ShareBar";
@@ -27,7 +27,7 @@ export default async function GamingArticlePage({
   const showAffiliateNote = /amazon\.com/i.test(injectShopLinks(copy, mode));
 
   return (
-    <article className="max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+    <article className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
       <Link
         href="/gaming"
         className="inline-flex items-center gap-1.5 text-sm font-medium text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 mb-8"
@@ -42,7 +42,7 @@ export default async function GamingArticlePage({
       <header className="mb-8">
         <div className="flex flex-wrap items-center gap-2 mb-3">
           <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border border-violet-800/50 text-violet-200">
-            {shelfOf(item)}
+            {SHELF_COPY[shelfOf(item)]?.title || shelfOf(item)}
           </span>
           <span
             className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${style.className}`}

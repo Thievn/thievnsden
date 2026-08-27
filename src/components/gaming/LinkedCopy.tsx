@@ -34,11 +34,10 @@ export function LinkedCopy({
   const paragraphs = text
     .split(/\n\n+/)
     .map((p) => p.trim())
-    .filter(Boolean)
-    .slice(0, 3);
+    .filter(Boolean);
 
   return (
-    <div className={className || "space-y-4 text-[15px] sm:text-base text-neutral-300 leading-relaxed"}>
+    <div className={className || "space-y-5 text-[16px] sm:text-[17px] text-neutral-300 leading-[1.7]"}>
       {paragraphs.map((p, i) => (
         <p key={i}>
           <Parts parts={splitLinkedCopy(p, mode)} />

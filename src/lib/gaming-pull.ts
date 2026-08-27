@@ -1,8 +1,15 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import {
   ESSAY_TOPICS,
+  SHORT_GAME_BODY_CHARS,
+  applyReleaseShelf,
+  classicCutoffUtc,
   cleanGamingItems,
+  eraMeta,
   eraToKind,
+  shelfFromReleased,
+  shelfOf,
+  sortForShelf,
   uniqueSlug,
   type GamingConfig,
   type GamingItem,
@@ -11,7 +18,6 @@ import {
 import { stripHtml, writeEssay, writeGameTake } from "@/lib/gaming-write";
 import { generateGrokCover } from "@/lib/gaming-art";
 import { lookupGameCover } from "@/lib/gaming-covers";
-import { shelfOf } from "@/lib/gaming-data";
 
 export type { PullEra };
 
@@ -25,21 +31,19 @@ function dateShift(days: number) {
   return d.toISOString().slice(0, 10);
 }
 
+function eightYearsAgoStamp(now = new Date()) {
+  return new Date(classicCutoffUtc(now)).toISOString().slice(0, 10);
+}
+
 function eraQuery(era: PullEra, page: number) {
   const p = Math.max(1, page);
   if (era === "coming") {
-    return `dates=${dateShift(1)},${dateShift(300)}&ordering=-added&page=${p}`;
+    return `dates=${dateShift(1)},${dateShift(400)}&ordering=-added&page=${p}`;
   }
   if (era === "classic") {
-    return `dates=1996-01-01,2016-12-31&ordering=-rating&page=${p}`;
+    return `dates=1996-01-01,${eightYearsAgoStamp()}&ordering=-rating&page=${p}`;
   }
-  return `dates=${dateShift(-60)},${dateShift(10)}&ordering=-added&page=${p}`;
-}
-
-function eraMeta(era: PullEra, released?: string) {
-  if (era === "coming") return released ? `Drops ${released}` : "Coming soon";
-  if (era === "classic") return released ? `Classic · ${released.slice(0, 4)}` : "Classic";
-  return released ? `Out ${released}` : "Just out";
+  return `dates=${eightYearsAgoStamp()},${dateShift(0)}&ordering=-added&page=${p}`;
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -188,7 +192,7 @@ function looksLikeAGame(g: any) {
 export async function composeGameItem(opts: {
   key: string;
   game: any;
-  era: PullEra;
+  era?: PullEra;
   existing: GamingItem[];
 }) {
   const detail = (await rawgGame(opts.key, opts.game.id)) || opts.game;
@@ -210,14 +214,16 @@ export async function composeGameItem(opts: {
     }
   }
   if (!cover) return null;
+  const released = String(detail.released || "").slice(0, 10);
+  const era = shelfFromReleased(released);
   const pulse = rawgPulse(detail);
   const take = await writeGameTake({
     title,
-    era: opts.era,
+    era,
     pulse,
     description,
   });
-  const { kind, status, shelf } = eraToKind(opts.era);
+  const { kind, status, shelf } = eraToKind(era);
   const item: GamingItem = {
     id: `rawg-${detail.id}`,
     kind,
@@ -228,10 +234,11 @@ export async function composeGameItem(opts: {
     body: take.body,
     status,
     cover,
-    meta: eraMeta(opts.era, detail.released),
+    released,
+    meta: eraMeta(era, released),
     url: detail.slug ? `https://rawg.io/games/${detail.slug}` : "",
     featured: false,
-    sort: opts.era === "coming" ? 35 : opts.era === "classic" ? 85 : 25,
+    sort: sortForShelf(shelf),
     published: true,
   };
   return item;
@@ -304,12 +311,7 @@ export async function backfillEmptyTakes(opts: {
     if (rawgId && opts.key) {
       detail = await rawgGame(opts.key, rawgId);
     }
-    const era: PullEra =
-      item.shelf === "coming" || item.kind === "watchlist"
-        ? "coming"
-        : item.shelf === "classic" || item.kind === "library"
-          ? "classic"
-          : "current";
+    const era = shelfFromReleased(detail?.released || item.released);
     const take = await writeGameTake({
       title: item.title,
       era,
@@ -329,16 +331,115 @@ export async function backfillEmptyTakes(opts: {
         console.error("backfill cover", item.title, err);
       }
     }
-    out[i] = {
-      ...item,
-      note: take.note || item.note,
-      body: take.body,
-      cover,
-      shelf: item.shelf || (era === "coming" ? "coming" : era === "classic" ? "classic" : "current"),
-    };
+    out[i] = applyReleaseShelf(
+      {
+        ...item,
+        note: take.note || item.note,
+        body: take.body,
+        cover,
+        released: String(detail?.released || item.released || "").slice(0, 10),
+      },
+      detail?.released || item.released
+    );
     filled += 1;
   }
   return { items: out, filled };
+}
+
+async function rawgDetailForItem(key: string, item: GamingItem) {
+  const rawgId = item.id.startsWith("rawg-") ? item.id.slice(5) : "";
+  if (rawgId && key) {
+    const byId = await rawgGame(key, rawgId);
+    if (byId) return byId;
+  }
+  if (!key || !item.title) return null;
+  const hits = await rawgSearchList(key, item.title, 8);
+  const match =
+    hits.find((h: any) => titleKey(h.name) === titleKey(item.title)) || hits[0] || null;
+  if (!match?.id) return match;
+  return (await rawgGame(key, match.id)) || match;
+}
+
+export async function recategorizeAndExpand(opts: {
+  key: string;
+  items: GamingItem[];
+  rewriteLimit?: number;
+}) {
+  const rewriteLimit = opts.rewriteLimit ?? 12;
+  const out = [...opts.items];
+  let recategorized = 0;
+  let rewritten = 0;
+  let covers = 0;
+
+  for (let i = 0; i < out.length; i++) {
+    const item = out[i];
+    if (shelfOf(item) === "essay" || item.kind === "article" || item.kind === "drama") continue;
+
+    let detail: any = null;
+    try {
+      detail = await rawgDetailForItem(opts.key, item);
+    } catch (err) {
+      console.error("recategorize lookup", item.title, err);
+    }
+
+    const released = String(detail?.released || item.released || "").slice(0, 10);
+    const next = applyReleaseShelf({ ...item, released }, released);
+    if (next.shelf !== item.shelf) recategorized += 1;
+
+    let cover = next.cover || "";
+    if (!cover && detail?.background_image) {
+      cover = await mirrorCover(detail.background_image);
+      if (cover) covers += 1;
+    }
+    if (!cover) {
+      try {
+        cover = await generateGrokCover({
+          title: next.title,
+          note: next.note,
+          body: next.body || "",
+        });
+        if (cover) covers += 1;
+      } catch (err) {
+        console.error("recategorize cover", next.title, err);
+      }
+    }
+
+    let body = next.body || "";
+    let note = next.note;
+    const era = shelfFromReleased(released);
+    if (body.trim().length < SHORT_GAME_BODY_CHARS && rewritten < rewriteLimit) {
+      try {
+        const take = await writeGameTake({
+          title: next.title,
+          era,
+          pulse: detail ? rawgPulse(detail) : "",
+          description: detail ? stripHtml(detail.description_raw || detail.description || "") : "",
+        });
+        if (take.body.trim().length >= SHORT_GAME_BODY_CHARS || take.body.trim().length > body.trim().length) {
+          body = take.body;
+          note = take.note;
+          rewritten += 1;
+        }
+      } catch (err) {
+        console.error("recategorize write", next.title, err);
+      }
+    }
+
+    out[i] = {
+      ...next,
+      cover,
+      body,
+      note,
+      released,
+    };
+  }
+
+  return {
+    items: cleanGamingItems(out),
+    recategorized,
+    rewritten,
+    covers,
+  };
 }
 
 export async function fillMissingCovers(items: GamingItem[], rawgKey = "", limit = 8) {

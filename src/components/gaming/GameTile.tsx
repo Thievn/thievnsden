@@ -2,15 +2,8 @@
 
 import Link from "next/link";
 import type { GamingItem } from "@/lib/gaming-data";
-import { STATUS_STYLES, itemSlug, shelfOf } from "@/lib/gaming-data";
+import { STATUS_STYLES, SHELF_COPY, itemSlug, shelfOf } from "@/lib/gaming-data";
 import { CoverImage } from "@/components/gaming/CoverImage";
-
-const SHELF_LABEL: Record<string, string> = {
-  current: "Just out",
-  coming: "Soon",
-  classic: "Classic",
-  essay: "Take",
-};
 
 export function GameTile({ item }: { item: GamingItem }) {
   const href = `/gaming/${itemSlug(item)}`;
@@ -32,7 +25,7 @@ export function GameTile({ item }: { item: GamingItem }) {
       <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5">
         <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
           <span className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded border border-white/15 text-neutral-200 bg-black/40">
-            {SHELF_LABEL[shelf] || shelf}
+            {SHELF_COPY[shelf]?.tile || shelf}
           </span>
           <span className={`text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded border ${style.className}`}>
             {style.label}

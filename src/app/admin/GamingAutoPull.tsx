@@ -79,7 +79,7 @@ export function GamingAutoPull() {
             className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200"
           >
             <option value="coming">Coming soon</option>
-            <option value="current">Current / just out</option>
+            <option value="current">Out now</option>
             <option value="classic">Older / classics</option>
           </select>
         </label>
@@ -98,7 +98,7 @@ export function GamingAutoPull() {
         </label>
       </div>
       <p className="text-[11px] text-neutral-600 leading-relaxed">
-        Coming soon lands in Watchlist. Current lands in Radar. Classics land in Library.
+        Coming soon is future dates. Out now is released and under eight years. Classics are eight years or older.
         First visit to /gaming each day adds that many new titles. Covers are copied onto your storage so the public page can show them.
       </p>
       <button

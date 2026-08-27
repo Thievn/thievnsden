@@ -33,11 +33,18 @@ export type GamingItem = {
   meta?: string | null;
   url?: string | null;
   slug?: string | null;
+  released?: string | null;
   hours?: number | null;
   featured?: boolean;
   sort: number;
   published: boolean;
 };
+
+/** Games this old (or older) sit on Classics. Younger titles stay on Out now. */
+export const CLASSIC_AGE_YEARS = 8;
+
+/** Rewrite a game take if the stored body is shorter than this. */
+export const SHORT_GAME_BODY_CHARS = 900;
 
 export type GamingConfig = {
   rawg_api_key: string;
@@ -61,7 +68,7 @@ export const DEFAULT_GAMING_CONFIG: GamingConfig = {
   radar_enabled: false,
   radar_platforms: "4",
   radar_page_size: 8,
-  hero_line: "Short takes. Real covers. No press kits.",
+  hero_line: "Full-page takes. Real covers. No press kits.",
   currently_line: "",
   auto_pull_enabled: true,
   auto_pull_era: "current",
@@ -119,16 +126,109 @@ export function eraToKind(era: PullEra): { kind: GamingKind; status: GamingStatu
   return { kind: "radar", status: "hype", shelf: "current" };
 }
 
+export function parseReleasedUtc(released?: string | null): number | null {
+  const iso = String(released || "").trim().slice(0, 10);
+  if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+  const t = Date.parse(`${iso}T00:00:00.000Z`);
+  return Number.isNaN(t) ? null : t;
+}
+
+export function utcDay(now = new Date()) {
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+}
+
+export function classicCutoffUtc(now = new Date()) {
+  return Date.UTC(
+    now.getUTCFullYear() - CLASSIC_AGE_YEARS,
+    now.getUTCMonth(),
+    now.getUTCDate()
+  );
+}
+
+/** coming = future or no date. classic = released 8+ years ago. else current. */
+export function shelfFromReleased(released?: string | null, now = new Date()): PullEra {
+  const t = parseReleasedUtc(released);
+  if (t == null) return "coming";
+  const today = utcDay(now);
+  if (t > today) return "coming";
+  if (t <= classicCutoffUtc(now)) return "classic";
+  return "current";
+}
+
+export function formatReleasedLabel(released?: string | null) {
+  const iso = String(released || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[m - 1]} ${d}, ${y}`;
+}
+
+export function eraMeta(era: PullEra, released?: string | null) {
+  const label = formatReleasedLabel(released);
+  const year = String(released || "").slice(0, 4);
+  if (era === "coming") return label ? `Drops ${label}` : "Coming soon";
+  if (era === "classic") return year ? `Classic · ${year}` : "Classic";
+  return label ? `Out ${label}` : "Out now";
+}
+
+export function sortForShelf(shelf: GamingShelf, fallback = 40) {
+  if (shelf === "coming") return 35;
+  if (shelf === "classic") return 85;
+  if (shelf === "essay") return 8;
+  return fallback < 40 ? fallback : 25;
+}
+
+export function applyReleaseShelf(item: GamingItem, released?: string | null): GamingItem {
+  if (item.kind === "article" || item.kind === "drama" || item.shelf === "essay") return item;
+  const date = released || item.released || "";
+  const era = shelfFromReleased(date);
+  const mapped = eraToKind(era);
+  const keepKind = item.kind === "playing" || item.kind === "season";
+  const keepStatus = item.status === "playing" || item.status === "season";
+  return {
+    ...item,
+    released: date || item.released || "",
+    shelf: mapped.shelf,
+    kind: keepKind ? item.kind : mapped.kind,
+    status: keepStatus ? item.status : mapped.status,
+    meta: eraMeta(era, date),
+    sort: sortForShelf(mapped.shelf, item.sort),
+  };
+}
+
 export function isGameCard(item: GamingItem) {
   return shelfOf(item) !== "essay";
 }
 
+export const SHELF_COPY: Record<GamingShelf, { title: string; tile: string; blurb: string }> = {
+  current: {
+    title: "Out now",
+    tile: "Out now",
+    blurb: "Released, and younger than eight years.",
+  },
+  coming: {
+    title: "Coming soon",
+    tile: "Soon",
+    blurb: "A future date, or no date yet. Not playable.",
+  },
+  classic: {
+    title: "Classics",
+    tile: "Classic",
+    blurb: "Eight years or older. Still worth booting.",
+  },
+  essay: {
+    title: "Den takes",
+    tile: "Take",
+    blurb: "Culture notes, not recaps.",
+  },
+};
+
 export const SHELVES: { id: GamingShelf | "all"; label: string; hint: string }[] = [
   { id: "all", label: "All", hint: "Everything on the plate" },
-  { id: "current", label: "Just out", hint: "Current and recently released" },
-  { id: "coming", label: "Coming soon", hint: "On the radar. Not pre-orders." },
-  { id: "classic", label: "Older & classics", hint: "The pile that still holds up" },
-  { id: "essay", label: "Den takes", hint: "Short culture notes, not recaps" },
+  { id: "current", label: SHELF_COPY.current.title, hint: SHELF_COPY.current.blurb },
+  { id: "coming", label: SHELF_COPY.coming.title, hint: SHELF_COPY.coming.blurb },
+  { id: "classic", label: SHELF_COPY.classic.title, hint: SHELF_COPY.classic.blurb },
+  { id: "essay", label: SHELF_COPY.essay.title, hint: SHELF_COPY.essay.blurb },
 ];
 
 export const STATUS_STYLES: Record<
@@ -182,16 +282,22 @@ const JUNK_TITLES = new Set([
 ]);
 
 export function normalizeItem(item: GamingItem, existing: GamingItem[] = []): GamingItem {
-  const shelf = shelfOf(item);
-  const slug = item.slug || uniqueSlug(item.title, existing, item.id);
+  const dated =
+    item.kind === "article" || item.kind === "drama" || item.shelf === "essay"
+      ? item
+      : item.released
+        ? applyReleaseShelf(item, item.released)
+        : item;
+  const shelf = shelfOf(dated);
+  const slug = dated.slug || uniqueSlug(dated.title, existing, dated.id);
   return {
-    ...item,
+    ...dated,
     shelf,
     slug,
-    note: item.note || "",
-    body: item.body || "",
-    published: item.published !== false,
-    cover: item.cover || "",
+    note: dated.note || "",
+    body: dated.body || "",
+    published: dated.published !== false,
+    cover: dated.cover || "",
   };
 }
 

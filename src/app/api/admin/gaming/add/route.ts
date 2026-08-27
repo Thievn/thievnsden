@@ -3,24 +3,14 @@ import { createServiceClient } from "@/lib/supabase/server";
 import {
   DEFAULT_GAMING_CONFIG,
   SEED_GAMING_ITEMS,
+  shelfFromReleased,
   type GamingConfig,
   type GamingItem,
-  type PullEra,
 } from "@/lib/gaming-data";
 import { composeGameItem, rawgGame } from "@/lib/gaming-pull";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
-
-function eraFromRelease(released?: string | null): PullEra {
-  if (!released) return "coming";
-  const t = new Date(released).getTime();
-  if (Number.isNaN(t)) return "current";
-  const now = Date.now();
-  if (t > now + 24 * 60 * 60 * 1000) return "coming";
-  if (t < now - 4 * 365 * 24 * 60 * 60 * 1000) return "classic";
-  return "current";
-}
+export const maxDuration = 180;
 
 export async function POST(req: NextRequest) {
   try {
@@ -47,14 +37,12 @@ export async function POST(req: NextRequest) {
         ? (data.gaming_items as GamingItem[])
         : SEED_GAMING_ITEMS;
 
-    const game = rawgId
-      ? await rawgGame(config.rawg_api_key, rawgId)
-      : null;
+    const game = rawgId ? await rawgGame(config.rawg_api_key, rawgId) : null;
     if (!game) {
       return NextResponse.json({ error: "RAWG didn’t return that game" }, { status: 404 });
     }
 
-    const era = (body.era as PullEra) || eraFromRelease(game.released);
+    const era = shelfFromReleased(game.released);
     const item = await composeGameItem({
       key: config.rawg_api_key,
       game,

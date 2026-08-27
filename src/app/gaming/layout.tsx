@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 const title = "Gaming";
 const description =
-  "Short takes on just-out games, coming soon, older classics, and Den notes. No press kits.";
+  "Full-page takes on games out now, coming soon, and classics, plus Den notes. Shelved by release date. No press kits.";
 
 export const metadata: Metadata = {
   title,

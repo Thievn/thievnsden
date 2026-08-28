@@ -86,6 +86,14 @@ export const metadata: Metadata = {
     },
   },
   category: "entertainment",
+  icons: {
+    icon: [
+      { url: "/icon", type: "image/png" },
+      { url: "/icon-192", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-icon",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

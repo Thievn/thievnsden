@@ -1,24 +1,12 @@
-import { ImageResponse } from "next/og";
-import { SatoriDenSeal } from "@/lib/den-seal";
-
-export const runtime = "edge";
+import { readFile } from "fs/promises";
+import { join } from "path";
 
 export async function GET() {
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#070707",
-        }}
-      >
-        <SatoriDenSeal size={192} />
-      </div>
-    ),
-    { width: 192, height: 192 }
-  );
+  const buf = await readFile(join(process.cwd(), "public/mark/icon-192.png"));
+  return new Response(buf, {
+    headers: {
+      "Content-Type": "image/png",
+      "Cache-Control": "public, max-age=0, must-revalidate",
+    },
+  });
 }

@@ -20,8 +20,8 @@ export function DenBoot() {
     if (sessionStorage.getItem("den_boot_seen") === "1" && !standalone) return;
 
     setShow(true);
-    const hideAt = standalone ? 2800 : 2400;
-    const goneAt = hideAt + 560;
+    const hideAt = standalone ? 3200 : 2800;
+    const goneAt = hideAt + 600;
     const t1 = window.setTimeout(() => setLeaving(true), hideAt);
     const t2 = window.setTimeout(() => {
       sessionStorage.setItem("den_boot_seen", "1");
@@ -49,9 +49,9 @@ export function DenBoot() {
       <div className="pointer-events-none absolute inset-0 den-boot-vignette" />
 
       <div className="relative z-10 flex h-full flex-col items-center justify-center gap-8 den-boot-core">
-        <DenMarkSplash className="w-16 h-[5.5rem] sm:w-[4.5rem] sm:h-24" />
+        <DenMarkSplash className="h-28 w-[5.3rem] sm:h-36 sm:w-[6.8rem]" />
         <div className="text-center den-boot-text">
-          <p className="text-[11px] uppercase tracking-[0.42em] text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-red-300 to-violet-400 mb-1.5">
+          <p className="text-[11px] uppercase tracking-[0.42em] text-transparent bg-clip-text bg-gradient-to-r from-orange-300 via-rose-300 to-violet-400 mb-1.5">
             Come in
           </p>
           <p className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-50">Thievn&apos;s Den</p>

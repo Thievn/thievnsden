@@ -1,72 +1,39 @@
-"use client";
-
-import { useId } from "react";
-import { CAVE_GLOW, CAVE_INNER, CAVE_OUTER, CAVE_VIEWBOX } from "@/lib/cave-mark";
+const STONE = "/mark/den-stone.webp";
 
 export function DenMark({
-  className = "w-4 h-5",
+  className = "h-8 w-auto",
   title = "Thievn's Den",
-  draw = false,
+  glow = false,
 }: {
   className?: string;
   title?: string;
-  draw?: boolean;
+  glow?: boolean;
 }) {
-  const raw = useId().replace(/:/g, "");
-  const ring = `${raw}-ring`;
-  const ember = `${raw}-ember`;
-
   return (
-    <svg
-      viewBox={CAVE_VIEWBOX}
-      className={`${className}${draw ? " den-cave-draw" : ""}`}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden={title ? undefined : true}
-      role={title ? "img" : undefined}
-    >
-      {title ? <title>{title}</title> : null}
-      <defs>
-        <linearGradient id={ring} x1="6" y1="6" x2="20" y2="33" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#fb7185" />
-          <stop offset="40%" stopColor="#be123c" />
-          <stop offset="100%" stopColor="#7c3aed" />
-        </linearGradient>
-        <radialGradient id={ember} cx="50%" cy="40%" r="62%">
-          <stop offset="0%" stopColor="#fecdd3" />
-          <stop offset="42%" stopColor="#e11d48" />
-          <stop offset="100%" stopColor="#6b21a8" />
-        </radialGradient>
-      </defs>
-      <path
-        d={CAVE_OUTER}
-        fill="none"
-        stroke="#7c3aed"
-        strokeWidth="3.1"
-        strokeLinejoin="round"
-        opacity="0.28"
+    <span className={`relative inline-flex items-center justify-center ${className}`}>
+      {glow ? <span className="pointer-events-none absolute inset-[-55%_-40%] den-mark-halo" /> : null}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={STONE}
+        alt={title}
+        draggable={false}
+        className="relative z-10 h-full w-auto max-w-none object-contain select-none"
       />
-      <path
-        d={CAVE_OUTER}
-        className="den-cave-fill"
-        fill="#3a121c"
-        stroke={`url(#${ring})`}
-        strokeWidth="1.55"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        pathLength={100}
-      />
-      <path d={CAVE_INNER} className="den-cave-inner" fill="#050208" />
-      <path d={CAVE_GLOW} className="den-cave-glow" fill={`url(#${ember})`} />
-    </svg>
+    </span>
   );
 }
 
-export function DenMarkSplash({ className = "w-12 h-16" }: { className?: string }) {
+export function DenMarkSplash({ className = "h-20 w-auto" }: { className?: string }) {
   return (
     <span className={`relative inline-flex items-center justify-center den-seal-splash ${className}`}>
-      <span className="pointer-events-none absolute inset-[-36%_-18%] den-seal-halo" />
-      <DenMark className="relative z-10 w-full h-full" title="" draw />
+      <span className="pointer-events-none absolute inset-[-32%] den-seal-halo" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={STONE}
+        alt=""
+        draggable={false}
+        className="relative z-10 den-boot-stone h-full w-auto max-w-none object-contain select-none"
+      />
     </span>
   );
 }

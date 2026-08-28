@@ -1,8 +1,6 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { SatoriDenSeal } from "@/lib/den-seal";
-
-export const runtime = "edge";
+import { loadDenStonePng, SatoriDenSeal } from "@/lib/den-seal";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -12,6 +10,7 @@ export async function GET(req: NextRequest) {
     160
   );
   const section = (searchParams.get("section") || "").slice(0, 40);
+  const stone = await loadDenStonePng();
 
   return new ImageResponse(
     (
@@ -27,7 +26,6 @@ export async function GET(req: NextRequest) {
           fontFamily: "system-ui, sans-serif",
         }}
       >
-        {/* Glow */}
         <div
           style={{
             position: "absolute",
@@ -36,8 +34,7 @@ export async function GET(req: NextRequest) {
             width: 500,
             height: 400,
             borderRadius: 999,
-            background:
-              "radial-gradient(circle, rgba(185,28,92,0.35) 0%, transparent 70%)",
+            background: "rgba(185, 28, 92, 0.28)",
           }}
         />
         <div
@@ -48,13 +45,12 @@ export async function GET(req: NextRequest) {
             width: 420,
             height: 360,
             borderRadius: 999,
-            background:
-              "radial-gradient(circle, rgba(124,58,237,0.28) 0%, transparent 70%)",
+            background: "rgba(124, 58, 237, 0.22)",
           }}
         />
 
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <SatoriDenSeal size={64} />
+          <SatoriDenSeal data={stone} size={72} />
           <div
             style={{
               fontSize: 22,

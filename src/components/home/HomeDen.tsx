@@ -51,7 +51,7 @@ export function HomeDen({
             <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 p-6 sm:p-10 lg:p-12 items-center">
               <div className="lg:col-span-7 text-left">
                 <div className="home-float mb-5 w-fit">
-                  <DenMarkSplash className="w-11 h-[3.7rem] sm:w-12 sm:h-16" />
+                  <DenMarkSplash className="h-[4.6rem] w-[3.5rem] sm:h-24 sm:w-[4.5rem]" />
                 </div>
                 <p className="text-[11px] sm:text-xs uppercase tracking-[0.32em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-300 to-purple-400 mb-4 font-medium">
                   Thievn&apos;s Den · members&apos; hours · 18+

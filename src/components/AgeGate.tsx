@@ -1,32 +1,23 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { DenMarkSplash } from "@/components/DenMark";
 
-function subscribe() {
-  return () => {};
-}
-
-function ageVerifiedOnClient() {
-  try {
-    return localStorage.getItem("thievn-age-verified") === "true";
-  } catch {
-    return true;
-  }
-}
-
 export function AgeGate() {
-  const verified = useSyncExternalStore(subscribe, ageVerifiedOnClient, () => true);
+  const [show, setShow] = useState(false);
   const [exiting, setExiting] = useState(false);
-  const [passed, setPassed] = useState(false);
 
-  const show = !verified && !passed;
+  useEffect(() => {
+    if (localStorage.getItem("thievn-age-verified") !== "true") {
+      setShow(true);
+    }
+  }, []);
 
   const handleEnter = () => {
     setExiting(true);
     window.setTimeout(() => {
       localStorage.setItem("thievn-age-verified", "true");
-      setPassed(true);
+      setShow(false);
     }, 620);
   };
 

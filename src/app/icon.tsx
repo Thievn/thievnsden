@@ -18,7 +18,7 @@ export default function Icon() {
           borderRadius: 8,
         }}
       >
-        <SatoriDenSeal size={28} />
+        <SatoriDenSeal size={32} />
       </div>
     ),
     { ...size }

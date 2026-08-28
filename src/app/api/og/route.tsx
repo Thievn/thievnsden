@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
         />
 
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <SatoriDenSeal size={52} />
+          <SatoriDenSeal size={64} />
           <div
             style={{
               fontSize: 22,

@@ -16,7 +16,7 @@ export async function GET() {
           background: "#070707",
         }}
       >
-        <SatoriDenSeal size={430} />
+        <SatoriDenSeal size={512} />
       </div>
     ),
     { width: 512, height: 512 }

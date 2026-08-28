@@ -1,9 +1,10 @@
 import { ImageResponse } from "next/og";
 import { SatoriDenSeal } from "@/lib/den-seal";
 
-export const runtime = "edge";
+export const size = { width: 180, height: 180 };
+export const contentType = "image/png";
 
-export async function GET() {
+export default function AppleIcon() {
   return new ImageResponse(
     (
       <div
@@ -16,9 +17,9 @@ export async function GET() {
           background: "#070707",
         }}
       >
-        <SatoriDenSeal size={192} />
+        <SatoriDenSeal size={180} />
       </div>
     ),
-    { width: 192, height: 192 }
+    { ...size }
   );
 }

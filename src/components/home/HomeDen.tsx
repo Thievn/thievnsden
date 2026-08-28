@@ -171,7 +171,7 @@ export function HomeDen({
               href={g.href}
               className={`home-room rounded-3xl border ${g.homeBorder} bg-[#0a0608] p-6 min-h-[200px] flex flex-col overflow-hidden`}
             >
-              <PlaygroundCardArt url={playgroundArt[g.id]} tone="home" />
+              <PlaygroundCardArt url={playgroundArt[g.id] || (g.id === "heat-check" ? "/heat-check/cabinet.png" : undefined)} tone="home" />
               <p className={`relative z-[3] text-[11px] uppercase tracking-[0.18em] ${g.homeKicker} mb-3`}>Playground</p>
               <h2 className="relative z-[3] text-xl font-semibold text-neutral-50 mb-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
                 {g.title}

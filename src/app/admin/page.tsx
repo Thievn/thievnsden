@@ -8,10 +8,11 @@ import { LootTab } from "@/app/admin/LootTab";
 import { ThoughtsTab } from "@/app/admin/ThoughtsTab";
 import { XThoughtsTab } from "@/app/admin/XThoughtsTab";
 import { PlaygroundArtTab } from "@/app/admin/PlaygroundArtTab";
+import { HeatTab } from "@/app/admin/HeatTab";
 import { CatalogSeed } from "@/components/afterimage/CatalogSeed";
 import { BulkUpload } from "@/components/afterimage/BulkUpload";
 
-type AdminMode = "main" | "afterimage" | "loot" | "thoughts" | "xthoughts" | "playground";
+type AdminMode = "main" | "afterimage" | "loot" | "thoughts" | "xthoughts" | "playground" | "heat";
 
 function AdminShell() {
   const search = useSearchParams();
@@ -27,7 +28,9 @@ function AdminShell() {
             ? "thoughts"
             : start === "playground"
               ? "playground"
-              : "main";
+              : start === "heat" || start === "heat-check"
+                ? "heat"
+                : "main";
   const [mode, setMode] = useState<AdminMode>(initial);
   return (
     <div data-admin-shell="xpic-v3">
@@ -50,6 +53,9 @@ function AdminShell() {
         <button type="button" onClick={() => setMode("playground")} className={`px-3 py-1.5 rounded-lg text-xs border ${
           mode === "playground" ? "border-rose-500/50 text-rose-100" : "border-neutral-800 text-neutral-500"
         }`}>Playground</button>
+        <button type="button" onClick={() => setMode("heat")} className={`px-3 py-1.5 rounded-lg text-xs border ${
+          mode === "heat" ? "border-orange-500/50 text-orange-100" : "border-neutral-800 text-neutral-500"
+        }`}>Heat Check</button>
       </div>
       {mode === "afterimage" ? (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -72,6 +78,10 @@ function AdminShell() {
       ) : mode === "playground" ? (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
           <PlaygroundArtTab />
+        </div>
+      ) : mode === "heat" ? (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+          <HeatTab />
         </div>
       ) : (
         <AdminDashboard />

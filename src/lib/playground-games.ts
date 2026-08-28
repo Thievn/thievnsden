@@ -2,6 +2,7 @@ export type PlaygroundGameId =
   | "face-the-den"
   | "would-you-rather"
   | "highway-hunter"
+  | "heat-check"
   | "den-arena";
 
 export type PlaygroundGame = {
@@ -64,6 +65,20 @@ export const PLAYGROUND_GAMES: PlaygroundGame[] = [
     homeEnter: "Take the on-ramp →",
   },
   {
+    id: "heat-check",
+    href: "/playground/heat-check",
+    title: "Heat Check",
+    tag: "Private",
+    line: "They’ll read it twice.",
+    homeLine: "They’ll read it twice.",
+    accent: "from-orange-600/20 via-rose-900/12 to-purple-950/20",
+    chip: "border-orange-400/45 text-orange-100",
+    homeBorder: "border-orange-900/45",
+    homeKicker: "text-orange-300/85",
+    homeCta: "text-orange-300",
+    homeEnter: "Open a thread →",
+  },
+  {
     id: "den-arena",
     href: "#",
     title: "Den Arena",
@@ -86,6 +101,7 @@ export const PLAYGROUND_ART_PROMPTS: Record<PlaygroundGameId, string> = {
   "face-the-den": `${SHARED} Scene: a crimson velvet judgment booth in near-dark, unfocused vanity bulbs as rose bokeh, a chair silhouette facing away, faint smoke, analog film. Accent: blood rose.`,
   "would-you-rather": `${SHARED} Scene: empty late-night game-show floor split by two pools of light, violet left and amber right, glossy black stage, no host, no crowd. Accent: split neon.`,
   "highway-hunter": `${SHARED} Scene: wet night interstate from a low hood angle, orange sodium lamps, rain streaks, distant headlights as bokeh, empty road. Accent: sodium orange.`,
+  "heat-check": `${SHARED} Scene: late-night luxury phone face-down on black marble, ember coals, crimson-purple rim light, no readable chat, keyhole den. Accent: ember.`,
   "den-arena": `${SHARED} Scene: unused circular pit in a dark den, one cold spotlight on dust, empty ropes in shadow, waiting. Accent: cool steel.`,
 };
 

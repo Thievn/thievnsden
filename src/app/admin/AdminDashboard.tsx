@@ -11,6 +11,7 @@ import { SeedsTab } from "@/app/admin/SeedsTab";
 import { HouseTab } from "@/app/admin/HouseTab";
 import { GamingTab } from "@/app/admin/GamingTab";
 import { WyrTab } from "@/app/admin/WyrTab";
+import { HeatTab } from "@/app/admin/HeatTab";
 import type { User } from "@supabase/supabase-js";
 
 type Tab =
@@ -21,6 +22,7 @@ type Tab =
   | "house"
   | "gaming"
   | "wyr"
+  | "heat"
   | "users"
   | "judgments"
   | "controls"
@@ -132,6 +134,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const t = searchParams.get("tab");
     if (t === "wyr") setTab("wyr");
+    if (t === "heat") setTab("heat");
     if (t === "seeds" || t === "cast") setTab("seeds");
     if (t === "house") setTab("house");
     if (t === "users") setTab("users");
@@ -413,6 +416,7 @@ export default function AdminDashboard() {
     { id: "house" as const, label: "House" },
     { id: "gaming" as const, label: "Gaming" },
     { id: "wyr" as const, label: "Floor" },
+    { id: "heat" as const, label: "Heat" },
     { id: "users" as const, label: "Users" },
     { id: "judgments" as const, label: "Judgments" },
     { id: "controls" as const, label: "Controls" },
@@ -507,6 +511,7 @@ export default function AdminDashboard() {
       {tab === "house" && <HouseTab />}
       {tab === "gaming" && <GamingTab />}
       {tab === "wyr" && <WyrTab />}
+      {tab === "heat" && <HeatTab />}
 
       {tab === "users" && (
         <div className="space-y-4">

@@ -803,6 +803,7 @@ function Bubble({
         }}
       >
         {msg.body}
+        <span className="tail" aria-hidden />
       </button>
     </div>
   );

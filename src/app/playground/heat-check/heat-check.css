@@ -208,9 +208,23 @@
 }
 .hc-bubble .tail {
   position: absolute;
-  bottom: 4px;
-  width: 10px;
-  height: 10px;
+  bottom: 3px;
+  width: 11px;
+  height: 11px;
+}
+[data-skin="ios"] .hc-bubble.them .tail,
+[data-skin="android"] .hc-bubble.them .tail {
+  left: -3px;
+  background: inherit;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+  filter: brightness(0.85);
+}
+[data-skin="ios"] .hc-bubble.me .tail,
+[data-skin="android"] .hc-bubble.me .tail {
+  right: -3px;
+  background: inherit;
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+  filter: brightness(0.9);
 }
 
 [data-skin="ios"] .hc-bubble.them {
@@ -333,6 +347,7 @@
 }
 
 .hc-recap {
+  overflow: hidden;
   background:
     radial-gradient(ellipse at 20% 90%, rgba(255,90,40,0.18), transparent 50%),
     #070407;

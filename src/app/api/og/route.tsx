@@ -2,6 +2,8 @@ import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { loadDenStonePng, SatoriDenSeal } from "@/lib/den-seal";
 
+export const runtime = "nodejs";
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const title = (searchParams.get("title") || "Thievn's Den").slice(0, 120);
@@ -50,7 +52,7 @@ export async function GET(req: NextRequest) {
         />
 
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <SatoriDenSeal data={stone} size={72} />
+          <SatoriDenSeal data={stone} size={108} />
           <div
             style={{
               fontSize: 22,

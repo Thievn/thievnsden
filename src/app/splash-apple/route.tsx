@@ -2,6 +2,8 @@ import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { loadDenStonePng, SatoriDenSeal } from "@/lib/den-seal";
 
+export const runtime = "nodejs";
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const width = Math.min(1290, Math.max(320, Number(searchParams.get("w") || 1284)));

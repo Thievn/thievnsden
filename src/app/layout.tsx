@@ -88,11 +88,11 @@ export const metadata: Metadata = {
   category: "entertainment",
   icons: {
     icon: [
-      { url: "/icon", type: "image/png" },
-      { url: "/icon-192", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512", sizes: "512x512", type: "image/png" },
+      { url: "/mark/icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/mark/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/mark/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: "/apple-icon",
+    apple: "/mark/apple-180.png",
   },
   appleWebApp: {
     capable: true,

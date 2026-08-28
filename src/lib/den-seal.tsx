@@ -19,6 +19,7 @@ export function SatoriDenSeal({ size }: { size: number }) {
       </defs>
       <path
         d="M1.6 19.8 L3.2 14.1 L6.8 11.2 L11.2 12.6 L15.8 9.4 L20.2 11.8 L24.8 9.1 L29.2 12.4 L33.6 10.8 L36.6 14.4 L38.2 19.8 Z"
+        fill="#10080c"
         stroke="url(#caveRing)"
         strokeWidth={sw}
         strokeLinejoin="round"

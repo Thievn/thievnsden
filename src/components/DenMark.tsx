@@ -43,7 +43,7 @@ export function DenMark({
           <stop offset="100%" stopColor="#7c3aed" />
         </linearGradient>
       </defs>
-      <path d={CAVE} stroke={`url(#${ring})`} strokeWidth="1.55" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={CAVE} fill="#10080c" stroke={`url(#${ring})`} strokeWidth="1.55" strokeLinejoin="round" strokeLinecap="round" />
       <path d={CAVE_INNER} stroke={`url(#${ring})`} strokeWidth="0.8" strokeLinejoin="round" opacity="0.45" />
       <path d={CAVE_EMBER} fill={`url(#${ember})`} />
     </svg>

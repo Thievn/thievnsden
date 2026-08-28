@@ -67,7 +67,7 @@ export function Navbar() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 relative">
         <div className="flex items-center justify-between h-14 sm:h-16">
           <Link href="/" className="flex items-center gap-2.5 group" onClick={() => setOpen(false)}>
-            <DenMark className="h-8 w-[1.5rem] sm:h-9 sm:w-7 shrink-0" glow />
+            <DenMark className="nav-mark-bounce h-8 w-[1.5rem] sm:h-9 sm:w-7 shrink-0" />
             <span className="text-base sm:text-[17px] font-semibold tracking-tight text-neutral-100 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-red-300 group-hover:to-purple-300 transition-all duration-200">
               Thievn's Den
             </span>

@@ -1,26 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { DenMarkSplash } from "@/components/DenMark";
 
-export function AgeGate() {
-  const [show, setShow] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [exiting, setExiting] = useState(false);
+function subscribe() {
+  return () => {};
+}
 
-  useEffect(() => {
-    setMounted(true);
-    const verified = localStorage.getItem("thievn-age-verified");
-    if (!verified) {
-      setShow(true);
-    }
-  }, []);
+function ageVerifiedOnClient() {
+  try {
+    return localStorage.getItem("thievn-age-verified") === "true";
+  } catch {
+    return true;
+  }
+}
+
+export function AgeGate() {
+  const verified = useSyncExternalStore(subscribe, ageVerifiedOnClient, () => true);
+  const [exiting, setExiting] = useState(false);
+  const [passed, setPassed] = useState(false);
+
+  const show = !verified && !passed;
 
   const handleEnter = () => {
     setExiting(true);
-    setTimeout(() => {
+    window.setTimeout(() => {
       localStorage.setItem("thievn-age-verified", "true");
-      setShow(false);
+      setPassed(true);
     }, 620);
   };
 
@@ -28,14 +34,14 @@ export function AgeGate() {
     window.location.href = "https://www.google.com";
   };
 
-  if (!mounted || !show) return null;
+  if (!show) return null;
 
   return (
     <div
+      id="den-age-gate"
       className={`fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden ${
         exiting ? "age-gate-exit" : ""
       }`}
-      id="den-age-gate"
     >
       <div className="absolute inset-0 bg-[#050505]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.14)_0%,_transparent_55%)]" />

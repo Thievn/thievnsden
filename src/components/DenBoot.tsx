@@ -1,43 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { DenMarkSplash } from "@/components/DenMark";
+
+function subscribe() {
+  return () => {};
+}
+
+function bootSeenOnClient() {
+  try {
+    return sessionStorage.getItem("den_boot_seen") === "1";
+  } catch {
+    return true;
+  }
+}
 
 /**
  * Opening animation for the Den.
  * Plays once per browser session (and always when launched as installed PWA).
  */
 export function DenBoot() {
-  const [show, setShow] = useState(false);
+  const seen = useSyncExternalStore(subscribe, bootSeenOnClient, () => true);
+  const standalone = useSyncExternalStore(
+    subscribe,
+    () =>
+      window.matchMedia("(display-mode: standalone)").matches ||
+      // @ts-expect-error iOS safari
+      window.navigator.standalone === true,
+    () => false
+  );
   const [leaving, setLeaving] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const show = !done && (standalone || !seen);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      // iOS
-      // @ts-expect-error iOS safari
-      window.navigator.standalone === true;
-
-    if (sessionStorage.getItem("den_boot_seen") && !standalone) return;
-
-    setShow(true);
-    setLeaving(false);
-
+    if (!show) return;
     const hideAt = standalone ? 2800 : 2400;
     const goneAt = standalone ? 3400 : 3000;
     const t1 = window.setTimeout(() => setLeaving(true), hideAt);
     const t2 = window.setTimeout(() => {
       sessionStorage.setItem("den_boot_seen", "1");
-      setShow(false);
+      setDone(true);
     }, goneAt);
-
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
     };
-  }, []);
+  }, [show, standalone]);
 
   if (!show) return null;
 

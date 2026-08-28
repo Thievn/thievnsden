@@ -61,7 +61,7 @@ export function DenBoot() {
       <div className="den-boot-leak" />
 
       <div className="relative z-30 flex h-full flex-col items-center justify-center gap-6 den-boot-core">
-        <DenMarkSplash className="w-[4.5rem] h-[4.5rem] sm:w-20 sm:h-20 drop-shadow-[0_0_28px_rgba(225,29,72,0.45)]" />
+        <DenMarkSplash className="w-[5.25rem] h-16 sm:w-24 sm:h-[4.6rem] drop-shadow-[0_0_28px_rgba(225,29,72,0.45)]" />
         <div className="text-center den-boot-text">
           <p className="text-[11px] uppercase tracking-[0.38em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-300 to-purple-400 mb-1.5">
             Come in

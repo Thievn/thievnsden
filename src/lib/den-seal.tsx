@@ -1,40 +1,44 @@
-/** Satori-friendly den seal (ember in a ring). Used by favicon, PWA icons, OG. */
+/** Satori-friendly cave mouth. Used by favicon, PWA icons, OG. */
+const CAVE =
+  "polygon(9% 88%, 13% 58%, 21% 36%, 32% 48%, 40% 22%, 50% 38%, 62% 18%, 73% 42%, 84% 32%, 91% 58%, 94% 88%)";
+const EMBER =
+  "polygon(34% 78%, 37% 58%, 46% 62%, 51% 46%, 59% 62%, 67% 56%, 69% 78%)";
+
 export function SatoriDenSeal({ size }: { size: number }) {
-  const ring = Math.round(size * 0.74);
-  const core = Math.round(size * 0.26);
-  const border = Math.max(2, Math.round(size * 0.055));
+  const pad = Math.max(2, Math.round(size * 0.06));
   return (
     <div
       style={{
         width: size,
-        height: size,
+        height: Math.round(size * 0.78),
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        position: "relative",
       }}
     >
       <div
         style={{
-          width: ring,
-          height: ring,
-          borderRadius: 999,
-          border: `${border}px solid #e11d48`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "radial-gradient(circle at 50% 42%, #1a0a12 0%, #070707 72%)",
-          boxShadow: `0 0 ${Math.round(size * 0.18)}px rgba(225,29,72,0.35)`,
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(180deg, #fb7185 0%, #e11d48 48%, #a855f7 100%)",
+          clipPath: CAVE,
         }}
-      >
-        <div
-          style={{
-            width: core,
-            height: core,
-            borderRadius: 999,
-            background: "linear-gradient(180deg, #fda4af 0%, #e11d48 48%, #7c3aed 100%)",
-          }}
-        />
-      </div>
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: pad,
+          background: "#070707",
+          clipPath: CAVE,
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(180deg, #fecdd3 0%, #e11d48 52%, #7c3aed 100%)",
+          clipPath: EMBER,
+        }}
+      />
     </div>
   );
 }

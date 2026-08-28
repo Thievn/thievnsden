@@ -197,9 +197,9 @@ body {
   100% { transform: translateX(102%); }
 }
 @keyframes denBootLeak {
-  0% { opacity: 0; transform: translateX(-50%) scaleY(0.12); }
-  22% { opacity: 1; transform: translateX(-50%) scaleY(1); }
-  70% { opacity: 0.35; }
+  0% { opacity: 0; transform: translate(-50%, -42%) scaleX(0.18) scaleY(0.55); }
+  22% { opacity: 1; transform: translate(-50%, -42%) scaleX(1) scaleY(1); }
+  70% { opacity: 0.32; }
   100% { opacity: 0; }
 }
 @keyframes denSealEmber {
@@ -210,8 +210,8 @@ body {
   0%, 100% { opacity: 0.35; transform: scale(1); }
   50% { opacity: 0.7; transform: scale(1.08); }
 }
-@keyframes denSealSpin {
-  to { transform: rotate(360deg); }
+.den-cave-clip {
+  clip-path: polygon(9% 90%, 13% 58%, 21% 36%, 32% 48%, 40% 22%, 50% 38%, 62% 18%, 73% 42%, 84% 32%, 91% 58%, 94% 90%);
 }
 .den-boot-core { animation: denBootCoreIn 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both; }
 .den-boot-text { animation: denBootTextIn 0.7s ease-out 0.85s both; }
@@ -237,25 +237,22 @@ body {
 }
 .den-boot-leak {
   position: absolute;
-  top: 8%;
-  bottom: 8%;
+  top: 50%;
   left: 50%;
-  width: 2px;
+  width: 7.5rem;
+  height: 4.6rem;
   z-index: 21;
   pointer-events: none;
-  border-radius: 999px;
-  background: linear-gradient(180deg, transparent, #fb7185 20%, #a855f7 80%, transparent);
-  box-shadow: 0 0 24px 6px rgba(225, 29, 72, 0.45);
+  background: radial-gradient(ellipse at 50% 72%, rgba(251, 113, 133, 0.7) 0%, rgba(168, 85, 247, 0.28) 42%, transparent 70%);
+  clip-path: polygon(9% 90%, 13% 58%, 21% 36%, 32% 48%, 40% 22%, 50% 38%, 62% 18%, 73% 42%, 84% 32%, 91% 58%, 94% 90%);
+  filter: blur(0.4px);
   animation: denBootLeak 1.5s ease-out forwards;
 }
 .den-seal-splash { animation: denSealEmber 2.4s ease-in-out infinite; }
 .den-seal-ember { animation: denSealEmber 2.4s ease-in-out infinite; }
 .den-seal-halo {
-  background: radial-gradient(circle, rgba(225, 29, 72, 0.35) 0%, rgba(124, 58, 237, 0.12) 45%, transparent 70%);
+  background: radial-gradient(ellipse at 50% 70%, rgba(225, 29, 72, 0.4) 0%, rgba(124, 58, 237, 0.14) 48%, transparent 72%);
   animation: denSealHalo 3.2s ease-in-out infinite;
-}
-.den-seal-spin {
-  animation: denSealSpin 18s linear infinite;
 }
 .age-gate-door {
   position: absolute;
@@ -427,7 +424,7 @@ body {
   .home-ember, .home-float, .home-line, .home-spot, .den-ember,
   .home-room::after, .home-reveal, .animate-fade-in-up,
   .den-boot-core, .den-boot-text, .den-boot-door-l, .den-boot-door-r,
-  .den-boot-leak, .den-seal-ember, .den-seal-halo, .den-seal-spin, .age-gate-card {
+  .den-boot-leak, .den-seal-ember, .den-seal-halo, .age-gate-card {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;

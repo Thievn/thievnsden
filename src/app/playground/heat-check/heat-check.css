@@ -85,7 +85,8 @@
 
 .hc-start-hero {
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(255, 90, 40, 0.18), transparent 50%),
+    linear-gradient(180deg, rgba(7, 4, 7, 0.45), rgba(7, 4, 7, 0.82)),
+    radial-gradient(ellipse at 50% 0%, rgba(255, 90, 40, 0.22), transparent 52%),
     url("/heat-check/hero.png") center/cover;
 }
 
@@ -337,8 +338,8 @@
     #070407;
 }
 .hc-recap-art {
-  background: url("/heat-check/recap.png") center/cover;
-  filter: saturate(0.9);
+  background: url("/heat-check/recap.png") center 20%/cover;
+  filter: saturate(0.85) brightness(0.55);
 }
 
 .hc-cta {

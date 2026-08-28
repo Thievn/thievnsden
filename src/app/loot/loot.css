@@ -1,23 +1,51 @@
 @keyframes lootRise {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: none; }
 }
 @keyframes lootGlow {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 0.8; }
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
+}
+@keyframes lootShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+.loot-hero-orb {
+  background: radial-gradient(ellipse at center, rgba(245, 158, 11, 0.16) 0%, transparent 68%);
+  animation: lootGlow 8s ease-in-out infinite;
 }
 .loot-card {
   animation: lootRise 0.55s ease both;
-  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.35s ease;
 }
 .loot-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(245, 158, 11, 0.45);
-  box-shadow: 0 24px 50px -28px rgba(245, 158, 11, 0.45);
+  transform: translateY(-4px);
+  border-color: rgba(245, 158, 11, 0.42);
+  box-shadow: 0 28px 60px -32px rgba(245, 158, 11, 0.4);
 }
-.loot-hero-orb {
-  animation: lootGlow 7s ease-in-out infinite;
+.loot-row {
+  animation: lootRise 0.45s ease both;
+}
+.loot-row:hover img {
+  transform: scale(1.04);
+}
+.loot-row img {
+  transition: transform 0.4s ease;
+}
+.loot-shelf-chip {
+  transition: border-color 0.25s ease, transform 0.25s ease;
+}
+.loot-shelf-chip:hover {
+  transform: translateY(-2px);
+}
+.loot-shimmer {
+  background: linear-gradient(110deg, #0a0907 0%, #1a140c 45%, #0a0907 90%);
+  background-size: 200% 100%;
+  animation: lootShimmer 1.4s linear infinite;
+}
+.loot-article-hero {
+  position: relative;
 }
 @media (prefers-reduced-motion: reduce) {
-  .loot-card, .loot-hero-orb { animation: none; }
+  .loot-card, .loot-hero-orb, .loot-shimmer, .loot-row { animation: none; }
 }

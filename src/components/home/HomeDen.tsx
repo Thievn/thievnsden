@@ -186,28 +186,18 @@ export function HomeDen({
           <Link href="/loot" className="home-room rounded-3xl border border-amber-900/35 bg-[#11100c] p-6 sm:p-8 overflow-hidden relative">
             <p className="text-[11px] uppercase tracking-[0.2em] text-amber-300/85 mb-3">Loot</p>
             <h2 className="text-2xl font-semibold text-neutral-50 mb-2">Things I actually use</h2>
-            <p className="text-sm text-neutral-500">Mini takes. Real searches. No fake roundups.</p>
+            <p className="text-sm text-neutral-500">Lookbook takes. Real searches. No fake roundups.</p>
             {lootCovers.length ? (
-              <div className="relative mt-6 h-[120px]">
-                {lootCovers.slice(0, 3).map((item, i) => (
-                  <div
-                    key={item.id}
-                    className="absolute overflow-hidden rounded-xl border border-white/15 shadow-lg"
-                    style={{
-                      width: "42%",
-                      height: "100%",
-                      left: `${i * 22}%`,
-                      transform: `rotate(${[-6, 4, 9][i]}deg)`,
-                      zIndex: 3 - i,
-                    }}
-                  >
+              <div className="mt-6 grid grid-cols-4 gap-2">
+                {lootCovers.slice(0, 4).map((item) => (
+                  <div key={item.id} className="aspect-[4/5] overflow-hidden rounded-xl border border-white/10">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={item.image_url} alt="" className="h-full w-full object-cover" />
                   </div>
                 ))}
               </div>
             ) : null}
-            <p className="mt-6 text-sm text-amber-300">Browse the shelf →</p>
+            <p className="mt-6 text-sm text-amber-300">Browse the lookbook →</p>
           </Link>
           <Link href="/about" className="home-room rounded-3xl border border-neutral-800/80 bg-[#0e0e0e] p-6 sm:p-8">
             <p className="text-[11px] uppercase tracking-[0.2em] text-neutral-500 mb-3">The house</p>

@@ -34,7 +34,7 @@ export async function generateLootStill(opts: {
       aspect_ratio: "4:3",
       response_format: "b64_json",
     };
-    if (model.includes("2.0")) payload.quality = "medium";
+    if (model.includes("2.0")) payload.quality = "high";
     const res = await fetch("https://api.x.ai/v1/images/generations", {
       method: "POST",
       headers: {

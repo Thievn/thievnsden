@@ -189,27 +189,33 @@ export function affiliateUrl(pick: Partial<LootPick>, defaultTag = AMAZON_TAG) {
 }
 
 const SCENE_TEXT: Record<string, string> = {
-  studio: "seamless void catalog packshot, the object floating or standing on nothing, cinematic product lighting, zero furniture",
-  shelf: "one collector glass shelf, museum spotlight, the object is the only readable thing, other silhouettes are blur only",
-  desk: "dark aluminum battlestation crop, the product is the hero on a nearly empty desk, RGB rim only as accent",
-  hand: "worn or held in a gloved or anonymous hand, tight crop, no room visible",
-  wall: "mounted on a dark textured wall, product fills the frame",
-  floor: "workshop concrete or rubber mat, utility object isolated, not a staged home",
+  studio:
+    "luxury editorial still life on a dark seamless cyc, object filling the frame, museum spotlight and a colored rim, tactile materials, cinematic depth of field — not a cheap packshot",
+  shelf:
+    "collector lookbook: one object on smoked glass or black walnut, museum pin-light, shallow depth, other shelf ghosts are blur only",
+  desk:
+    "dark aluminum battlestation crop, one hero object, empty desk, a single RGB edge as jewelry not a rainbow",
+  hand:
+    "tight luxury crop, worn or held by an anonymous gloved hand, dark studio, no room",
+  wall:
+    "mounted on dark plaster or charcoal pegboard, product fills the frame, gallery lighting",
+  floor:
+    "workshop concrete or rubber, isolated utility object, cinematic, not a staged home",
 };
 
 const LIGHTS = [
-  "cool cyan rim against warm key",
-  "hard side light with a thin gold edge",
-  "soft overhead with a teal bounce",
-  "low hero light, almost black surround",
-  "split amber and steel lighting",
+  "cool cyan rim against a warm key, like a nightclub still",
+  "hard side light with a thin gold edge, fashion editorial",
+  "soft overhead with a teal bounce and deep falloff",
+  "low hero light, almost black surround, luxury catalog",
+  "split amber and steel lighting, cinematic",
 ];
 const BACKS = [
-  "void black seamless",
-  "brushed gunmetal plate",
-  "obsidian acrylic",
-  "dark carbon weave",
-  "matte charcoal cyc",
+  "void black with a faint smoke catch-light",
+  "brushed gunmetal plate, barely visible",
+  "obsidian acrylic with a single reflection",
+  "dark carbon weave out of focus",
+  "matte charcoal cyc, infinite",
 ];
 const ANGLES = [
   "three-quarter catalog hero",
@@ -255,13 +261,14 @@ export function lootCoverPrompt(
   const angle = ANGLES[(salt >> 7) % ANGLES.length];
   const section = item.section || "desk";
   return [
-    "Photorealistic single-product catalog photograph, Amazon listing quality, 4:3.",
+    "Luxury editorial product photograph for a dark lookbook, 4:3, photoreal, tactile, expensive lighting.",
+    "Shot like Highsnobiety or a museum catalog — never like a generic Amazon listing, never CGI, never a 3D render, never a toy diorama.",
     `The only subject is this exact object: ${item.name}.`,
     `Search intent / what it is: ${term}.`,
     `Loot section: ${section}.`,
     sceneLine + ".",
     `Lighting: ${light}. Background: ${back}. Camera: ${angle}.`,
-    "Make this still unique. Do not reuse a living-room, bedroom, kitchen, sofa, nightstand, house interior, staged home, or furniture set.",
+    "Make this still unique. Ban living rooms, bedrooms, kitchens, sofas, nightstands, staged homes, and furniture sets.",
     "No people faces, no readable text, no watermark, no collage, no extra products competing.",
     extra,
   ]

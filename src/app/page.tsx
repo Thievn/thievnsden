@@ -39,7 +39,7 @@ async function loadHome() {
         .order("created_at", { ascending: false })
         .limit(24),
       supabase.from("site_settings").select("gaming_items, playground_art").eq("id", 1).maybeSingle(),
-      supabase.from("loot_picks").select("id, name, image_url").eq("active", true).not("image_url", "is", null).order("sort_order").limit(6),
+      supabase.from("loot_picks").select("id, name, image_url, section").eq("active", true).not("image_url", "is", null).order("sort_order").limit(24),
     ]);
 
     const thoughts = (thoughtsRes.data as HomeThought[] | null)?.filter((t) => t?.slug) || [];
@@ -54,13 +54,18 @@ async function loadHome() {
         title: String(row.title),
         kind: row.kind,
       }));
-    const lootCovers: HomeLootCover[] = (lootRes.data || [])
-      .filter((row: { image_url?: string; name?: string; id?: string }) => row?.image_url && row?.name && row?.id)
-      .map((row: { image_url: string; name: string; id: string }) => ({
-        image_url: String(row.image_url),
-        name: String(row.name),
-        id: String(row.id),
-      }));
+    const lootRows = (lootRes.data || []).filter(
+      (row: { image_url?: string; name?: string; id?: string }) => row?.image_url && row?.name && row?.id
+    ) as { image_url: string; name: string; id: string; section?: string }[];
+    const lootBySection = new Map<string, HomeLootCover>();
+    const lootRest: HomeLootCover[] = [];
+    for (const row of lootRows) {
+      const cover = { image_url: String(row.image_url), name: String(row.name), id: String(row.id) };
+      const section = String(row.section || row.id);
+      if (!lootBySection.has(section)) lootBySection.set(section, cover);
+      else lootRest.push(cover);
+    }
+    const lootCovers = [...lootBySection.values(), ...lootRest].slice(0, 4);
     const prefer =
       gamingCovers.find((g) => g.kind === "playing") ||
       gamingCovers[0] ||

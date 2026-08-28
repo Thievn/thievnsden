@@ -1,6 +1,6 @@
 import { splitLinkedCopy, type CopyPart } from "@/lib/gaming-affiliates";
 
-function Parts({ parts }: { parts: CopyPart[] }) {
+function Parts({ parts, loot = false }: { parts: CopyPart[]; loot?: boolean }) {
   return (
     <>
       {parts.map((part, i) =>
@@ -10,7 +10,11 @@ function Parts({ parts }: { parts: CopyPart[] }) {
             href={part.href}
             target="_blank"
             rel="nofollow sponsored noopener noreferrer"
-            className="underline underline-offset-[3px] decoration-violet-400/70 text-violet-200 hover:text-violet-100 hover:decoration-violet-300"
+            className={
+              loot
+                ? "underline underline-offset-[3px] decoration-amber-400/70 text-amber-200 hover:text-amber-100 hover:decoration-amber-300"
+                : "underline underline-offset-[3px] decoration-violet-400/70 text-violet-200 hover:text-violet-100 hover:decoration-violet-300"
+            }
           >
             {part.text}
           </a>
@@ -42,7 +46,7 @@ export function LinkedCopy({
     <div className={className || "space-y-5 text-[16px] sm:text-[17px] text-neutral-300 leading-[1.7]"}>
       {paragraphs.map((p, i) => (
         <p key={i}>
-          <Parts parts={splitLinkedCopy(p, mode, undefined, shopQuery)} />
+          <Parts parts={splitLinkedCopy(p, mode, undefined, shopQuery)} loot={mode === "loot"} />
         </p>
       ))}
     </div>

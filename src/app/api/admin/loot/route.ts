@@ -159,6 +159,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, shot, picks: updated });
     }
 
+    if (action === "photos_refresh") {
+      const section = String(body.section || "");
+      let q = supabase.from("loot_picks").select("*").eq("active", true);
+      if (section && section !== "all") q = q.eq("section", section);
+      const { data: rows } = await q.order("sort_order");
+      const batch = (rows || []).slice(0, 8);
+      let shot = 0;
+      for (const pick of batch) {
+        try {
+          const still = await generateLootStill({
+            id: pick.id,
+            name: pick.name,
+            section: pick.section,
+            search_query: pick.search_query,
+            extra: String(body.extra || ""),
+            scene: String(body.scene || "auto"),
+          });
+          await supabase.from("loot_picks").update({ image_url: still.image_url }).eq("id", pick.id);
+          shot += 1;
+        } catch (err) {
+          console.error("photos_refresh", pick.name, err);
+        }
+      }
+      return NextResponse.json({ success: true, shot });
+    }
+
     if (action === "photo" || !action) {
       const id = String(body.id || slugify(body.name || "loot"));
       const name = String(body.name || id);

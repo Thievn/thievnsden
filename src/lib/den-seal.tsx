@@ -1,44 +1,33 @@
-/** Satori-friendly cave mouth. Used by favicon, PWA icons, OG. */
-const CAVE =
-  "polygon(9% 88%, 13% 58%, 21% 36%, 32% 48%, 40% 22%, 50% 38%, 62% 18%, 73% 42%, 84% 32%, 91% 58%, 94% 88%)";
-const EMBER =
-  "polygon(34% 78%, 37% 58%, 46% 62%, 51% 46%, 59% 62%, 67% 56%, 69% 78%)";
-
+/** Satori cave mouth for favicon, PWA icons, OG. */
 export function SatoriDenSeal({ size }: { size: number }) {
-  const pad = Math.max(2, Math.round(size * 0.06));
+  const w = size;
+  const h = Math.round(size * 0.55);
+  const sw = Math.max(1.4, size * 0.045);
   return (
-    <div
-      style={{
-        width: size,
-        height: Math.round(size * 0.78),
-        display: "flex",
-        position: "relative",
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "linear-gradient(180deg, #fb7185 0%, #e11d48 48%, #a855f7 100%)",
-          clipPath: CAVE,
-        }}
+    <svg width={w} height={h} viewBox="0 0 40 22" fill="none">
+      <defs>
+        <linearGradient id="caveRing" x1="4" y1="8" x2="36" y2="20" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fb7185" />
+          <stop offset="48%" stopColor="#e11d48" />
+          <stop offset="100%" stopColor="#a855f7" />
+        </linearGradient>
+        <linearGradient id="caveEmber" x1="16" y1="15" x2="26" y2="18" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fecdd3" />
+          <stop offset="50%" stopColor="#e11d48" />
+          <stop offset="100%" stopColor="#7c3aed" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M1.6 19.8 L3.2 14.1 L6.8 11.2 L11.2 12.6 L15.8 9.4 L20.2 11.8 L24.8 9.1 L29.2 12.4 L33.6 10.8 L36.6 14.4 L38.2 19.8 Z"
+        stroke="url(#caveRing)"
+        strokeWidth={sw}
+        strokeLinejoin="round"
+        strokeLinecap="round"
       />
-      <div
-        style={{
-          position: "absolute",
-          inset: pad,
-          background: "#070707",
-          clipPath: CAVE,
-        }}
+      <path
+        d="M13.2 17.6 L15 15.4 L20.2 16 L25.4 15.2 L27.2 17.6 Z"
+        fill="url(#caveEmber)"
       />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "linear-gradient(180deg, #fecdd3 0%, #e11d48 52%, #7c3aed 100%)",
-          clipPath: EMBER,
-        }}
-      />
-    </div>
+    </svg>
   );
 }

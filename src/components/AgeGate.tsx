@@ -43,7 +43,7 @@ export function AgeGate() {
       <div className="relative z-10 w-full max-w-[340px] sm:max-w-md age-gate-card">
         <div className="rounded-2xl border border-[#2a1a28] bg-[#0c0c0c]/95 backdrop-blur-xl px-5 py-7 sm:p-8 text-center shadow-2xl">
           <div className="mb-5 sm:mb-7 flex justify-center">
-            <DenMarkSplash className="w-[4.6rem] h-14 sm:w-[5.4rem] sm:h-[4.15rem] drop-shadow-[0_0_24px_rgba(225,29,72,0.4)]" />
+            <DenMarkSplash className="w-24 h-8 sm:w-[6.8rem] sm:h-9 drop-shadow-[0_0_24px_rgba(225,29,72,0.4)]" />
           </div>
 
           <p className="text-[10px] uppercase tracking-[0.28em] text-rose-300/80 mb-2">Members&apos; hours · 18+</p>

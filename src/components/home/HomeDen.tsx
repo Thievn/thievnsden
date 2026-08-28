@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { DenMarkSplash } from "@/components/DenMark";
+import { DenMark } from "@/components/DenMark";
 import { HomeAtmosphere } from "@/components/home/HomeAtmosphere";
 import { HomeGamingRoom, HomePolaroids, HomePrintStrip } from "@/components/home/HomePolaroids";
 import { PlaygroundCardArt } from "@/components/playground/PlaygroundCardArt";
@@ -50,8 +50,9 @@ export function HomeDen({
             <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-rose-400/70 to-transparent" />
             <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 p-6 sm:p-10 lg:p-12 items-center">
               <div className="lg:col-span-7 text-left">
-                <div className="home-float mb-5 w-fit">
-                  <DenMarkSplash className="h-[4.6rem] w-[3.5rem] sm:h-24 sm:w-[4.5rem]" />
+                <div className="home-seal mb-5 w-fit">
+                  <span className="home-seal-ring" aria-hidden />
+                  <DenMark className="relative z-10 h-[4.6rem] w-[3.5rem] sm:h-24 sm:w-[4.5rem]" />
                 </div>
                 <p className="text-[11px] sm:text-xs uppercase tracking-[0.32em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-300 to-purple-400 mb-4 font-medium">
                   Thievn&apos;s Den · members&apos; hours · 18+

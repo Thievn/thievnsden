@@ -6,6 +6,7 @@ import { DenMarkSplash } from "@/components/DenMark";
 /**
  * Opening animation for the Den.
  * Plays once per browser session (and always when launched as installed PWA).
+ * Mark session seen only after the splash finishes so Strict Mode remounts still dismiss.
  */
 export function DenBoot() {
   const [show, setShow] = useState(false);
@@ -20,15 +21,25 @@ export function DenBoot() {
       // @ts-expect-error iOS safari
       window.navigator.standalone === true;
 
-    const seen = sessionStorage.getItem("den_boot_seen");
-    if (seen && !standalone) return;
+    if (sessionStorage.getItem("den_boot_seen") && !standalone) return;
 
+    let cancelled = false;
     setShow(true);
-    sessionStorage.setItem("den_boot_seen", "1");
 
-    const t1 = setTimeout(() => setLeaving(true), standalone ? 2800 : 2100);
-    const t2 = setTimeout(() => setShow(false), standalone ? 3400 : 2700);
+    const hideAt = standalone ? 2800 : 2200;
+    const goneAt = standalone ? 3400 : 2800;
+
+    const t1 = setTimeout(() => {
+      if (!cancelled) setLeaving(true);
+    }, hideAt);
+    const t2 = setTimeout(() => {
+      if (cancelled) return;
+      sessionStorage.setItem("den_boot_seen", "1");
+      setShow(false);
+    }, goneAt);
+
     return () => {
+      cancelled = true;
       clearTimeout(t1);
       clearTimeout(t2);
     };
@@ -50,7 +61,7 @@ export function DenBoot() {
       <div className="den-boot-door den-boot-door-r" />
       <div className="den-boot-leak" />
 
-      <div className="relative z-10 flex h-full flex-col items-center justify-center gap-6 den-boot-core">
+      <div className="relative z-30 flex h-full flex-col items-center justify-center gap-6 den-boot-core">
         <DenMarkSplash className="w-[4.5rem] h-[4.5rem] sm:w-20 sm:h-20 drop-shadow-[0_0_28px_rgba(225,29,72,0.45)]" />
         <div className="text-center den-boot-text">
           <p className="text-[11px] uppercase tracking-[0.38em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-300 to-purple-400 mb-1.5">

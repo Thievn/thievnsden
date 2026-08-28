@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
     }
     const ext = parsed.mime === "image/png" ? "png" : parsed.mime === "image/webp" ? "webp" : "jpg";
     const path = `${user.id}/${Date.now()}.${ext}`;
-    await uploadHeatBytes({
-      bucket: "heat-uploads",
+    const up = await uploadHeatBytes({
+      bucket: "heat-faces",
       path,
       bytes: parsed.bytes,
       contentType: parsed.mime,
@@ -37,11 +37,12 @@ export async function POST(req: NextRequest) {
     await supabase.from("heat_assets").insert({
       user_id: user.id,
       kind: "upload",
-      bucket: "heat-uploads",
+      bucket: "heat-faces",
       path,
+      url: up.url,
       status: "pending",
     });
-    return NextResponse.json({ path });
+    return NextResponse.json({ path: up.path, url: up.url });
   } catch (err: unknown) {
     console.error("heat upload", err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "Upload failed" }, { status: 500 });

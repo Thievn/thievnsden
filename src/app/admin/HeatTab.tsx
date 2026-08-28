@@ -142,9 +142,9 @@ export function HeatTab() {
               ["kill", "Kill switch", settings.kill],
               ["public", "Public for everyone", settings.public],
               ["peek_default", "Tip peek on by default", settings.peek_default],
-              ["face_gen", "Face generation", settings.face_gen],
+              ["face_gen", "Show generate-their-face", settings.face_gen],
               ["ios", "iOS mock", settings.skins.ios],
-              ["android", "Pixel mock", settings.skins.android],
+              ["android", "Android mock", settings.skins.android],
             ] as const
           ).map(([key, label, on]) => (
             <label key={key} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/30 px-3 py-2.5">
@@ -164,6 +164,9 @@ export function HeatTab() {
             </label>
           ))}
         </div>
+        <p className="text-[12px] text-neutral-500">
+          Uncheck generate-their-face to hide it on start. Upload a photo still works. Credits for faces can land later.
+        </p>
         <label className="text-sm block">
           Reward photo threshold
           <input

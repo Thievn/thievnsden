@@ -46,6 +46,7 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
   }
   if (thread.user_photo_path) {
     await supabase.storage.from("heat-uploads").remove([thread.user_photo_path]);
+    await supabase.storage.from("heat-faces").remove([thread.user_photo_path]);
   }
   await supabase.from("heat_assets").delete().eq("thread_id", id);
   await supabase.from("heat_tips").delete().eq("thread_id", id);

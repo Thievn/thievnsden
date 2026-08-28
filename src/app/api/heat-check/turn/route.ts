@@ -3,12 +3,14 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { isFadeText, type HeatThread } from "@/lib/heat-check";
 import {
   buildRecap,
+  fallbackHeatTurn,
   generateRewardStill,
   requireHeatPlayer,
   runHeatTurn,
   signedUploadUrl,
   heatMessageRow,
   splitThem,
+  withTimeout,
 } from "@/lib/heat-check-server";
 
 export const runtime = "nodejs";
@@ -73,17 +75,27 @@ export async function POST(req: NextRequest) {
       photoUrl = await signedUploadUrl(thread.user_photo_path);
     }
 
-    const turn = await runHeatTurn({
-      thread: thread as HeatThread,
-      history: [...prior, { sender: "user", body: text }],
-      userLine: text,
-      opening: prior.filter((m) => m.sender === "user").length === 0,
-      fade,
-      doubleText,
-      lastScores,
-      settings: ctx.settings,
-      photoUrl,
-    });
+    let turn;
+    try {
+      turn = await withTimeout(
+        runHeatTurn({
+          thread: thread as HeatThread,
+          history: [...prior, { sender: "user", body: text }],
+          userLine: text,
+          opening: prior.filter((m) => m.sender === "user").length === 0,
+          fade,
+          doubleText,
+          lastScores,
+          settings: ctx.settings,
+          photoUrl,
+        }),
+        28000,
+        "Reply timed out",
+      );
+    } catch (err) {
+      console.error("heat turn grok", err);
+      turn = fallbackHeatTurn(false);
+    }
 
     await supabase.from("heat_messages").update({ score: turn.score }).eq("id", userMsg.id);
 

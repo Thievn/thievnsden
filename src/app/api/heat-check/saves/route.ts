@@ -31,7 +31,9 @@ export async function POST(req: NextRequest) {
     .insert({
       user_id: user.id,
       thread_id: body.threadId || null,
+      source_thread: body.threadId || null,
       line: line.slice(0, 500),
+      body: line.slice(0, 500),
     })
     .select("*")
     .single();

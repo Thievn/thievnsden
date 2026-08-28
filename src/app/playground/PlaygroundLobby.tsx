@@ -33,7 +33,7 @@ export function PlaygroundLobby({ arts }: { arts: Record<string, string> }) {
                   g.disabled ? "pg-card-disabled opacity-70" : ""
                 }`}
               >
-                <PlaygroundCardArt url={arts[g.id] || (g.id === "heat-check" ? "/heat-check/cabinet.png" : undefined)} />
+                <PlaygroundCardArt url={arts[g.id] || (g.id === "heat-check" ? "/heat-check/card.png" : undefined)} />
                 <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${g.accent} z-[1]`} />
                 <div className="relative z-[3]">
                   <span className={`text-[10px] uppercase tracking-[0.18em] px-2 py-0.5 rounded-full border ${g.chip}`}>

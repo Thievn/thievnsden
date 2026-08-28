@@ -8,7 +8,6 @@ import {
   parseHeatTurn,
   parseJsonObject,
   splitScene,
-  SEED_NAMES,
   type HeatLevel,
   type HeatMood,
   type HeatRole,
@@ -18,14 +17,24 @@ import {
   type HeatThread,
   type HeatTurnJson,
   type HeatVoice,
+  type HeatLook,
+  type HeatPronouns,
+  type HeatOrientation,
+  SEED_NAME_ROWS,
+  faceBrief,
+  vibeForLook,
 } from "@/lib/heat-check";
 
 type Service = ReturnType<typeof createServiceClient>;
 
 export async function loadHeatSettings(supabase?: Service): Promise<HeatSettings> {
   const db = supabase || createServiceClient();
-  const { data } = await db.from("site_settings").select("heat_settings").eq("id", 1).maybeSingle();
-  return parseHeatSettings(data?.heat_settings);
+  const { data } = await db.from("site_settings").select("heat_settings, heat_check").eq("id", 1).maybeSingle();
+  const raw =
+    data?.heat_settings && typeof data.heat_settings === "object" && Object.keys(data.heat_settings).length
+      ? data.heat_settings
+      : data?.heat_check;
+  return parseHeatSettings(raw);
 }
 
 export async function saveHeatSettings(next: HeatSettings) {
@@ -90,7 +99,7 @@ export async function grokJsonChat(opts: {
   return parseJsonObject(data.choices?.[0]?.message?.content || "{}");
 }
 
-export async function pickContactName(supabase: Service, userId: string) {
+export async function pickContactName(supabase: Service, userId: string, look?: HeatLook | string) {
   const { data: recent } = await supabase
     .from("heat_threads")
     .select("contact_name")
@@ -98,13 +107,20 @@ export async function pickContactName(supabase: Service, userId: string) {
     .order("created_at", { ascending: false })
     .limit(20);
   const used = new Set((recent || []).map((r) => String(r.contact_name || "").toLowerCase()));
+  const vibe = vibeForLook(look || "unisex");
 
-  const { data: pool } = await supabase.from("heat_names").select("name").order("name");
-  const names = (pool || []).map((r) => String(r.name).trim()).filter(Boolean);
-  const source = names.length ? names : [...new Set(SEED_NAMES)];
-  const fresh = source.filter((n) => !used.has(n.toLowerCase()));
-  const bag = fresh.length ? fresh : source;
-  return bag[Math.floor(Math.random() * bag.length)] || "Mara";
+  const { data: pool } = await supabase.from("heat_names").select("name, vibe").order("name");
+  let rows = (pool || []).map((r) => ({ name: String(r.name).trim(), vibe: String(r.vibe || "unisex") })).filter((r) => r.name);
+  if (rows.length < 40) {
+    await supabase.from("heat_names").upsert(SEED_NAME_ROWS, { onConflict: "name" });
+    const { data: again } = await supabase.from("heat_names").select("name, vibe").order("name");
+    rows = (again || []).map((r) => ({ name: String(r.name).trim(), vibe: String(r.vibe || "unisex") })).filter((r) => r.name);
+  }
+  const source = rows.length ? rows : SEED_NAME_ROWS;
+  const matched = source.filter((r) => r.vibe === vibe || r.vibe === "unisex" || vibe === "unisex");
+  const bag = (matched.length ? matched : source).filter((r) => !used.has(r.name.toLowerCase()));
+  const pickFrom = bag.length ? bag : matched.length ? matched : source;
+  return pickFrom[Math.floor(Math.random() * pickFrom.length)]?.name || "Mara";
 }
 
 const FACE_BASE = `Amateur candid iPhone still of a fictional adult 26–34. One person. Not a celebrity. Not a real person. No likeness of anyone famous. SFW-sexy, tasteful, no nudity, no explicit anatomy, no pornography, museum lighting allowed. Night indoor lamp, film grain, slight motion, looking toward camera. Attractive, lived-in, expensive den energy.`;
@@ -167,9 +183,14 @@ export async function uploadHeatBytes(opts: {
   return { path: opts.path, url: data.publicUrl };
 }
 
-export async function generateContactFace(userId: string, seed?: string) {
+export async function generateContactFace(
+  userId: string,
+  seed?: string,
+  identity?: { look?: string; pronouns?: string; orientation?: string },
+) {
   const extra = (seed || "").trim().slice(0, 180);
-  const prompt = `${FACE_BASE} ${extra || "warm skin, messy night hair, hotel-adjacent bedroom, amber lamp."} STRICT: clothes on or implied, no hardcore.`;
+  const who = faceBrief(identity?.look || "woman", identity?.pronouns || "she", identity?.orientation || "bi");
+  const prompt = `${FACE_BASE} ${who} ${extra || "night indoor lamp, messy hair, lived-in room."} STRICT: clothes on or implied, no hardcore.`;
   const bytes = await imagineStill(prompt);
   const path = `${userId}/${Date.now().toString(36)}.jpg`;
   const up = await uploadHeatBytes({ bucket: "heat-faces", path, bytes });
@@ -233,13 +254,19 @@ export async function runHeatTurn(ctx: TurnContext): Promise<HeatTurnJson> {
     .map((m) => `${m.sender === "user" ? "THEM (the player)" : "YOU"}: ${m.body}`)
     .join("\n");
   const high = ctx.lastScores.length >= 3 && ctx.lastScores.slice(-3).every((s) => s >= ctx.settings.reward_threshold);
+  const meta = (ctx.thread.meta || {}) as Record<string, unknown>;
+  const look = String(ctx.thread.they_look || meta.look || "woman");
+  const pronouns = String(ctx.thread.they_pronouns || meta.pronouns || "she");
+  const orientation = String(ctx.thread.they_orientation || meta.orientation || "bi");
   const user = `Contact name: ${ctx.thread.contact_name}
+They are: ${look}. Pronouns: ${pronouns}. Orientation: ${orientation}.
+${faceBrief(look, pronouns, orientation)}
 Role: ${ctx.thread.role} — ${role}
 Heat: ${ctx.thread.heat} — ${heat}
 Voice: ${ctx.thread.voice} — ${voice}
 Current mood: ${ctx.thread.mood}
 Who starts: ${ctx.thread.who_starts}
-Opening turn: ${ctx.opening ? "yes — consent first beat. They have not spoken yet." : "no"}
+Opening turn: ${ctx.opening ? "yes — consent first beat. They have not spoken yet. Do not reuse a stock 'you still up'." : "no"}
 Fade requested: ${ctx.fade ? "yes — wind down, ended true, end_reason fade" : "no"}
 Player double-texted while unread: ${ctx.doubleText ? "yes — flag it in tip" : "no"}
 Last user scores: ${ctx.lastScores.join(", ") || "none"}
@@ -251,7 +278,7 @@ ${transcript || "(empty)"}
 
 ${ctx.userLine ? `Latest player text: ${ctx.userLine}` : "No player text yet. You text first."}
 
-JSON only.`;
+You control the night. Stay human. Stay in their body. JSON only.`;
 
   const raw = await grokJsonChat({
     system: p.system,
@@ -293,7 +320,7 @@ export function buildRecap(opts: {
     }
   });
   const dirty = /(cock|pussy|fuck|dick|cunt|cum|slut|whore|rape)/i;
-  const clean = dirty.test(best) ? "They'll read it twice." : best.slice(0, 90);
+  const clean = dirty.test(best) ? "Don't hang up the night yet." : best.slice(0, 90);
   return {
     heat: heatScore,
     pacing,
@@ -316,6 +343,9 @@ export const VALID_HEAT = new Set(["tease", "filthy", "nasty"]);
 export const VALID_VOICE = new Set(["shy", "mean", "needy", "funny", "dry"]);
 export const VALID_STARTER = new Set(["they", "you"]);
 export const VALID_SKIN = new Set(["ios", "android"]);
+export const VALID_LOOK = new Set(["woman", "man", "nonbinary", "trans-woman", "trans-man", "androgynous"]);
+export const VALID_PRONOUNS = new Set(["she", "he", "they", "she-they", "he-they", "any"]);
+export const VALID_ORIENTATION = new Set(["straight", "gay", "lesbian", "bi", "pan", "queer", "questioning", "ace"]);
 
 export function asRole(v: unknown): HeatRole {
   return VALID_ROLE.has(String(v)) ? (v as HeatRole) : "first-time";
@@ -331,4 +361,36 @@ export function asStarter(v: unknown): HeatStarter {
 }
 export function asSkin(v: unknown): HeatSkin {
   return VALID_SKIN.has(String(v)) ? (v as HeatSkin) : "ios";
+}
+export function asLook(v: unknown): HeatLook {
+  return VALID_LOOK.has(String(v)) ? (v as HeatLook) : "woman";
+}
+export function asPronouns(v: unknown): HeatPronouns {
+  return VALID_PRONOUNS.has(String(v)) ? (v as HeatPronouns) : "she";
+}
+export function asOrientation(v: unknown): HeatOrientation {
+  return VALID_ORIENTATION.has(String(v)) ? (v as HeatOrientation) : "bi";
+}
+
+export function heatMessageRow(opts: {
+  thread_id: string;
+  user_id: string;
+  sender: "user" | "them" | "photo";
+  body?: string | null;
+  image_url?: string | null;
+  delivered_at?: string | null;
+  read_at?: string | null;
+  score?: number | null;
+}) {
+  return {
+    thread_id: opts.thread_id,
+    user_id: opts.user_id,
+    sender: opts.sender,
+    role: opts.sender === "photo" ? "photo" : opts.sender,
+    body: opts.body ?? null,
+    image_url: opts.image_url ?? null,
+    delivered_at: opts.delivered_at ?? null,
+    read_at: opts.read_at ?? null,
+    score: opts.score ?? null,
+  };
 }

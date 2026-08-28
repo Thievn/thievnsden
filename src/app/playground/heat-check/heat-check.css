@@ -85,9 +85,9 @@
 
 .hc-start-hero {
   background:
-    linear-gradient(180deg, rgba(7, 4, 7, 0.45), rgba(7, 4, 7, 0.82)),
-    radial-gradient(ellipse at 50% 0%, rgba(255, 90, 40, 0.22), transparent 52%),
-    url("/heat-check/hero.png") center/cover;
+    linear-gradient(180deg, rgba(7, 4, 7, 0.28), rgba(7, 4, 7, 0.78)),
+    radial-gradient(ellipse at 50% 0%, rgba(255, 90, 40, 0.18), transparent 52%),
+    url("/heat-check/night.png") center 40%/cover;
 }
 
 .hc-phone {
@@ -353,8 +353,8 @@
     #070407;
 }
 .hc-recap-art {
-  background: url("/heat-check/recap.png") center 20%/cover;
-  filter: saturate(0.85) brightness(0.55);
+  background: url("/heat-check/night.png") center 30%/cover;
+  filter: saturate(0.85) brightness(0.42);
 }
 
 .hc-cta {
@@ -376,5 +376,26 @@
 .hc-soon {
   background:
     linear-gradient(180deg, rgba(7,4,7,0.35), rgba(7,4,7,0.82)),
-    url("/heat-check/coming-soon.png") center/cover;
+    url("/heat-check/night.png") center/cover;
 }
+
+.hc-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #0c0709;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23ffb199' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  color: #f4eae4;
+  padding: 0.85rem 2.4rem 0.85rem 0.95rem;
+  font-size: 15px;
+  min-height: 48px;
+}
+.hc-select:focus {
+  outline: none;
+  border-color: rgba(255, 150, 110, 0.55);
+}
+.hc-select option { background: #12080c; color: #f4eae4; }

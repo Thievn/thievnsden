@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/admin";
 import { userFromRequest } from "@/lib/auth-request";
 import { writeAudit } from "@/lib/audit";
-import { DEFAULT_HEAT_SETTINGS, parseHeatSettings, SEED_NAMES, type HeatSettings } from "@/lib/heat-check";
+import { DEFAULT_HEAT_SETTINGS, parseHeatSettings, SEED_NAME_ROWS, type HeatSettings } from "@/lib/heat-check";
 import {
   generateContactFace,
   grokJsonChat,
@@ -89,27 +89,35 @@ export async function POST(req: NextRequest) {
   if (action === "names") {
     const parsed = await grokJsonChat({
       system: "Return JSON only. No markdown.",
-      user: `Generate 50 distinctive first names for a late-night adult chat trainer. Mix genders. No celebrities. No last names. JSON {"names":["..."]}`,
-      maxTokens: 900,
+      user: `Generate 50 distinctive first names for a late-night adult chat. Mix woman, man, unisex. No celebrities. No last names. JSON {"names":[{"name":"Mara","vibe":"woman"}]} vibe must be woman, man, or unisex.`,
+      maxTokens: 1200,
       temperature: 0.9,
     });
     const names = Array.from(
-      new Set((parsed.names || []).map((n: unknown) => String(n).trim()).filter((n: string) => n.length > 1 && n.length < 24)),
-    ).slice(0, 50);
+      new Map(
+        (parsed.names || [])
+          .map((n: unknown) => {
+            if (typeof n === "string") return { name: n.trim(), vibe: "unisex" };
+            const row = n as { name?: string; vibe?: string };
+            const name = String(row.name || "").trim();
+            const vibe = ["woman", "man", "unisex"].includes(String(row.vibe)) ? String(row.vibe) : "unisex";
+            return { name, vibe };
+          })
+          .filter((n: { name: string }) => n.name.length > 1 && n.name.length < 24)
+          .map((n: { name: string; vibe: string }) => [n.name, n]),
+      ).values(),
+    ).slice(0, 50) as { name: string; vibe: string }[];
     if (!names.length) return NextResponse.json({ error: "No names" }, { status: 500 });
-    const { error, data } = await supabase.from("heat_names").upsert(names.map((name) => ({ name })), { onConflict: "name" }).select("name");
+    const { error, data } = await supabase.from("heat_names").upsert(names, { onConflict: "name" }).select("name");
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     await writeAudit({ action: "heat_names", details: `${data?.length || names.length}` });
-    return NextResponse.json({ inserted: data?.length || names.length, names: data || names });
+    return NextResponse.json({ inserted: data?.length || names.length });
   }
 
   if (action === "seed-names") {
-    const { error } = await supabase.from("heat_names").upsert(
-      [...new Set(SEED_NAMES)].map((name) => ({ name })),
-      { onConflict: "name" },
-    );
+    const { error } = await supabase.from("heat_names").upsert(SEED_NAME_ROWS, { onConflict: "name" });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, count: SEED_NAME_ROWS.length });
   }
 
   if (action === "contact") {
@@ -122,7 +130,11 @@ export async function POST(req: NextRequest) {
     let face_url: string | null = null;
     if (body.face) {
       try {
-        const face = await generateContactFace(user.id, String(body.seed || ""));
+        const face = await generateContactFace(user.id, String(body.seed || ""), {
+          look: String(body.look || "woman"),
+          pronouns: String(body.pronouns || "she"),
+          orientation: String(body.orientation || "bi"),
+        });
         face_url = face.url;
       } catch (err) {
         return NextResponse.json({ error: err instanceof Error ? err.message : "face failed", name }, { status: 502 });
@@ -153,7 +165,10 @@ export async function POST(req: NextRequest) {
       end_reason: null,
       last_seen_label: lastSeenLabel(),
       recap: null,
-      meta: {},
+      they_look: body.look || "woman",
+      they_pronouns: body.pronouns || "she",
+      they_orientation: body.orientation || "bi",
+      meta: { look: body.look || "woman", pronouns: body.pronouns || "she", orientation: body.orientation || "bi" },
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     } as const;

@@ -70,7 +70,7 @@ export function PlaygroundArtTab() {
           disabled={!!busy}
           className="px-4 py-2.5 rounded-xl text-sm border border-rose-800/60 text-rose-100 disabled:opacity-40"
         >
-          {busy === "all" ? "Shooting all…" : "Shoot all four"}
+          {busy === "all" ? "Shooting all…" : "Shoot all cards"}
         </button>
         {msg && <p className={`text-xs ${failed ? "text-red-300" : "text-neutral-400"}`}>{msg}</p>}
       </div>

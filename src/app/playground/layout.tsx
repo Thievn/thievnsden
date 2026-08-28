@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Playground",
   description:
-    "Games in Thievn's Den. Face The Den, Would You Rather, and more. 18+.",
+    "Games in Thievn's Den. Face The Den, Would You Rather, Heat Check, and more. 18+.",
   alternates: { canonical: "/playground" },
   openGraph: {
     title: "Playground · Thievn's Den",

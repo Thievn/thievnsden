@@ -26,8 +26,8 @@ export function DenBoot() {
     setShow(true);
     sessionStorage.setItem("den_boot_seen", "1");
 
-    const t1 = setTimeout(() => setLeaving(true), standalone ? 2200 : 1600);
-    const t2 = setTimeout(() => setShow(false), standalone ? 2800 : 2100);
+    const t1 = setTimeout(() => setLeaving(true), standalone ? 2800 : 2100);
+    const t2 = setTimeout(() => setShow(false), standalone ? 3400 : 2700);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -38,28 +38,25 @@ export function DenBoot() {
 
   return (
     <div
-      className={`fixed inset-0 z-[200] flex items-center justify-center bg-[#050505] transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[200] overflow-hidden bg-[#050505] transition-opacity duration-500 ${
         leaving ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
       aria-hidden
     >
-      {/* Soft vignette only — no floating orbs */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.08)_0%,_transparent_55%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_#050505_75%)]" />
-      </div>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.16)_0%,_transparent_58%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_#050505_78%)]" />
 
-      <div className="relative flex flex-col items-center gap-6 den-boot-core">
-        <div className="relative flex items-center justify-center">
-          <div className="absolute inset-[-20px] rounded-full border border-red-900/25 den-boot-ring" />
-          <div className="absolute inset-[-36px] rounded-full border border-purple-900/15 den-boot-ring-slow" />
-          <DenMarkSplash className="w-14 h-[4.5rem] relative z-10 drop-shadow-[0_0_18px_rgba(185,28,92,0.35)]" />
-        </div>
+      <div className="den-boot-door den-boot-door-l" />
+      <div className="den-boot-door den-boot-door-r" />
+      <div className="den-boot-leak" />
+
+      <div className="relative z-10 flex h-full flex-col items-center justify-center gap-6 den-boot-core">
+        <DenMarkSplash className="w-[4.5rem] h-[4.5rem] sm:w-20 sm:h-20 drop-shadow-[0_0_28px_rgba(225,29,72,0.45)]" />
         <div className="text-center den-boot-text">
-          <p className="text-[11px] uppercase tracking-[0.28em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-purple-400 mb-1">
-            Entering
+          <p className="text-[11px] uppercase tracking-[0.38em] text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-rose-300 to-purple-400 mb-1.5">
+            Come in
           </p>
-          <p className="text-xl font-semibold tracking-tight text-neutral-50">Thievn's Den</p>
+          <p className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-50">Thievn&apos;s Den</p>
         </div>
       </div>
     </div>

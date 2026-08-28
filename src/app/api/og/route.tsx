@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
+import { SatoriDenSeal } from "@/lib/den-seal";
 
 export const runtime = "edge";
 
@@ -53,29 +54,7 @@ export async function GET(req: NextRequest) {
         />
 
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          {/* Keyhole approximation */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <div
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: 999,
-                border: "3px solid #e11d48",
-              }}
-            />
-            <div
-              style={{
-                width: 14,
-                height: 22,
-                marginTop: -4,
-                borderLeft: "3px solid #c026d3",
-                borderRight: "3px solid #c026d3",
-                borderBottom: "3px solid #a855f7",
-                borderBottomLeftRadius: 3,
-                borderBottomRightRadius: 3,
-              }}
-            />
-          </div>
+          <SatoriDenSeal size={52} />
           <div
             style={{
               fontSize: 22,

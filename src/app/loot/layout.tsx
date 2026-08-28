@@ -3,7 +3,7 @@ import "./loot.css";
 
 export const metadata: Metadata = {
   title: "Loot",
-  description: "Mini takes on gear, merch, and den tools. Affiliate search lists, not fake roundups.",
+  description: "Gear, merch, and den tools that earned a place. Mini takes, not a catalog.",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

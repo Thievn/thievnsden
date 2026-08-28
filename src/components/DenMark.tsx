@@ -1,4 +1,8 @@
-/** Classic flat-bottom keyhole mark for Thievn's Den */
+"use client";
+
+import { useId } from "react";
+
+/** Circular den seal — ember in a vault ring. Replaces the old keyhole. */
 export function DenMark({
   className = "w-5 h-5",
   title = "Thievn's Den",
@@ -6,9 +10,13 @@ export function DenMark({
   className?: string;
   title?: string;
 }) {
+  const raw = useId().replace(/:/g, "");
+  const ring = `${raw}-ring`;
+  const ember = `${raw}-ember`;
+
   return (
     <svg
-      viewBox="0 0 24 32"
+      viewBox="0 0 32 32"
       className={className}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -17,48 +25,33 @@ export function DenMark({
     >
       {title ? <title>{title}</title> : null}
       <defs>
-        <linearGradient id="den-key-stroke" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#f87171" />
-          <stop offset="45%" stopColor="#e11d48" />
+        <linearGradient id={ring} x1="8" y1="2" x2="24" y2="30" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fb7185" />
+          <stop offset="48%" stopColor="#e11d48" />
           <stop offset="100%" stopColor="#a855f7" />
         </linearGradient>
+        <radialGradient id={ember} cx="46%" cy="38%" r="62%">
+          <stop offset="0%" stopColor="#fecdd3" />
+          <stop offset="42%" stopColor="#fb7185" />
+          <stop offset="78%" stopColor="#e11d48" />
+          <stop offset="100%" stopColor="#6b21a8" />
+        </radialGradient>
       </defs>
-      {/* Classic keyhole: round head + tapered slot with flat base */}
-      <path
-        d="M12 2.5c-3.6 0-6.5 2.9-6.5 6.5 0 2.35 1.25 4.4 3.1 5.5L7.2 28.5h9.6l-1.4-14c1.85-1.1 3.1-3.15 3.1-5.5 0-3.6-2.9-6.5-6.5-6.5z"
-        stroke="url(#den-key-stroke)"
-        strokeWidth="2"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
+      <circle cx="16" cy="16" r="13.35" stroke={`url(#${ring})`} strokeWidth="1.65" />
+      <circle cx="16" cy="16" r="10.15" stroke={`url(#${ring})`} strokeWidth="0.7" opacity="0.38" />
+      <circle cx="16" cy="16" r="4.55" fill={`url(#${ember})`} />
+      <circle cx="14.7" cy="14.35" r="1.15" fill="#fff" opacity="0.38" />
     </svg>
   );
 }
 
-/** Larger splash variant with optional soft outer ring */
-export function DenMarkSplash({ className = "w-16 h-20" }: { className?: string }) {
+/** Larger splash seal with a living halo. */
+export function DenMarkSplash({ className = "w-16 h-16" }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 32"
-      className={className}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-    >
-      <defs>
-        <linearGradient id="den-key-splash" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#f87171" />
-          <stop offset="40%" stopColor="#e11d48" />
-          <stop offset="100%" stopColor="#a855f7" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M12 2.5c-3.6 0-6.5 2.9-6.5 6.5 0 2.35 1.25 4.4 3.1 5.5L7.2 28.5h9.6l-1.4-14c1.85-1.1 3.1-3.15 3.1-5.5 0-3.6-2.9-6.5-6.5-6.5z"
-        stroke="url(#den-key-splash)"
-        strokeWidth="2.25"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-    </svg>
+    <span className={`relative inline-flex items-center justify-center den-seal-splash ${className}`}>
+      <span className="pointer-events-none absolute inset-[-22%] rounded-full den-seal-halo" />
+      <span className="pointer-events-none absolute inset-[-8%] rounded-full border border-rose-500/25 den-seal-spin" />
+      <DenMark className="relative z-10 w-full h-full" title="" />
+    </span>
   );
 }

@@ -54,9 +54,9 @@ export default async function LootArticlePage({ params }: { params: Promise<{ sl
         </div>
         <aside className="lg:col-span-4">
           <div className="lg:sticky lg:top-20 rounded-[1.6rem] border border-amber-900/40 bg-[#120e0a] p-5 sm:p-6">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-amber-300/80 mb-2">Shop this search</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-amber-300/80 mb-2">Off the table</p>
             <p className="text-sm text-neutral-400 leading-relaxed mb-5">
-              Opens Amazon with the Den tag. Not a locked SKU — the search that matches this take.
+              Same piece. Walk it out.
             </p>
             <a
               href={`/go/${pick.id}`}
@@ -64,7 +64,7 @@ export default async function LootArticlePage({ params }: { params: Promise<{ sl
               rel="nofollow sponsored noopener noreferrer"
               className="inline-flex w-full items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-gradient-to-b from-amber-200 to-amber-500 text-black text-sm font-semibold hover:from-amber-100 hover:to-amber-400"
             >
-              Open the search
+              Hunt this
               <span aria-hidden>→</span>
             </a>
             {showNote ? (

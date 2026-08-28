@@ -69,11 +69,11 @@ export function LootHub({ initialPicks }: { initialPicks: LootPick[] }) {
           <h1 className="text-4xl sm:text-6xl font-semibold tracking-tight text-neutral-50 leading-[0.98] max-w-3xl">
             Things that earned a place.
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-rose-200 to-purple-200">
-              Not a dump of ASINs.
+              The ones that stayed.
             </span>
           </h1>
           <p className="mt-5 max-w-xl text-neutral-400 leading-relaxed">
-            Mini takes, real searches. Browse like a shelf, not a spreadsheet.
+            Mini takes on what actually lives here. Browse like a shelf.
           </p>
         </header>
 
@@ -164,7 +164,7 @@ export function LootHub({ initialPicks }: { initialPicks: LootPick[] }) {
         )}
 
         <p className="mt-16 text-[11px] text-neutral-600">
-          Product links on this page are Amazon searches with the Den tag.{" "}
+          Some product links are affiliate links.{" "}
           <Link href="/about" className="text-neutral-500 hover:text-amber-200">
             How the house works
           </Link>

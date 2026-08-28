@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DenMarkSplash } from "@/components/DenMark";
 
 export function AgeGate() {
   const [show, setShow] = useState(false);
@@ -20,7 +21,7 @@ export function AgeGate() {
     setTimeout(() => {
       localStorage.setItem("thievn-age-verified", "true");
       setShow(false);
-    }, 300);
+    }, 620);
   };
 
   const handleLeave = () => {
@@ -31,27 +32,23 @@ export function AgeGate() {
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-opacity duration-300 ${
-        exiting ? "opacity-0" : "opacity-100"
+      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden ${
+        exiting ? "age-gate-exit" : ""
       }`}
     >
       <div className="absolute inset-0 bg-[#050505]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.09)_0%,_transparent_55%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(124,58,237,0.06)_0%,_transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.14)_0%,_transparent_55%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(124,58,237,0.08)_0%,_transparent_50%)]" />
+      <div className="age-gate-door age-gate-door-l" />
+      <div className="age-gate-door age-gate-door-r" />
 
       <div className="relative z-10 w-full max-w-[340px] sm:max-w-md age-gate-card">
         <div className="rounded-2xl border border-[#2a1a28] bg-[#0c0c0c]/95 backdrop-blur-xl px-5 py-7 sm:p-8 text-center shadow-2xl">
           <div className="mb-5 sm:mb-7 flex justify-center">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-purple-900/20 blur-xl scale-150" />
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border border-purple-900/30 bg-gradient-to-b from-purple-950/40 via-red-950/30 to-[#0c0c0c] flex items-center justify-center">
-                <span className="text-xl sm:text-2xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-red-300 to-purple-300">
-                  18+
-                </span>
-              </div>
-            </div>
+            <DenMarkSplash className="w-[4.25rem] h-[4.25rem] sm:w-20 sm:h-20 drop-shadow-[0_0_24px_rgba(225,29,72,0.4)]" />
           </div>
 
+          <p className="text-[10px] uppercase tracking-[0.28em] text-rose-300/80 mb-2">Members&apos; hours · 18+</p>
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-neutral-100 mb-2.5">
             Enter the Den
           </h1>

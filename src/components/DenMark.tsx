@@ -49,7 +49,7 @@ export function DenMark({
       <path
         d={CAVE_OUTER}
         className="den-cave-fill"
-        fill="#1a0a10"
+        fill="#3a121c"
         stroke={`url(#${ring})`}
         strokeWidth="1.55"
         strokeLinejoin="round"

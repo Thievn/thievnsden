@@ -49,7 +49,7 @@ export function DenBoot() {
       <div className="pointer-events-none absolute inset-0 den-boot-vignette" />
 
       <div className="relative z-10 flex h-full flex-col items-center justify-center gap-8 den-boot-core">
-        <DenMarkSplash className="w-[3.6rem] h-[5rem] sm:w-16 sm:h-[5.5rem]" />
+        <DenMarkSplash className="w-16 h-[5.5rem] sm:w-[4.5rem] sm:h-24" />
         <div className="text-center den-boot-text">
           <p className="text-[11px] uppercase tracking-[0.42em] text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-red-300 to-violet-400 mb-1.5">
             Come in

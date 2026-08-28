@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const width = Math.min(1290, Math.max(320, Number(searchParams.get("w") || 1284)));
   const height = Math.min(2796, Math.max(568, Number(searchParams.get("h") || 2778)));
-  const mark = Math.round(Math.min(width, height) * 0.22);
+  const mark = Math.round(Math.min(width, height) * 0.4);
 
   return new ImageResponse(
     (
@@ -23,32 +23,12 @@ export async function GET(req: NextRequest) {
           background: "#050505",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            display: "flex",
-            width: Math.round(width * 0.42),
-            height: Math.round(width * 0.42),
-            borderRadius: 9999,
-            background: "rgba(190, 18, 60, 0.22)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            display: "flex",
-            width: Math.round(width * 0.28),
-            height: Math.round(width * 0.28),
-            borderRadius: 9999,
-            background: "rgba(124, 58, 237, 0.18)",
-          }}
-        />
         <SatoriDenSeal size={mark} />
         <div
           style={{
-            marginTop: 32,
+            marginTop: 36,
             display: "flex",
-            fontSize: Math.max(18, Math.round(width * 0.038)),
+            fontSize: Math.max(20, Math.round(width * 0.045)),
             color: "#f5f5f5",
             fontWeight: 600,
             letterSpacing: "-0.03em",

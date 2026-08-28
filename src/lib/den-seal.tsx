@@ -29,7 +29,7 @@ export function SatoriDenSeal({ size }: { size: number }) {
         </defs>
         <path
           d={CAVE_OUTER}
-          fill="#1a0a10"
+          fill="#3a121c"
           stroke="url(#caveRing)"
           strokeWidth="1.55"
           strokeLinejoin="round"

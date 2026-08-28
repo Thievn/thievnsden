@@ -142,6 +142,13 @@ export default function AccountPage() {
           <span>My Afterimage prints</span>
           <span className="text-neutral-600">→</span>
         </Link>
+        <Link
+          href="/account/heat-check"
+          className="p-4 text-sm text-neutral-300 hover:text-neutral-100 flex items-center justify-between"
+        >
+          <span>Heat Check threads</span>
+          <span className="text-neutral-600">→</span>
+        </Link>
       </div>
 
       <form onSubmit={updateUsername} className="rounded-2xl border border-neutral-800/80 bg-[#111] p-5 sm:p-6 space-y-4 mb-5">

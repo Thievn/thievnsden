@@ -7,6 +7,7 @@ import {
   requireHeatPlayer,
   runHeatTurn,
   signedUploadUrl,
+  heatMessageRow,
   splitThem,
 } from "@/lib/heat-check-server";
 
@@ -39,11 +40,11 @@ export async function POST(req: NextRequest) {
 
     const { data: history } = await supabase
       .from("heat_messages")
-      .select("id, sender, body, score, read_at, created_at")
+      .select("id, sender, role, body, score, read_at, created_at")
       .eq("thread_id", threadId)
       .order("created_at", { ascending: true });
 
-    const prior = history || [];
+    const prior = (history || []).map((m) => ({ ...m, sender: m.sender || m.role }));
     const lastUser = [...prior].reverse().find((m) => m.sender === "user");
     const doubleText = !!(lastUser && !lastUser.read_at);
     const fade = isFadeText(text) || !!body.fade;
@@ -51,13 +52,15 @@ export async function POST(req: NextRequest) {
     const now = new Date().toISOString();
     const { data: userMsg, error: userErr } = await supabase
       .from("heat_messages")
-      .insert({
-        thread_id: threadId,
-        user_id: user.id,
-        sender: "user",
-        body: text,
-        delivered_at: now,
-      })
+      .insert(
+        heatMessageRow({
+          thread_id: threadId,
+          user_id: user.id,
+          sender: "user",
+          body: text,
+          delivered_at: now,
+        }),
+      )
       .select("*")
       .single();
     if (userErr || !userMsg) {
@@ -98,12 +101,14 @@ export async function POST(req: NextRequest) {
       .select("*")
       .single();
 
-    const themRows = splitThem(turn.scene).map((bodyText) => ({
-      thread_id: threadId,
-      user_id: user.id,
-      sender: "them" as const,
-      body: bodyText,
-    }));
+    const themRows = splitThem(turn.scene).map((bodyText) =>
+      heatMessageRow({
+        thread_id: threadId,
+        user_id: user.id,
+        sender: "them",
+        body: bodyText,
+      }),
+    );
 
     let themMessages: Record<string, unknown>[] = [];
     if (themRows.length) {
@@ -118,16 +123,18 @@ export async function POST(req: NextRequest) {
         reward = await generateRewardStill(user.id, threadId, facePrompt);
         const { data: photoMsg } = await supabase
           .from("heat_messages")
-          .insert({
-            thread_id: threadId,
-            user_id: user.id,
-            sender: "photo",
-            image_url: reward.url,
-          })
+          .insert(
+            heatMessageRow({
+              thread_id: threadId,
+              user_id: user.id,
+              sender: "photo",
+              image_url: reward.url,
+            }),
+          )
           .select("*")
           .single();
         if (photoMsg) themMessages.push(photoMsg);
-        await supabase.from("heat_threads").update({ reward_photo_sent: true }).eq("id", threadId);
+        await supabase.from("heat_threads").update({ reward_photo_sent: true, reward_used: true }).eq("id", threadId);
       } catch (err) {
         console.error("heat reward", err);
       }
@@ -155,6 +162,7 @@ export async function POST(req: NextRequest) {
         heat: thread.heat,
       });
       patch.ended = true;
+      patch.status = "ended";
       patch.end_reason = fade ? "fade" : turn.end_reason || "recap";
       patch.recap = recap;
     }

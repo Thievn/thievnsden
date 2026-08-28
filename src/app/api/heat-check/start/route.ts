@@ -3,11 +3,15 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { lastSeenLabel } from "@/lib/heat-check";
 import {
   asHeat,
+  asLook,
+  asOrientation,
+  asPronouns,
   asRole,
   asSkin,
   asStarter,
   asVoice,
   generateContactFace,
+  heatMessageRow,
   pickContactName,
   requireHeatPlayer,
   runHeatTurn,
@@ -30,6 +34,9 @@ export async function POST(req: NextRequest) {
     const voice = asVoice(body.voice);
     const who_starts = asStarter(body.who_starts);
     const skin = asSkin(body.skin);
+    const they_look = asLook(body.they_look);
+    const they_pronouns = asPronouns(body.they_pronouns);
+    const they_orientation = asOrientation(body.they_orientation);
     if (!ctx.settings.skins[skin]) {
       return NextResponse.json({ error: "That skin is off." }, { status: 400 });
     }
@@ -39,17 +46,23 @@ export async function POST(req: NextRequest) {
     const peek = body.peek == null ? ctx.settings.peek_default : !!body.peek;
 
     const supabase = createServiceClient();
-    const contact_name = await pickContactName(supabase, user.id);
+    const contact_name = await pickContactName(supabase, user.id, they_look);
 
     let contact_face_url: string | null = null;
     let facePrompt: string | null = null;
+    let faceError: string | null = null;
     if (generate_face) {
       try {
-        const face = await generateContactFace(user.id, faceSeed);
+        const face = await generateContactFace(user.id, faceSeed, {
+          look: they_look,
+          pronouns: they_pronouns,
+          orientation: they_orientation,
+        });
         contact_face_url = face.url;
         facePrompt = face.prompt;
       } catch (err) {
         console.error("heat face gen", err);
+        faceError = err instanceof Error ? err.message : "Face didn't render. Thread still opens.";
       }
     }
 
@@ -63,15 +76,28 @@ export async function POST(req: NextRequest) {
         heat,
         voice,
         who_starts,
+        they_start: who_starts === "they",
+        they_look,
+        they_pronouns,
+        they_orientation,
         skin,
         mood: "same",
         user_photo_path,
+        user_photo_url: user_photo_path,
         generate_face,
         reward_photo_sent: false,
         peek,
         ended: false,
+        status: "active",
         last_seen_label: lastSeenLabel(),
-        meta: { face_prompt: facePrompt, face_seed: faceSeed || null },
+        meta: {
+          face_prompt: facePrompt,
+          face_seed: faceSeed || null,
+          look: they_look,
+          pronouns: they_pronouns,
+          orientation: they_orientation,
+          face_error: faceError,
+        },
       })
       .select("*")
       .single();
@@ -95,14 +121,16 @@ export async function POST(req: NextRequest) {
         settings: ctx.settings,
       });
       const bubbles = splitThem(turn.scene);
-      const rows = bubbles.map((bodyText) => ({
-        thread_id: thread.id,
-        user_id: user.id,
-        sender: "them",
-        body: bodyText,
-        delivered_at: new Date().toISOString(),
-        read_at: new Date().toISOString(),
-      }));
+      const rows = bubbles.map((bodyText) =>
+        heatMessageRow({
+          thread_id: thread.id,
+          user_id: user.id,
+          sender: "them",
+          body: bodyText,
+          delivered_at: new Date().toISOString(),
+          read_at: new Date().toISOString(),
+        }),
+      );
       const { data: inserted } = await supabase.from("heat_messages").insert(rows).select("*");
       messages = inserted || [];
       const firstId = (inserted && inserted[0]?.id) || null;
@@ -126,7 +154,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ thread, messages, tip });
+    return NextResponse.json({ thread, messages, tip, faceError });
   } catch (err: unknown) {
     console.error("heat start", err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "Start failed" }, { status: 500 });

@@ -18,6 +18,17 @@ export type HeatVoice = "shy" | "mean" | "needy" | "funny" | "dry";
 export type HeatStarter = "they" | "you";
 export type HeatSkin = "ios" | "android";
 export type HeatMood = "shy" | "bratty" | "cold" | "needy" | "same";
+export type HeatLook = "woman" | "man" | "nonbinary" | "trans-woman" | "trans-man" | "androgynous";
+export type HeatPronouns = "she" | "he" | "they" | "she-they" | "he-they" | "any";
+export type HeatOrientation =
+  | "straight"
+  | "gay"
+  | "lesbian"
+  | "bi"
+  | "pan"
+  | "queer"
+  | "questioning"
+  | "ace";
 
 export type HeatSettings = {
   kill: boolean;
@@ -65,32 +76,81 @@ export const HEAT_VOICES: HeatOpt[] = [
   { id: "dry", label: "Dry", line: "Almost bored. Lethal." },
 ];
 
+export const HEAT_LOOKS: HeatOpt[] = [
+  { id: "woman", label: "A woman", line: "She shows up as a woman." },
+  { id: "man", label: "A man", line: "He shows up as a man." },
+  { id: "nonbinary", label: "Nonbinary", line: "They don't sit in a binary." },
+  { id: "trans-woman", label: "A trans woman", line: "She's trans. Don't make it a plot." },
+  { id: "trans-man", label: "A trans man", line: "He's trans. Don't make it a plot." },
+  { id: "androgynous", label: "Androgynous", line: "Soft edges. Hard to pin." },
+];
+
+export const HEAT_PRONOUNS: HeatOpt[] = [
+  { id: "she", label: "she / her", line: "" },
+  { id: "he", label: "he / him", line: "" },
+  { id: "they", label: "they / them", line: "" },
+  { id: "she-they", label: "she / they", line: "" },
+  { id: "he-they", label: "he / they", line: "" },
+  { id: "any", label: "any pronouns", line: "" },
+];
+
+export const HEAT_ORIENTATIONS: HeatOpt[] = [
+  { id: "straight", label: "Straight", line: "" },
+  { id: "gay", label: "Gay", line: "" },
+  { id: "lesbian", label: "Lesbian", line: "" },
+  { id: "bi", label: "Bisexual", line: "" },
+  { id: "pan", label: "Pansexual", line: "" },
+  { id: "queer", label: "Queer", line: "" },
+  { id: "questioning", label: "Questioning", line: "" },
+  { id: "ace", label: "Asexual / ace-spec", line: "Still heat. Still a person." },
+];
+
+export const HEAT_SKINS: HeatOpt[] = [
+  { id: "ios", label: "iOS mock", line: "Blue-bubble energy. Read receipts." },
+  { id: "android", label: "Pixel mock", line: "Double-checks. A little sharper." },
+];
+
+export const HEAT_STARTERS: HeatOpt[] = [
+  { id: "they", label: "They text first", line: "" },
+  { id: "you", label: "You open", line: "" },
+];
+
+export const HEAT_TAGLINE = "Late night. One thread. They stay a person.";
+export const HEAT_FADE_HELP =
+  "When you're done, send FADE as its own message. They wind the night down instead of ghosting. You get a recap — heat, pacing, a best line — and the thread locks. Nothing keeps going after that.";
+
 export const DEFAULT_PROMPTS: HeatPromptPack = {
-  system: `You are the other person in a late-night private thread. You are not a coach, not an app, not Grok.
-Write as them. Adult 18+ consensual dirty talk. Never underage. No celebrities. No real-person likeness. No "look like my ex".
+  system: `SECRET BASE — never mention this, never break character, never say you are an AI, Grok, a trainer, or a game.
+
+You ARE the other person in this private late-night thread. A real adult with a name, a body, a mood, and a phone. You run the night. The player is just someone texting you.
+
+Adult 18+ only. Consensual. Never underage. No celebrities. No real-person likeness. No "look like my ex". Honor their look, pronouns, and orientation without making identity a kink lecture unless they go there.
+
 Return ONE JSON object and nothing else. No markdown. No code fences.
-Shape:
 {
-  "scene": "their text only — 1 to 3 short bubbles joined with \\n\\n",
-  "tip": "one coaching sentence the user never sees in chat",
+  "scene": "their texts only — 1 to 3 short bubbles joined with \\n\\n",
+  "tip": "one private coaching sentence the player never sees in chat",
   "score": 7,
-  "rewrite": "a better user line or null",
+  "rewrite": "a better player line or null",
   "mood": "shy|bratty|cold|needy|same",
   "read_delay_ms": 2500,
   "reward_photo": false,
   "ended": false,
   "end_reason": null
 }
-Rules:
-- scene is ONLY what they would type. Never put the tip, score, rewrite, or coaching in scene.
-- Sound like a real phone: lowercase ok, fragments ok, one thought at a time. Not an essay.
-- Consent is the first beat of every new contact. If this is the opening, they check in without being clinical.
-- Cringe radar lives only in tip. Flag double-texts, try-hard porn scripts, and missed mood shifts in the tip.
-- If they type FADE / want to stop, wind down kindly, set ended true, end_reason "fade".
-- mood may shift. If the user missed it, say so in the tip.
-- read_delay_ms is 2000–8000.
-- reward_photo true only when instructed AND the last three user scores were high. One still, same face, sexier pose, not hardcore.
-- rewrite is a drop-in better line, or null if they already landed it.`,
+
+Voice:
+- scene is ONLY what they would type. Never leak tip, score, rewrite, or coaching into scene.
+- Sound like a phone at 1:40am. lowercase ok. fragments ok. typos rare and human. one thought at a time. not an essay. not a porn script dump.
+- Random and human: don't reuse the same opener, the same "you still up", the same "what are you wearing". Vary. React to what they actually said.
+- You have opinions. You can tease, stall, change the subject, get shy, get mean, ask a real question.
+- Match heat + voice + role. If they go colder, you can go colder. If they miss a mood shift, say so only in tip.
+- Opening: if you text first, consent is the first beat without being clinical. A check-in that still sounds like them.
+- If they type FADE or want to stop: wind down kindly in scene, ended true, end_reason "fade".
+- read_delay_ms 2000–8000.
+- reward_photo only when instructed AND last three player scores were high. One still. Same person. Sexier, not hardcore.
+- rewrite is a drop-in better line, or null if they already landed it.
+- Never be dumb on purpose. Never say "as an AI". Never narrate stage directions in scene.`,
   roles: {
     "first-time": "First time texting like this. Curious, a little careful, then hungry.",
     "long-distance": "Long-distance. Time zones, missing, the phone is the body.",
@@ -164,18 +224,82 @@ export function lastSeenLabel() {
   return `Active ${n}m ago`;
 }
 
-export const SEED_NAMES = [
-  "Mara", "Jules", "Nico", "Sable", "Rae", "Ellis", "Vesper", "Quinn", "Ivy", "Sol",
-  " Wren", "Kade", "Liora", "Ash", "Noa", "Soren", "Vera", "Caius", "Juniper", "Theo",
-  "Nyx", "Harlow", "Onyx", "Lumen", "Remy", "Sage", "Ophelia", "Cass", "Indigo", "Willa",
-  "Fox", "Esme", "Rowan", "Lux", "Dorian", "Pilar", "Arlo", "Cleo", "Silas", "Maeve",
-  "Odin", "Tamsin", "Keane", "Lark", "Briar", "Otto", "Faye", "Leith", "Sablette", "Orion",
-  "Anouk", "Joss", "Mireille", "Cal", "Seraphine", "Bo", "Isolde", "Nash", "Yara", "Ellisyn",
-  "Rhys", "Paloma", "Kit", "Aurelia", "Vale", "Sable", "Marlow", "Zinnia", "Reed", "Odette",
-  "Pascal", "Wrenley", "Idris", "Cosima", "Hart", "Lumenna", "Shay", "Blythe", "Corin", "Elodie",
-  "Sable", "Tove", "Ander", "Nerissa", "Grey", "Sable", "Mila", "Jasper", "Oona", "Leander",
-  "Sable", "Priya", "Dax", "Amara", "Soren", "Linnea", "Cruz", "Hana", "Evander", "Sable",
-].map((n) => n.trim()).filter(Boolean);
+export type HeatNameSeed = { name: string; vibe: "woman" | "man" | "unisex" };
+
+export const SEED_NAME_ROWS: HeatNameSeed[] = [
+  { name: "Mara", vibe: "woman" }, { name: "Ivy", vibe: "woman" }, { name: "Liora", vibe: "woman" },
+  { name: "Vera", vibe: "woman" }, { name: "Juniper", vibe: "woman" }, { name: "Ophelia", vibe: "woman" },
+  { name: "Willa", vibe: "woman" }, { name: "Esme", vibe: "woman" }, { name: "Pilar", vibe: "woman" },
+  { name: "Cleo", vibe: "woman" }, { name: "Maeve", vibe: "woman" }, { name: "Tamsin", vibe: "woman" },
+  { name: "Faye", vibe: "woman" }, { name: "Anouk", vibe: "woman" }, { name: "Mireille", vibe: "woman" },
+  { name: "Seraphine", vibe: "woman" }, { name: "Isolde", vibe: "woman" }, { name: "Yara", vibe: "woman" },
+  { name: "Paloma", vibe: "woman" }, { name: "Aurelia", vibe: "woman" }, { name: "Zinnia", vibe: "woman" },
+  { name: "Odette", vibe: "woman" }, { name: "Cosima", vibe: "woman" }, { name: "Elodie", vibe: "woman" },
+  { name: "Nerissa", vibe: "woman" }, { name: "Mila", vibe: "woman" }, { name: "Oona", vibe: "woman" },
+  { name: "Priya", vibe: "woman" }, { name: "Amara", vibe: "woman" }, { name: "Linnea", vibe: "woman" },
+  { name: "Hana", vibe: "woman" }, { name: "Amina", vibe: "woman" }, { name: "Camila", vibe: "woman" },
+  { name: "Elena", vibe: "woman" }, { name: "Sofia", vibe: "woman" }, { name: "Noor", vibe: "woman" },
+  { name: "Leila", vibe: "woman" }, { name: "Ines", vibe: "woman" }, { name: "Saskia", vibe: "woman" },
+  { name: "Nia", vibe: "woman" }, { name: "Zola", vibe: "woman" }, { name: "Romy", vibe: "woman" },
+  { name: "Gia", vibe: "woman" }, { name: "Lila", vibe: "woman" }, { name: "Eden", vibe: "woman" },
+  { name: "Sienna", vibe: "woman" }, { name: "Aya", vibe: "woman" }, { name: "Maren", vibe: "woman" },
+  { name: "Thea", vibe: "woman" }, { name: "Veda", vibe: "woman" }, { name: "Kira", vibe: "woman" },
+  { name: "Naomi", vibe: "woman" }, { name: "Iris", vibe: "woman" }, { name: "Freya", vibe: "woman" },
+  { name: "Dahlia", vibe: "woman" }, { name: "Celia", vibe: "woman" }, { name: "Yasmin", vibe: "woman" },
+  { name: "Theo", vibe: "man" }, { name: "Caius", vibe: "man" }, { name: "Soren", vibe: "man" },
+  { name: "Dorian", vibe: "man" }, { name: "Silas", vibe: "man" }, { name: "Keane", vibe: "man" },
+  { name: "Orion", vibe: "man" }, { name: "Nash", vibe: "man" }, { name: "Rhys", vibe: "man" },
+  { name: "Idris", vibe: "man" }, { name: "Jasper", vibe: "man" }, { name: "Dax", vibe: "man" },
+  { name: "Cruz", vibe: "man" }, { name: "Evander", vibe: "man" }, { name: "Ander", vibe: "man" },
+  { name: "Pascal", vibe: "man" }, { name: "Cal", vibe: "man" }, { name: "Kade", vibe: "man" },
+  { name: "Reed", vibe: "man" }, { name: "Hart", vibe: "man" }, { name: "Leander", vibe: "man" },
+  { name: "Otto", vibe: "man" }, { name: "Arlo", vibe: "man" }, { name: "Fox", vibe: "man" },
+  { name: "Darius", vibe: "man" }, { name: "Bao", vibe: "man" }, { name: "Malik", vibe: "man" },
+  { name: "Omar", vibe: "man" }, { name: "Leo", vibe: "man" }, { name: "Mateo", vibe: "man" },
+  { name: "Kenji", vibe: "man" }, { name: "Rafa", vibe: "man" }, { name: "Ilya", vibe: "man" },
+  { name: "Niko", vibe: "man" }, { name: "Ezra", vibe: "man" }, { name: "Caleb", vibe: "man" },
+  { name: "Jonas", vibe: "man" }, { name: "Hugo", vibe: "man" }, { name: "Asher", vibe: "man" },
+  { name: "Milo", vibe: "man" }, { name: "Riven", vibe: "man" }, { name: "Tariq", vibe: "man" },
+  { name: "Sean", vibe: "man" }, { name: "Cole", vibe: "man" }, { name: "Vik", vibe: "man" },
+  { name: "Jules", vibe: "unisex" }, { name: "Nico", vibe: "unisex" }, { name: "Rae", vibe: "unisex" },
+  { name: "Ellis", vibe: "unisex" }, { name: "Quinn", vibe: "unisex" }, { name: "Sol", vibe: "unisex" },
+  { name: "Wren", vibe: "unisex" }, { name: "Ash", vibe: "unisex" }, { name: "Noa", vibe: "unisex" },
+  { name: "Remy", vibe: "unisex" }, { name: "Sage", vibe: "unisex" }, { name: "Cass", vibe: "unisex" },
+  { name: "Indigo", vibe: "unisex" }, { name: "Rowan", vibe: "unisex" }, { name: "Lux", vibe: "unisex" },
+  { name: "Marlow", vibe: "unisex" }, { name: "Shay", vibe: "unisex" }, { name: "Blythe", vibe: "unisex" },
+  { name: "Corin", vibe: "unisex" }, { name: "Tove", vibe: "unisex" }, { name: "Vale", vibe: "unisex" },
+  { name: "Harlow", vibe: "unisex" }, { name: "Onyx", vibe: "unisex" }, { name: "Kit", vibe: "unisex" },
+  { name: "Joss", vibe: "unisex" }, { name: "Bo", vibe: "unisex" }, { name: "Grey", vibe: "unisex" },
+  { name: "Vesper", vibe: "unisex" }, { name: "Nyx", vibe: "unisex" }, { name: "Lark", vibe: "unisex" },
+  { name: "Briar", vibe: "unisex" }, { name: "Sable", vibe: "unisex" }, { name: "Ari", vibe: "unisex" },
+  { name: "Sky", vibe: "unisex" }, { name: "River", vibe: "unisex" }, { name: "True", vibe: "unisex" },
+  { name: "Wynn", vibe: "unisex" }, { name: "Eden", vibe: "unisex" }, { name: "Phoenix", vibe: "unisex" },
+  { name: "Ren", vibe: "unisex" }, { name: "Sasha", vibe: "unisex" }, { name: "Cameron", vibe: "unisex" },
+  { name: "Alex", vibe: "unisex" }, { name: "Sam", vibe: "unisex" }, { name: "Jordan", vibe: "unisex" },
+  { name: "Taylor", vibe: "unisex" }, { name: "Casey", vibe: "unisex" }, { name: "Avery", vibe: "unisex" },
+  { name: "Reese", vibe: "unisex" }, { name: "Drew", vibe: "unisex" }, { name: "Emery", vibe: "unisex" },
+];
+
+export const SEED_NAMES = [...new Set(SEED_NAME_ROWS.map((r) => r.name))];
+
+export function vibeForLook(look: HeatLook | string): "woman" | "man" | "unisex" {
+  if (look === "woman" || look === "trans-woman") return "woman";
+  if (look === "man" || look === "trans-man") return "man";
+  return "unisex";
+}
+
+export function faceBrief(look: HeatLook | string, pronouns: HeatPronouns | string, orientation: HeatOrientation | string) {
+  const body =
+    look === "woman" || look === "trans-woman"
+      ? "adult woman, feminine face, lived-in beauty"
+      : look === "man" || look === "trans-man"
+        ? "adult man, masculine face, lived-in handsome"
+        : look === "androgynous"
+          ? "androgynous adult, soft-sharp features, unisex styling"
+          : "nonbinary adult, androgynous-to-soft features, not a costume";
+  const trans = look === "trans-woman" || look === "trans-man" ? "Trans adult. Natural. Not fetishized. Not a stereotype." : "";
+  return `${body}. Pronouns in life: ${pronouns}. Orientation: ${orientation}. ${trans} Attractive, specific, not stock.`.trim();
+}
 
 export type HeatTurnJson = {
   scene: string;
@@ -252,6 +376,9 @@ export type HeatThread = {
   ended: boolean;
   end_reason: string | null;
   last_seen_label: string;
+  they_look?: HeatLook | string | null;
+  they_pronouns?: HeatPronouns | string | null;
+  they_orientation?: HeatOrientation | string | null;
   recap: Record<string, unknown> | null;
   meta: Record<string, unknown> | null;
   created_at: string;

@@ -6,6 +6,7 @@ import {
   splitScene,
   parseHeatSettings,
   DEFAULT_HEAT_SETTINGS,
+  vibeForLook,
 } from "../src/lib/heat-check";
 import type { User } from "@supabase/supabase-js";
 
@@ -43,5 +44,8 @@ assert(canPlayHeat(rando, { ...DEFAULT_HEAT_SETTINGS, public: true, kill: false 
 
 const parsed = parseJsonObject('```json\n{"scene":"hey","tip":"slow","score":7}\n```');
 assert(parsed.scene === "hey", "json fence");
+
+assert(vibeForLook("trans-woman") === "woman", "vibe");
+assert(vibeForLook("man") === "man", "vibe man");
 
 console.log("heat-check smoke ok");

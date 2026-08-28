@@ -1,17 +1,27 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import {
+  HEAT_FADE_HELP,
   HEAT_JOIN,
   HEAT_LEVELS,
   HEAT_LOGIN,
+  HEAT_LOOKS,
+  HEAT_ORIENTATIONS,
+  HEAT_PRONOUNS,
   HEAT_ROLES,
+  HEAT_SKINS,
+  HEAT_STARTERS,
+  HEAT_TAGLINE,
   HEAT_VOICES,
   isFadeText,
   type HeatLevel,
+  type HeatLook,
   type HeatMessage,
+  type HeatOrientation,
+  type HeatPronouns,
   type HeatRole,
   type HeatSkin,
   type HeatStarter,
@@ -86,7 +96,10 @@ export function HeatCheckApp() {
   const [voice, setVoice] = useState<HeatVoice>("shy");
   const [who, setWho] = useState<HeatStarter>("they");
   const [skin, setSkin] = useState<HeatSkin>("ios");
-  const [wantFace, setWantFace] = useState(false);
+  const [look, setLook] = useState<HeatLook>("woman");
+  const [pronouns, setPronouns] = useState<HeatPronouns>("she");
+  const [orientation, setOrientation] = useState<HeatOrientation>("bi");
+  const [wantFace, setWantFace] = useState(true);
   const [photoPath, setPhotoPath] = useState<string | null>(null);
   const [photoName, setPhotoName] = useState<string | null>(null);
 
@@ -171,6 +184,9 @@ export function HeatCheckApp() {
           voice,
           who_starts: who,
           skin,
+          they_look: look,
+          they_pronouns: pronouns,
+          they_orientation: orientation,
           generate_face: wantFace,
           user_photo_path: photoPath,
           peek: peekDefault,
@@ -180,13 +196,17 @@ export function HeatCheckApp() {
       if (!res.ok) throw new Error(data.error === "coming_soon" ? "Still warming up." : data.error || "Could not open.");
       setThread(data.thread);
       setSkin(data.thread.skin);
-      const incoming: HeatMessage[] = data.messages || [];
+      const incoming: HeatMessage[] = (data.messages || []).map((m: HeatMessage & { role?: string }) => ({
+        ...m,
+        sender: m.sender || m.role || "them",
+      }));
       setMessages([]);
       setPendingThem(incoming);
       setTip(data.tip || null);
       setTipReady(!!data.tip);
       setScreen("chat");
       setReceipt("sent");
+      if (data.faceError) setErr(data.faceError);
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Could not open.");
     } finally {
@@ -334,7 +354,7 @@ export function HeatCheckApp() {
   if (screen === "boot") {
     return (
       <div className="hc-root min-h-[70vh] grid place-items-center">
-        <img src="/heat-check/ember-mark.png" alt="" className="w-16 h-16 opacity-90" />
+        <FlameMark className="w-10 h-12 opacity-90" />
       </div>
     );
   }
@@ -343,9 +363,9 @@ export function HeatCheckApp() {
     return (
       <Shell>
         <StartFrame>
-          <p className="hc-kicker mb-4">18+ · members</p>
+          <FlameMark className="w-9 h-11 mb-5" />
           <h1 className="hc-title text-5xl sm:text-6xl mb-4">Heat Check</h1>
-          <p className="text-[#d9c4bb] text-lg mb-8 max-w-[20ch]">They&apos;ll read it twice. You need a key.</p>
+          <p className="text-[#d9c4bb] text-lg mb-8 max-w-[24ch]">{HEAT_TAGLINE} You need a key.</p>
           <div className="flex flex-col gap-3">
             <Link href={HEAT_LOGIN} className="hc-cta">Log in</Link>
             <Link href={HEAT_JOIN} className="text-center text-sm text-[#c4a59a]">Join the Den</Link>
@@ -360,12 +380,11 @@ export function HeatCheckApp() {
       <Shell>
         <div className="hc-soon relative overflow-hidden rounded-[2rem] hc-rim min-h-[70vh] p-8 sm:p-12 flex flex-col justify-end">
           <div className="hc-grain" />
-          <img src="/heat-check/ember-mark.png" alt="" className="w-12 h-12 mb-6" />
-          <p className="hc-kicker mb-3">Private hours</p>
+          <FlameMark className="w-9 h-11 mb-6" />
           <h1 className="hc-title text-5xl sm:text-6xl mb-3">Heat Check</h1>
-          <p className="text-[#e8d2c8] text-lg max-w-[22ch] mb-2">They&apos;ll read it twice.</p>
+          <p className="text-[#e8d2c8] text-lg max-w-[24ch] mb-2">{HEAT_TAGLINE}</p>
           <p className="text-sm text-[#b89a90] max-w-[34ch] leading-relaxed">
-            A late-night thread is warming. When it opens, it won&apos;t look like a default inbox.
+            Private hours. When it opens, it won&apos;t look like a default inbox.
           </p>
         </div>
       </Shell>
@@ -378,66 +397,44 @@ export function HeatCheckApp() {
         <div className="hc-start-hero relative overflow-hidden rounded-[2rem] hc-rim">
           <div className="hc-ember w-64 h-64 -left-10 -top-8" />
           <div className="hc-grain" />
-          <div className="relative z-[3] p-6 sm:p-8 pb-4">
+          <div className="relative z-[3] p-6 sm:p-8 pb-5">
             <Link href="/playground" className="text-xs text-[#b89a90] hover:text-white">← Playground</Link>
-            <div className="mt-6 flex items-center gap-3">
-              <img src="/heat-check/ember-mark.png" alt="" className="w-9 h-9" />
-              <div>
-                <p className="hc-kicker">Trainer · 18+</p>
-                <h1 className="hc-title text-4xl sm:text-5xl mt-1">Heat Check</h1>
-              </div>
+            <div className="mt-7 flex items-center gap-3">
+              <FlameMark className="w-8 h-10 shrink-0" />
+              <h1 className="hc-title text-4xl sm:text-5xl">Heat Check</h1>
             </div>
-            <p className="mt-3 text-[#e4cfc6] text-[15px]">They&apos;ll read it twice.</p>
+            <p className="mt-3 text-[#e4cfc6] text-[15px] max-w-[28ch]">{HEAT_TAGLINE}</p>
           </div>
         </div>
 
-        <div className="mt-6 space-y-6">
-          <Field label="Role">
-            {HEAT_ROLES.map((o) => (
-              <button key={o.id} type="button" className="hc-chip" aria-pressed={role === o.id} onClick={() => setRole(o.id as HeatRole)}>
-                {o.label}
-              </button>
-            ))}
-          </Field>
-          <Field label="Heat">
-            {HEAT_LEVELS.map((o) => (
-              <button key={o.id} type="button" className="hc-chip" aria-pressed={heat === o.id} onClick={() => setHeat(o.id as HeatLevel)}>
-                {o.label}
-              </button>
-            ))}
-          </Field>
-          <Field label="Voice">
-            {HEAT_VOICES.map((o) => (
-              <button key={o.id} type="button" className="hc-chip" aria-pressed={voice === o.id} onClick={() => setVoice(o.id as HeatVoice)}>
-                {o.label}
-              </button>
-            ))}
-          </Field>
-          <Field label="Who starts">
-            <button type="button" className={cx("hc-chip", who === "they" && "is-on")} aria-pressed={who === "they"} onClick={() => setWho("they")}>
-              They text first
-            </button>
-            <button type="button" className="hc-chip" aria-pressed={who === "you"} onClick={() => setWho("you")}>
-              You open
-            </button>
-          </Field>
-          <Field label="Skin">
-            {skins.ios && (
-              <button type="button" className="hc-chip" aria-pressed={skin === "ios"} onClick={() => setSkin("ios")}>
-                iOS language
-              </button>
-            )}
-            {skins.android && (
-              <button type="button" className="hc-chip" aria-pressed={skin === "android"} onClick={() => setSkin("android")}>
-                Android language
-              </button>
-            )}
-          </Field>
+        <div className="mt-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <SelectField label="Who they are" value={look} onChange={(v) => {
+              const next = v as HeatLook;
+              setLook(next);
+              if (next === "woman" || next === "trans-woman") setPronouns("she");
+              else if (next === "man" || next === "trans-man") setPronouns("he");
+              else setPronouns("they");
+            }} options={HEAT_LOOKS} />
+            <SelectField label="Pronouns" value={pronouns} onChange={(v) => setPronouns(v as HeatPronouns)} options={HEAT_PRONOUNS} />
+            <SelectField label="Orientation" value={orientation} onChange={(v) => setOrientation(v as HeatOrientation)} options={HEAT_ORIENTATIONS} />
+            <SelectField label="Role" value={role} onChange={(v) => setRole(v as HeatRole)} options={HEAT_ROLES} />
+            <SelectField label="Heat" value={heat} onChange={(v) => setHeat(v as HeatLevel)} options={HEAT_LEVELS} />
+            <SelectField label="Voice" value={voice} onChange={(v) => setVoice(v as HeatVoice)} options={HEAT_VOICES} />
+            <SelectField label="Who starts" value={who} onChange={(v) => setWho(v as HeatStarter)} options={HEAT_STARTERS} />
+            <SelectField
+              label="Phone mock"
+              value={skin}
+              onChange={(v) => setSkin(v as HeatSkin)}
+              options={HEAT_SKINS.filter((s) => (s.id === "ios" ? skins.ios : skins.android))}
+            />
+          </div>
           <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/30 p-4">
             <label className="flex items-center justify-between gap-3 text-sm">
               <span>Generate their face</span>
               <input type="checkbox" checked={wantFace && faceGenOn} disabled={!faceGenOn} onChange={(e) => setWantFace(e.target.checked)} />
             </label>
+            <p className="text-[11px] text-[#9a7f76] -mt-1">Matches who you picked. Private still. If it fails, the thread still opens.</p>
             <label className="flex items-center justify-between gap-3 text-sm">
               <span>My photo · private</span>
               <input
@@ -456,7 +453,7 @@ export function HeatCheckApp() {
           <button type="button" className="hc-cta" disabled={busy} onClick={openThread}>
             {busy ? "Opening…" : "Open thread"}
           </button>
-          <p className="text-center text-[11px] text-[#7a6862]">Type FADE later if you want the night to end.</p>
+          <p className="text-[12px] leading-relaxed text-[#8a7670] px-1">{HEAT_FADE_HELP}</p>
         </div>
       </Shell>
     );
@@ -469,7 +466,7 @@ export function HeatCheckApp() {
           <div className="hc-recap-art absolute inset-0 opacity-35" />
           <div className="hc-grain" />
           <div className="relative z-[3]">
-            <img src="/heat-check/ember-mark.png" alt="" className="w-10 h-10 mb-5" />
+            <FlameMark className="w-8 h-10 mb-5" />
             <p className="hc-kicker mb-2">Kept</p>
             <h2 className="hc-title text-4xl mb-6">The night, scored.</h2>
             <div className="grid grid-cols-2 gap-3 mb-6">
@@ -540,7 +537,7 @@ export function HeatCheckApp() {
             {menu && (
               <div className="hc-menu">
                 <button type="button" onClick={() => switchSkin(skin === "ios" ? "android" : "ios")}>
-                  {skin === "ios" ? "Android language" : "iOS language"}
+                  {skin === "ios" ? "Pixel mock" : "iOS mock"}
                 </button>
                 <button type="button" onClick={fadeOut}>Fade</button>
                 <button type="button" onClick={() => { setMenu(false); setThread(null); setMessages([]); setScreen("start"); }}>
@@ -557,7 +554,7 @@ export function HeatCheckApp() {
           onClick={() => { setRail((v) => !v); setTipReady(false); }}
           aria-label="Tip"
         >
-          <img src="/heat-check/ember-mark.png" alt="" />
+          <FlameMark className="w-3.5 h-4 opacity-90" />
         </button>
         <div className={cx("hc-rail", rail ? "open" : "shut")}>
           <div className="hc-rail-inner">
@@ -625,7 +622,7 @@ export function HeatCheckApp() {
                 send();
               }
             }}
-            placeholder={skin === "ios" ? "iMessage" : "Message"}
+            placeholder={skin === "ios" ? "iMessage" : "RCS"}
             className="hc-input resize-none max-h-28"
           />
           <button type="submit" className="hc-send" disabled={busy || !draft.trim()} aria-label="Send">
@@ -680,7 +677,10 @@ function applyPreview(
     end_reason: null,
     last_seen_label: "Active 9m ago",
     recap: null,
-    meta: {},
+    meta: { look: "woman", pronouns: "she", orientation: "bi" },
+    they_look: "woman",
+    they_pronouns: "she",
+    they_orientation: "bi",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -741,12 +741,49 @@ function StartFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function FlameMark({ className = "w-8 h-10" }: { className?: string }) {
+  const raw = useId().replace(/:/g, "");
+  const gid = `hcFlame-${raw}`;
   return (
-    <div>
-      <p className="hc-kicker mb-2.5">{label}</p>
-      <div className="flex flex-wrap gap-2">{children}</div>
-    </div>
+    <svg viewBox="0 0 32 40" className={className} aria-hidden>
+      <defs>
+        <linearGradient id={gid} x1="8" y1="38" x2="24" y2="2">
+          <stop offset="0%" stopColor="#6d1a8a" />
+          <stop offset="45%" stopColor="#c41e5a" />
+          <stop offset="100%" stopColor="#ffb08a" />
+        </linearGradient>
+      </defs>
+      <path
+        fill={`url(#${gid})`}
+        d="M16 1.5c4.2 6.4 10 11.6 10 19.2 0 8.2-4.4 14.6-10 18.8C10.4 35.3 6 28.9 6 20.7 6 13.1 11.8 7.9 16 1.5z"
+      />
+      <path fill="#1a080c" opacity="0.35" d="M16 14c2.2 3.2 4.4 5.6 4.4 9.1 0 3.6-1.9 6.4-4.4 8.3-2.5-1.9-4.4-4.7-4.4-8.3 0-3.5 2.2-5.9 4.4-9.1z" />
+    </svg>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { id: string; label: string }[];
+}) {
+  return (
+    <label className="block">
+      <span className="hc-kicker mb-2 block">{label}</span>
+      <select className="hc-select" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

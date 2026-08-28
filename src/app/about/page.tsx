@@ -22,7 +22,7 @@ const ROOMS = [
   { href: "/gaming", label: "Gaming", line: "What's on the plate. No press kits." },
   { href: "/afterimage", label: "Afterimage", line: "A lock screen that isn't stock." },
   { href: "/playground", label: "Playground", line: "Machines in the back room." },
-  { href: "/playground/heat-check", label: "Heat Check", line: "They'll read it twice." },
+  { href: "/playground/heat-check", label: "Heat Check", line: "Late night. One thread. They stay a person." },
 ];
 
 export default function AboutPage() {

@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { DEFAULT_HEAT_SETTINGS, HEAT_LEVELS, HEAT_ROLES, HEAT_VOICES, type HeatSettings } from "@/lib/heat-check";
+import {
+  DEFAULT_HEAT_SETTINGS,
+  HEAT_LEVELS,
+  HEAT_LOOKS,
+  HEAT_ROLES,
+  HEAT_VOICES,
+  type HeatSettings,
+} from "@/lib/heat-check";
 
 async function headers(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
@@ -12,7 +19,7 @@ async function headers(): Promise<Record<string, string>> {
 
 export function HeatTab() {
   const [settings, setSettings] = useState<HeatSettings>(DEFAULT_HEAT_SETTINGS);
-  const [names, setNames] = useState<{ id: string; name: string }[]>([]);
+  const [nameCount, setNameCount] = useState(0);
   const [assets, setAssets] = useState<any[]>([]);
   const [threads, setThreads] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
@@ -20,9 +27,14 @@ export function HeatTab() {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [testLine, setTestLine] = useState("you still up?");
+  const [testRole, setTestRole] = useState("hookup");
+  const [testHeat, setTestHeat] = useState("filthy");
+  const [testVoice, setTestVoice] = useState("mean");
+  const [testLook, setTestLook] = useState("woman");
   const [testOut, setTestOut] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactSeed, setContactSeed] = useState("");
+  const [promptPack, setPromptPack] = useState("system");
 
   const load = async () => {
     const h = await headers();
@@ -35,7 +47,7 @@ export function HeatTab() {
       fetch("/api/admin/heat-check?view=usage", { headers: h }).then((x) => x.json()),
     ]);
     if (s.settings) setSettings(s.settings);
-    setNames(n.names || []);
+    setNameCount((n.names || []).length);
     setAssets(m.assets || []);
     setThreads(t.threads || []);
     setReports(r.reports || []);
@@ -82,9 +94,10 @@ export function HeatTab() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed");
-      setMsg(JSON.stringify(data).slice(0, 220));
+      setMsg(typeof data.error === "string" ? data.error : data.ok ? "Done." : data.turn ? "Grok answered." : JSON.stringify(data).slice(0, 180));
       if (data.turn) setTestOut(JSON.stringify(data.turn, null, 2));
-      await load();
+      if (data.inserted != null || data.ok) await load();
+      else await load();
     } catch (e: any) {
       setMsg(e.message);
     } finally {
@@ -92,164 +105,232 @@ export function HeatTab() {
     }
   };
 
-  const field = "w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200";
+  const field = "w-full px-3 py-2.5 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm text-neutral-200";
+  const btn = "px-4 py-2 rounded-xl text-sm border border-orange-800/50 text-orange-100 disabled:opacity-40";
+  const ghost = "px-4 py-2 rounded-xl text-sm border border-neutral-700 text-neutral-300 disabled:opacity-40";
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-[11px] uppercase tracking-[0.18em] text-orange-300/80 mb-1">Playground · Heat Check</p>
-        <h2 className="text-2xl font-semibold text-neutral-50">Heat Check</h2>
-        <p className="text-sm text-neutral-500 mt-2">Kill switch, peek, faces, names, mod. Apply SQL in docs/heat-check-sql.md first.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-orange-300/80 mb-1">Playground</p>
+          <h2 className="text-2xl font-semibold text-neutral-50">Heat Check</h2>
+          <p className="text-sm text-neutral-500 mt-1">Controls, secret-base prompt, faces, threads. Name list stays off this page.</p>
+        </div>
+        {msg ? <p className="text-xs text-orange-200/80 max-w-sm text-right">{msg}</p> : null}
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          ["Threads", usage.threads],
+          ["Open threads", usage.threads],
           ["Messages", usage.messages],
-          ["Names", usage.names],
-          ["Open reports", usage.reports],
+          ["Name pool", usage.names || nameCount],
+          ["Reports", usage.reports],
         ].map(([l, v]) => (
-          <div key={String(l)} className="rounded-xl border border-neutral-800 bg-[#111] p-3">
+          <div key={String(l)} className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#161010] to-[#0e0e0e] p-4">
             <p className="text-[10px] uppercase tracking-wider text-neutral-500">{l}</p>
-            <p className="text-xl text-neutral-100 mt-1">{v}</p>
+            <p className="text-2xl text-neutral-50 mt-1">{v}</p>
           </div>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-orange-900/30 bg-[#111] p-5 space-y-3">
-        <p className="text-sm font-medium text-neutral-100">Controls</p>
-        <label className="flex items-center justify-between text-sm">
-          Kill switch <input type="checkbox" checked={settings.kill} onChange={(e) => setSettings({ ...settings, kill: e.target.checked })} />
-        </label>
-        <label className="flex items-center justify-between text-sm">
-          Public (everyone, not just THIEVN/admin) <input type="checkbox" checked={settings.public} onChange={(e) => setSettings({ ...settings, public: e.target.checked })} />
-        </label>
-        <label className="flex items-center justify-between text-sm">
-          Peek default <input type="checkbox" checked={settings.peek_default} onChange={(e) => setSettings({ ...settings, peek_default: e.target.checked })} />
-        </label>
-        <label className="flex items-center justify-between text-sm">
-          Face gen <input type="checkbox" checked={settings.face_gen} onChange={(e) => setSettings({ ...settings, face_gen: e.target.checked })} />
-        </label>
-        <label className="flex items-center justify-between text-sm">
-          iOS skin <input type="checkbox" checked={settings.skins.ios} onChange={(e) => setSettings({ ...settings, skins: { ...settings.skins, ios: e.target.checked } })} />
-        </label>
-        <label className="flex items-center justify-between text-sm">
-          Android skin <input type="checkbox" checked={settings.skins.android} onChange={(e) => setSettings({ ...settings, skins: { ...settings.skins, android: e.target.checked } })} />
-        </label>
+      <div className="rounded-2xl border border-orange-900/35 bg-[#111] p-5 space-y-4">
+        <p className="text-sm font-medium text-neutral-100">House controls</p>
+        <div className="grid sm:grid-cols-2 gap-3 text-sm">
+          {(
+            [
+              ["kill", "Kill switch", settings.kill],
+              ["public", "Public for everyone", settings.public],
+              ["peek_default", "Tip peek on by default", settings.peek_default],
+              ["face_gen", "Face generation", settings.face_gen],
+              ["ios", "iOS mock", settings.skins.ios],
+              ["android", "Pixel mock", settings.skins.android],
+            ] as const
+          ).map(([key, label, on]) => (
+            <label key={key} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/30 px-3 py-2.5">
+              <span>{label}</span>
+              <input
+                type="checkbox"
+                checked={on}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  if (key === "ios" || key === "android") {
+                    setSettings({ ...settings, skins: { ...settings.skins, [key]: v } });
+                  } else {
+                    setSettings({ ...settings, [key]: v });
+                  }
+                }}
+              />
+            </label>
+          ))}
+        </div>
         <label className="text-sm block">
-          Reward threshold
+          Reward photo threshold
           <input
             type="number"
             min={6}
             max={10}
             value={settings.reward_threshold}
             onChange={(e) => setSettings({ ...settings, reward_threshold: Number(e.target.value) })}
-            className={`${field} mt-1`}
+            className={`${field} mt-1 max-w-[8rem]`}
           />
         </label>
-        <button type="button" disabled={busy} onClick={save} className="px-4 py-2 rounded-xl text-sm border border-orange-800/60 text-orange-100">
+        <button type="button" disabled={busy} onClick={save} className={btn}>
           Save controls
         </button>
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
-        <p className="text-sm font-medium">Roles / heat / voices / prompts</p>
-        <textarea
-          className={field}
-          rows={6}
-          value={settings.prompts.system}
-          onChange={(e) => setSettings({ ...settings, prompts: { ...settings.prompts, system: e.target.value } })}
-        />
-        <div className="grid sm:grid-cols-3 gap-2">
-          {HEAT_ROLES.map((r) => (
-            <input
-              key={r.id}
-              className={field}
-              value={settings.prompts.roles[r.id as keyof typeof settings.prompts.roles]}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  prompts: { ...settings.prompts, roles: { ...settings.prompts.roles, [r.id]: e.target.value } },
-                })
-              }
-            />
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium">Secret base · prompts</p>
+          <select className={`${field} max-w-[12rem]`} value={promptPack} onChange={(e) => setPromptPack(e.target.value)}>
+            <option value="system">System / secret base</option>
+            <option value="roles">Roles</option>
+            <option value="heats">Heat</option>
+            <option value="voices">Voice</option>
+          </select>
         </div>
-        <div className="grid sm:grid-cols-3 gap-2">
-          {HEAT_LEVELS.map((r) => (
-            <input
-              key={r.id}
-              className={field}
-              value={settings.prompts.heats[r.id as keyof typeof settings.prompts.heats]}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  prompts: { ...settings.prompts, heats: { ...settings.prompts.heats, [r.id]: e.target.value } },
-                })
-              }
-            />
-          ))}
-        </div>
-        <div className="grid sm:grid-cols-3 gap-2">
-          {HEAT_VOICES.map((r) => (
-            <input
-              key={r.id}
-              className={field}
-              value={settings.prompts.voices[r.id as keyof typeof settings.prompts.voices]}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  prompts: { ...settings.prompts, voices: { ...settings.prompts.voices, [r.id]: e.target.value } },
-                })
-              }
-            />
-          ))}
-        </div>
-        <button type="button" disabled={busy} onClick={save} className="px-4 py-2 rounded-xl text-sm border border-neutral-700">
+        {promptPack === "system" ? (
+          <textarea
+            className={`${field} font-mono text-[12px] leading-relaxed`}
+            rows={10}
+            value={settings.prompts.system}
+            onChange={(e) => setSettings({ ...settings, prompts: { ...settings.prompts, system: e.target.value } })}
+          />
+        ) : null}
+        {promptPack === "roles" ? (
+          <div className="grid sm:grid-cols-2 gap-2">
+            {HEAT_ROLES.map((r) => (
+              <label key={r.id} className="text-[11px] text-neutral-500">
+                {r.label}
+                <textarea
+                  className={`${field} mt-1`}
+                  rows={2}
+                  value={settings.prompts.roles[r.id as keyof typeof settings.prompts.roles]}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      prompts: { ...settings.prompts, roles: { ...settings.prompts.roles, [r.id]: e.target.value } },
+                    })
+                  }
+                />
+              </label>
+            ))}
+          </div>
+        ) : null}
+        {promptPack === "heats" ? (
+          <div className="grid sm:grid-cols-3 gap-2">
+            {HEAT_LEVELS.map((r) => (
+              <label key={r.id} className="text-[11px] text-neutral-500">
+                {r.label}
+                <textarea
+                  className={`${field} mt-1`}
+                  rows={3}
+                  value={settings.prompts.heats[r.id as keyof typeof settings.prompts.heats]}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      prompts: { ...settings.prompts, heats: { ...settings.prompts.heats, [r.id]: e.target.value } },
+                    })
+                  }
+                />
+              </label>
+            ))}
+          </div>
+        ) : null}
+        {promptPack === "voices" ? (
+          <div className="grid sm:grid-cols-2 gap-2">
+            {HEAT_VOICES.map((r) => (
+              <label key={r.id} className="text-[11px] text-neutral-500">
+                {r.label}
+                <textarea
+                  className={`${field} mt-1`}
+                  rows={2}
+                  value={settings.prompts.voices[r.id as keyof typeof settings.prompts.voices]}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      prompts: { ...settings.prompts, voices: { ...settings.prompts.voices, [r.id]: e.target.value } },
+                    })
+                  }
+                />
+              </label>
+            ))}
+          </div>
+        ) : null}
+        <button type="button" disabled={busy} onClick={save} className={btn}>
           Save prompts
         </button>
       </div>
 
-      <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
-        <p className="text-sm font-medium">Name pool · {names.length}</p>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={busy} onClick={() => act("names")} className="px-3 py-2 rounded-lg text-xs border border-orange-800/50">
-            Generate 50 via Grok
-          </button>
-          <button type="button" disabled={busy} onClick={() => act("seed-names")} className="px-3 py-2 rounded-lg text-xs border border-neutral-700">
-            Seed built-in names
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
+          <p className="text-sm font-medium">Name pool · {usage.names || nameCount} names</p>
+          <p className="text-xs text-neutral-500">Hidden from this screen. Grok can mint more. Seed fills the built-in list with vibe tags so faces match who they picked.</p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" disabled={busy} onClick={() => act("names")} className={btn}>
+              Mint 50 names
+            </button>
+            <button type="button" disabled={busy} onClick={() => act("seed-names")} className={ghost}>
+              Seed built-in pool
+            </button>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
+          <p className="text-sm font-medium">Contact still</p>
+          <input className={field} placeholder="Name (blank = Grok)" value={contactName} onChange={(e) => setContactName(e.target.value)} />
+          <input className={field} placeholder="Face seed — hair, room, vibe" value={contactSeed} onChange={(e) => setContactSeed(e.target.value)} />
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => act("contact", { name: contactName, seed: contactSeed, face: true, look: testLook })}
+            className={btn}
+          >
+            Name + face
           </button>
         </div>
-        <p className="text-xs text-neutral-500 max-h-24 overflow-auto">{names.map((n) => n.name).join(" · ")}</p>
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
-        <p className="text-sm font-medium">Contact generator</p>
-        <input className={field} placeholder="Name (blank = Grok)" value={contactName} onChange={(e) => setContactName(e.target.value)} />
-        <input className={field} placeholder="Optional face seed" value={contactSeed} onChange={(e) => setContactSeed(e.target.value)} />
+        <p className="text-sm font-medium">Prompt lab · does not save as a user</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          <select className={field} value={testLook} onChange={(e) => setTestLook(e.target.value)}>
+            {HEAT_LOOKS.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+          </select>
+          <select className={field} value={testRole} onChange={(e) => setTestRole(e.target.value)}>
+            {HEAT_ROLES.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+          </select>
+          <select className={field} value={testHeat} onChange={(e) => setTestHeat(e.target.value)}>
+            {HEAT_LEVELS.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+          </select>
+          <select className={field} value={testVoice} onChange={(e) => setTestVoice(e.target.value)}>
+            {HEAT_VOICES.map((o) => (
+              <option key={o.id} value={o.id}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        <textarea className={field} rows={2} value={testLine} onChange={(e) => setTestLine(e.target.value)} />
         <button
           type="button"
           disabled={busy}
-          onClick={() => act("contact", { name: contactName, seed: contactSeed, face: true })}
-          className="px-3 py-2 rounded-lg text-xs border border-orange-800/50"
+          onClick={() => act("test", { userLine: testLine, role: testRole, heat: testHeat, voice: testVoice, look: testLook })}
+          className={ghost}
         >
-          Name + face
-        </button>
-      </div>
-
-      <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
-        <p className="text-sm font-medium">Prompt test · does not save as a user</p>
-        <textarea className={field} rows={2} value={testLine} onChange={(e) => setTestLine(e.target.value)} />
-        <button type="button" disabled={busy} onClick={() => act("test", { userLine: testLine })} className="px-3 py-2 rounded-lg text-xs border border-neutral-700">
           Run Grok
         </button>
-        {testOut ? <pre className="text-[11px] text-neutral-400 whitespace-pre-wrap">{testOut}</pre> : null}
+        {testOut ? <pre className="text-[11px] text-neutral-400 whitespace-pre-wrap max-h-64 overflow-auto">{testOut}</pre> : null}
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
-        <p className="text-sm font-medium">Mod queue</p>
+        <p className="text-sm font-medium">Face queue</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {assets.map((a) => (
+          {assets.length ? assets.map((a) => (
             <div key={a.id} className="rounded-xl overflow-hidden border border-neutral-800">
               {a.url ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -273,15 +354,17 @@ export function HeatTab() {
                 }}>ban</button>
               </div>
             </div>
-          ))}
+          )) : <p className="text-xs text-neutral-600 col-span-full">Nothing in the queue.</p>}
         </div>
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
         <p className="text-sm font-medium">Threads</p>
-        {threads.map((t) => (
+        {threads.length ? threads.map((t) => (
           <div key={t.id} className="flex items-center justify-between gap-3 text-xs border-b border-neutral-800 py-2">
-            <span className="text-neutral-300">{t.contact_name} · {t.role} · {t.heat}</span>
+            <span className="text-neutral-300">
+              {t.contact_name} · {t.they_look || "—"} · {t.role} · {t.heat} {t.ended ? "· faded" : ""}
+            </span>
             <button
               type="button"
               className="text-rose-300"
@@ -294,12 +377,12 @@ export function HeatTab() {
               wipe
             </button>
           </div>
-        ))}
+        )) : <p className="text-xs text-neutral-600">No threads yet.</p>}
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-2">
         <p className="text-sm font-medium">Reports</p>
-        {reports.map((r) => (
+        {reports.length ? reports.map((r) => (
           <div key={r.id} className="text-xs text-neutral-400 flex justify-between gap-2">
             <span>{r.reason} · {r.status} · {r.notes}</span>
             <button
@@ -312,10 +395,8 @@ export function HeatTab() {
               close
             </button>
           </div>
-        ))}
+        )) : <p className="text-xs text-neutral-600">Quiet.</p>}
       </div>
-
-      {msg ? <p className="text-xs text-neutral-500">{msg}</p> : null}
     </div>
   );
 }

@@ -211,7 +211,7 @@ body {
   50% { opacity: 0.7; transform: scale(1.08); }
 }
 .den-cave-clip {
-  clip-path: polygon(4% 92%, 8% 62%, 17% 48%, 28% 56%, 40% 38%, 50% 52%, 62% 36%, 73% 54%, 84% 46%, 92% 64%, 96% 92%);
+  clip-path: polygon(5% 92%, 6% 36%, 18% 44%, 30% 32%, 44% 46%, 56% 30%, 68% 44%, 81% 34%, 94% 40%, 95% 92%);
 }
 .den-boot-core { animation: denBootCoreIn 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both; }
 .den-boot-text { animation: denBootTextIn 0.7s ease-out 0.85s both; }
@@ -244,7 +244,7 @@ body {
   z-index: 21;
   pointer-events: none;
   background: radial-gradient(ellipse at 50% 78%, rgba(251, 113, 133, 0.7) 0%, rgba(168, 85, 247, 0.28) 42%, transparent 70%);
-  clip-path: polygon(4% 92%, 8% 62%, 17% 48%, 28% 56%, 40% 38%, 50% 52%, 62% 36%, 73% 54%, 84% 46%, 92% 64%, 96% 92%);
+  clip-path: polygon(5% 92%, 6% 36%, 18% 44%, 30% 32%, 44% 46%, 56% 30%, 68% 44%, 81% 34%, 94% 40%, 95% 92%);
   filter: blur(0.4px);
   animation: denBootLeak 1.5s ease-out forwards;
 }

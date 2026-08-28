@@ -2,13 +2,16 @@
 
 import { useId } from "react";
 
-/** Wide cave mouth — ragged roof, open floor. Not a circle, arch, or mountain. */
+/**
+ * Cave mouth in a cliff: high walls, ragged ceiling, flat floor.
+ * Reads as a hole, not mountains or an arch.
+ */
 const CAVE =
-  "M1.6 19.8 L3.2 14.1 L6.8 11.2 L11.2 12.6 L15.8 9.4 L20.2 11.8 L24.8 9.1 L29.2 12.4 L33.6 10.8 L36.6 14.4 L38.2 19.8 Z";
+  "M2.2 20 L2.6 8.6 L7.4 10.2 L12.2 7.8 L17.6 10.6 L22.4 7.4 L27.2 10.4 L32.4 8.2 L37.4 9.2 L37.8 20 Z";
 const CAVE_INNER =
-  "M7.4 18.2 L8.6 14.6 L11.4 13 L15 14.2 L18.4 12 L21.8 13.8 L25.2 12.2 L28.4 14 L31.4 13.2 L33 15.2 L33.6 18.2 Z";
+  "M6.4 18.4 L6.8 11.2 L10.8 12.2 L14.6 10.4 L19 12.6 L23.2 10.2 L27.4 12.4 L31.4 11 L33.6 12 L33.8 18.4 Z";
 const CAVE_EMBER =
-  "M13.2 17.6 L15 15.4 L20.2 16 L25.4 15.2 L27.2 17.6 Z";
+  "M12.8 17.4 L15.2 15.2 L20.2 15.8 L25.4 15 L27.6 17.4 Z";
 
 export function DenMark({
   className = "w-7 h-4",
@@ -43,7 +46,7 @@ export function DenMark({
           <stop offset="100%" stopColor="#7c3aed" />
         </linearGradient>
       </defs>
-      <path d={CAVE} fill="#10080c" stroke={`url(#${ring})`} strokeWidth="1.55" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={CAVE} fill="#14080e" stroke={`url(#${ring})`} strokeWidth="1.55" strokeLinejoin="round" strokeLinecap="round" />
       <path d={CAVE_INNER} stroke={`url(#${ring})`} strokeWidth="0.8" strokeLinejoin="round" opacity="0.45" />
       <path d={CAVE_EMBER} fill={`url(#${ember})`} />
     </svg>

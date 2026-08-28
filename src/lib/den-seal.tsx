@@ -1,4 +1,8 @@
 /** Satori cave mouth for favicon, PWA icons, OG. */
+const CAVE =
+  "M2.2 20 L2.6 8.6 L7.4 10.2 L12.2 7.8 L17.6 10.6 L22.4 7.4 L27.2 10.4 L32.4 8.2 L37.4 9.2 L37.8 20 Z";
+const EMBER = "M12.8 17.4 L15.2 15.2 L20.2 15.8 L25.4 15 L27.6 17.4 Z";
+
 export function SatoriDenSeal({ size }: { size: number }) {
   const w = size;
   const h = Math.round(size * 0.55);
@@ -18,17 +22,14 @@ export function SatoriDenSeal({ size }: { size: number }) {
         </linearGradient>
       </defs>
       <path
-        d="M1.6 19.8 L3.2 14.1 L6.8 11.2 L11.2 12.6 L15.8 9.4 L20.2 11.8 L24.8 9.1 L29.2 12.4 L33.6 10.8 L36.6 14.4 L38.2 19.8 Z"
-        fill="#10080c"
+        d={CAVE}
+        fill="#14080e"
         stroke="url(#caveRing)"
         strokeWidth={sw}
         strokeLinejoin="round"
         strokeLinecap="round"
       />
-      <path
-        d="M13.2 17.6 L15 15.4 L20.2 16 L25.4 15.2 L27.2 17.6 Z"
-        fill="url(#caveEmber)"
-      />
+      <path d={EMBER} fill="url(#caveEmber)" />
     </svg>
   );
 }

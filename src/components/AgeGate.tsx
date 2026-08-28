@@ -35,6 +35,7 @@ export function AgeGate() {
       className={`fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-hidden ${
         exiting ? "age-gate-exit" : ""
       }`}
+      id="den-age-gate"
     >
       <div className="absolute inset-0 bg-[#050505]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(185,28,92,0.14)_0%,_transparent_55%)]" />

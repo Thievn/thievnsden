@@ -6,7 +6,6 @@ import { DenMarkSplash } from "@/components/DenMark";
 /**
  * Opening animation for the Den.
  * Plays once per browser session (and always when launched as installed PWA).
- * Mark session seen only after the splash finishes so Strict Mode remounts still dismiss.
  */
 export function DenBoot() {
   const [show, setShow] = useState(false);
@@ -23,25 +22,20 @@ export function DenBoot() {
 
     if (sessionStorage.getItem("den_boot_seen") && !standalone) return;
 
-    let cancelled = false;
     setShow(true);
+    setLeaving(false);
 
-    const hideAt = standalone ? 2800 : 2200;
-    const goneAt = standalone ? 3400 : 2800;
-
-    const t1 = setTimeout(() => {
-      if (!cancelled) setLeaving(true);
-    }, hideAt);
-    const t2 = setTimeout(() => {
-      if (cancelled) return;
+    const hideAt = standalone ? 2800 : 2400;
+    const goneAt = standalone ? 3400 : 3000;
+    const t1 = window.setTimeout(() => setLeaving(true), hideAt);
+    const t2 = window.setTimeout(() => {
       sessionStorage.setItem("den_boot_seen", "1");
       setShow(false);
     }, goneAt);
 
     return () => {
-      cancelled = true;
-      clearTimeout(t1);
-      clearTimeout(t2);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
     };
   }, []);
 
@@ -49,6 +43,7 @@ export function DenBoot() {
 
   return (
     <div
+      id="den-boot"
       className={`fixed inset-0 z-[200] overflow-hidden bg-[#050505] transition-opacity duration-500 ${
         leaving ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}

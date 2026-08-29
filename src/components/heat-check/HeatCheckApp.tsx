@@ -157,7 +157,7 @@ export function HeatCheckApp() {
       const params = new URLSearchParams(window.location.search);
       const preview = params.get("preview");
       if (preview === "chat" || preview === "tip" || preview === "recap" || preview === "start" || preview === "soon") {
-        applyPreview(preview, { setScreen, setThread, setMessages, setTip, setRail, setRecap, setSkin, setTipsByMsg, setOpenTipId });
+        applyPreview(preview, { setScreen, setThread, setMessages, setTip, setRail, setRecap, setSkin, setTipsByMsg, setOpenTipId, setReceipt });
         return;
       }
       const nightId = params.get("night");
@@ -788,6 +788,7 @@ function applyPreview(
     setSkin: (s: HeatSkin) => void;
     setTipsByMsg: (t: Record<string, HeatTip>) => void;
     setOpenTipId: (id: string | null) => void;
+    setReceipt: (r: "sent" | "delivered" | "read") => void;
   },
 ) {
   const thread: HeatThread = {
@@ -820,7 +821,7 @@ function applyPreview(
     id: "t1",
     thread_id: "preview",
     message_id: "m2",
-    tip: "8/10 — make them wait one more text",
+    tip: "make them wait one more text",
     score: 8,
     rewrite: "good things take the kind of patience that makes you think about it all night",
     mood: "needy",
@@ -850,6 +851,7 @@ function applyPreview(
   } else {
     set.setRail(kind === "tip");
     set.setOpenTipId(kind === "tip" ? "m2" : null);
+    set.setReceipt("read");
     set.setScreen("chat");
   }
 }

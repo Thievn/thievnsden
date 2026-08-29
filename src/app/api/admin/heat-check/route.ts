@@ -205,9 +205,9 @@ export async function POST(req: NextRequest) {
     if (body.face) {
       try {
         const face = await generateContactFace(user.id, String(body.seed || ""), {
-          look: String(body.look || "woman"),
-          pronouns: String(body.pronouns || "she"),
-          orientation: String(body.orientation || "bi"),
+          who: String(body.look || "woman"),
+          presentation: String(body.presentation || "default"),
+          appearance: String(body.appearance || "any"),
         });
         face_url = face.url;
       } catch (err) {

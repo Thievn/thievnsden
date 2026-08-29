@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isFadeText, type HeatThread } from "@/lib/heat-check";
 import { lookupCompiledPrompt } from "@/lib/heat-prompt-cache";
+import { cacheRewardPose } from "@/lib/heat-face-cache";
 import {
   buildRecap,
   fallbackHeatTurn,
@@ -27,7 +28,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const threadId = String(body.threadId || "");
     const text = String(body.text || "").trim();
-    if (!threadId || !text) {
+    const chatImageUrl = typeof body.imageUrl === "string" ? body.imageUrl : null;
+    const chatImagePath = typeof body.imagePath === "string" ? body.imagePath : null;
+    if (!threadId || (!text && !chatImageUrl && !chatImagePath)) {
       return NextResponse.json({ error: "Need a line." }, { status: 400 });
     }
 
@@ -53,6 +56,8 @@ export async function POST(req: NextRequest) {
     const fade = isFadeText(text) || !!body.fade;
 
     const now = new Date().toISOString();
+    let visionUrl = chatImageUrl;
+    if (!visionUrl && chatImagePath) visionUrl = (await signedUploadUrl(chatImagePath)) || null;
     const { data: userMsg, error: userErr } = await supabase
       .from("heat_messages")
       .insert(
@@ -60,7 +65,8 @@ export async function POST(req: NextRequest) {
           thread_id: threadId,
           user_id: user.id,
           sender: "user",
-          body: text,
+          body: text || (visionUrl ? "(sent a photo)" : ""),
+          image_url: visionUrl,
           delivered_at: now,
         }),
       )
@@ -73,7 +79,9 @@ export async function POST(req: NextRequest) {
     const lastScores = prior.filter((m) => m.sender === "user" && m.score != null).map((m) => Number(m.score));
     let photoUrl: string | null = null;
     if (thread.user_photo_path) {
-      photoUrl = await signedUploadUrl(thread.user_photo_path);
+      photoUrl = (await signedUploadUrl(thread.user_photo_path)) || thread.user_photo_url || null;
+    } else if (thread.user_photo_url) {
+      photoUrl = thread.user_photo_url;
     }
 
     const compiled = await lookupCompiledPrompt({
@@ -87,14 +95,15 @@ export async function POST(req: NextRequest) {
       turn = await withTimeout(
         runHeatTurn({
           thread: thread as HeatThread,
-          history: [...prior, { sender: "user", body: text }],
-          userLine: text,
+          history: [...prior, { sender: "user", body: text || (visionUrl ? "[sent a photo]" : "") }],
+          userLine: text || (visionUrl ? "[sent a photo]" : null),
           opening: prior.filter((m) => m.sender === "user").length === 0,
           fade,
           doubleText,
           lastScores,
           settings: ctx.settings,
           photoUrl,
+          visionImageUrl: visionUrl,
           compiledSystem: compiled.compiled || undefined,
         }),
         28000,
@@ -155,6 +164,7 @@ export async function POST(req: NextRequest) {
           .single();
         if (photoMsg) themMessages.push(photoMsg);
         await supabase.from("heat_threads").update({ reward_photo_sent: true, reward_used: true }).eq("id", threadId);
+        await cacheRewardPose(thread.contact_id, reward.url);
       } catch (err) {
         console.error("heat reward", err);
       }

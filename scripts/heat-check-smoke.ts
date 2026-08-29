@@ -10,6 +10,7 @@ import {
   splitScene,
   parseHeatSettings,
   DEFAULT_HEAT_SETTINGS,
+  lookKey,
   vibeForLook,
 } from "../src/lib/heat-check";
 import type { User } from "@supabase/supabase-js";
@@ -50,7 +51,9 @@ const parsed = parseJsonObject('```json\n{"scene":"hey","tip":"slow","score":7}\
 assert(parsed.scene === "hey", "json fence");
 
 assert(vibeForLook("trans-woman") === "woman", "vibe");
-assert(HEAT_SKINS.find((s) => s.id === "android")?.label === "Android language", "android language");
+assert(HEAT_SKINS.find((s) => s.id === "android")?.label === "Android skin", "android skin");
+assert(lookKey("woman", "default", "any") === "woman|feminine", "look key default");
+assert(lookKey("woman", "feminine", "east-asian") === "woman|feminine|east-asian", "look key appearance");
 assert(HEAT_ROLES.length >= 17, "roles");
 assert(HEAT_TAGLINE.includes("twice"), "tagline");
 const h1 = sourceHash(["a", "b"]);

@@ -11,6 +11,16 @@ import {
   runHeatTurn,
   saveHeatSettings,
 } from "@/lib/heat-check-server";
+import {
+  listCompiledPrompts,
+  listHeatModules,
+  lookupCompiledPrompt,
+  moduleTable,
+  prewarmCompiled,
+  regenerateCompiled,
+  seedHeatModules,
+  upsertHeatModule,
+} from "@/lib/heat-prompt-cache";
 import { lastSeenLabel } from "@/lib/heat-check";
 
 export const runtime = "nodejs";
@@ -51,12 +61,12 @@ export async function GET(req: NextRequest) {
     );
     return NextResponse.json({ assets: signed });
   }
-  if (view === "threads") {
+  if (view === "nights" || view === "threads") {
     const q = url.searchParams.get("q") || "";
     let query = supabase.from("heat_threads").select("*").order("created_at", { ascending: false }).limit(40);
     if (q) query = query.or(`contact_name.ilike.%${q}%,user_id.eq.${q}`);
     const { data } = await query;
-    return NextResponse.json({ threads: data || [] });
+    return NextResponse.json({ nights: data || [], threads: data || [] });
   }
   if (view === "thread") {
     const id = url.searchParams.get("id") || "";
@@ -69,12 +79,17 @@ export async function GET(req: NextRequest) {
     const { data } = await supabase.from("heat_reports").select("*").order("created_at", { ascending: false }).limit(80);
     return NextResponse.json({ reports: data || [] });
   }
+  if (view === "modules") {
+    const modules = await listHeatModules();
+    const compiled = await listCompiledPrompts();
+    return NextResponse.json({ modules, compiled });
+  }
   if (view === "usage") {
     const { count: threads } = await supabase.from("heat_threads").select("id", { count: "exact", head: true });
     const { count: messages } = await supabase.from("heat_messages").select("id", { count: "exact", head: true });
     const { count: names } = await supabase.from("heat_names").select("id", { count: "exact", head: true });
     const { count: reports } = await supabase.from("heat_reports").select("id", { count: "exact", head: true }).eq("status", "open");
-    return NextResponse.json({ threads: threads || 0, messages: messages || 0, names: names || 0, reports: reports || 0 });
+    return NextResponse.json({ nights: threads || 0, threads: threads || 0, messages: messages || 0, names: names || 0, reports: reports || 0 });
   }
   return NextResponse.json({ settings, defaults: DEFAULT_HEAT_SETTINGS });
 }
@@ -118,6 +133,65 @@ export async function POST(req: NextRequest) {
     const { error } = await supabase.from("heat_names").upsert(SEED_NAME_ROWS, { onConflict: "name" });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, count: SEED_NAME_ROWS.length });
+  }
+
+  if (action === "seed-modules") {
+    await seedHeatModules();
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === "module") {
+    const kind = body.kind as "role" | "heat" | "voice" | "opener";
+    const slug = String(body.slug || "").trim();
+    const bodyText = String(body.body || "");
+    const label = String(body.label || slug);
+    if (!["role", "heat", "voice", "opener"].includes(kind) || !slug) {
+      return NextResponse.json({ error: "kind/slug" }, { status: 400 });
+    }
+    await upsertHeatModule(moduleTable(kind), { slug, label, body: bodyText });
+    await writeAudit({ action: "heat_module", details: `${kind}:${slug}` });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === "generate-module") {
+    const kind = body.kind as "role" | "heat" | "voice" | "opener";
+    const slug = String(body.slug || "").trim();
+    const label = String(body.label || slug);
+    if (!["role", "heat", "voice", "opener"].includes(kind) || !slug) {
+      return NextResponse.json({ error: "kind/slug" }, { status: 400 });
+    }
+    const parsed = await grokJsonChat({
+      system: "JSON only. Write one Heat Check prompt module. Adult 18+ dirty-talk trainer. No minors. No celebrity. No coaching past no/stop/fade.",
+      user: `Write module body for kind=${kind} slug=${slug} label=${label}. JSON {"body":"multi paragraph module text"}`,
+      maxTokens: 900,
+      temperature: 0.5,
+    });
+    const next = String(parsed.body || "").trim();
+    if (!next) return NextResponse.json({ error: "empty" }, { status: 500 });
+    await upsertHeatModule(moduleTable(kind), { slug, label, body: next });
+    return NextResponse.json({ ok: true, body: next });
+  }
+
+  if (action === "prewarm") {
+    const n = await prewarmCompiled();
+    return NextResponse.json({ ok: true, compiled: n });
+  }
+
+  if (action === "regenerate") {
+    if (body.id) {
+      const n = await regenerateCompiled(String(body.id));
+      return NextResponse.json({ ok: true, compiled: n });
+    }
+    const role = String(body.role || "");
+    const heat = String(body.heat || "");
+    const voice = String(body.voice || "");
+    const opener = String(body.opener || "");
+    if (role && heat && voice && opener) {
+      const row = await lookupCompiledPrompt({ role, heat, voice, opener });
+      return NextResponse.json({ ok: true, hash: row.hash, hit: row.hit });
+    }
+    const n = await regenerateCompiled();
+    return NextResponse.json({ ok: true, compiled: n });
   }
 
   if (action === "contact") {

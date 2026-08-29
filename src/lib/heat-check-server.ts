@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import {
   canPlayHeat,
   DEFAULT_HEAT_SETTINGS,
+  HEAT_ROLES,
   parseHeatSettings,
   parseHeatTurn,
   parseJsonObject,
@@ -55,7 +56,7 @@ export async function heatAuth(req: NextRequest) {
 
 export async function requireHeatPlayer(req: NextRequest) {
   const ctx = await heatAuth(req);
-  if (!ctx.user) return { ...ctx, error: "Log in to open a thread.", status: 401 as const };
+  if (!ctx.user) return { ...ctx, error: "Log in to open a night.", status: 401 as const };
   if (!ctx.play) return { ...ctx, error: "coming_soon", status: 403 as const };
   return ctx;
 }
@@ -300,11 +301,13 @@ export type TurnContext = {
   lastScores: number[];
   settings: HeatSettings;
   photoUrl?: string | null;
+  compiledSystem?: string;
 };
 
 export async function runHeatTurn(ctx: TurnContext): Promise<HeatTurnJson> {
   const p = ctx.settings.prompts;
-  const role = p.roles[ctx.thread.role as HeatRole] || p.roles["first-time"];
+  const compiled = ctx.compiledSystem || p.system;
+  const role = p.roles[ctx.thread.role as HeatRole] || p.roles["first-time"] || "";
   const heat = p.heats[ctx.thread.heat as HeatLevel] || p.heats.tease;
   const voice = p.voices[ctx.thread.voice as HeatVoice] || p.voices.shy;
   const transcript = ctx.history
@@ -312,7 +315,10 @@ export async function runHeatTurn(ctx: TurnContext): Promise<HeatTurnJson> {
     .slice(-18)
     .map((m) => `${m.sender === "user" ? "THEM (the player)" : "YOU"}: ${m.body}`)
     .join("\n");
-  const high = ctx.lastScores.length >= 3 && ctx.lastScores.slice(-3).every((s) => s >= ctx.settings.reward_threshold);
+  const maybeReward =
+    !ctx.thread.reward_photo_sent &&
+    ctx.lastScores.length >= 2 &&
+    ctx.lastScores.slice(-2).every((s) => s >= ctx.settings.reward_threshold);
   const meta = (ctx.thread.meta || {}) as Record<string, unknown>;
   const look = String(ctx.thread.they_look || meta.look || "woman");
   const pronouns = String(ctx.thread.they_pronouns || meta.pronouns || "she");
@@ -329,10 +335,10 @@ Opening turn: ${ctx.opening ? "yes — consent first beat. They have not spoken 
 Fade requested: ${ctx.fade ? "yes — wind down, ended true, end_reason fade" : "no"}
 Player double-texted while unread: ${ctx.doubleText ? "yes — flag it in tip" : "no"}
 Last user scores: ${ctx.lastScores.join(", ") || "none"}
-Reward photo allowed this turn: ${high && !ctx.thread.reward_photo_sent ? "yes, maybe one still" : "no"}
+Reward photo allowed this turn: ${maybeReward ? "yes, maybe one still of the SAME contact, sexier, not hardcore, if this score is also high" : "no"}
 Player photo attached: ${ctx.photoUrl ? "yes, you may comment on lighting/crop in the TIP only, never in scene" : "no"}
 
-Thread:
+Night:
 ${transcript || "(empty)"}
 
 ${ctx.userLine ? `Latest player text: ${ctx.userLine}` : "No player text yet. You text first."}
@@ -340,7 +346,7 @@ ${ctx.userLine ? `Latest player text: ${ctx.userLine}` : "No player text yet. Yo
 You control the night. Stay human. Stay in their body. JSON only.`;
 
   const raw = await grokJsonChat({
-    system: p.system,
+    system: compiled,
     user,
     imageUrl: ctx.photoUrl || undefined,
     maxTokens: 800,
@@ -350,7 +356,13 @@ You control the night. Stay human. Stay in their body. JSON only.`;
   if (!parsed.scene && !ctx.fade) {
     parsed.scene = ctx.opening ? "you still up?" : "yeah?";
   }
-  if (parsed.reward_photo && (!high || ctx.thread.reward_photo_sent)) parsed.reward_photo = false;
+  const withThis = ctx.userLine ? [...ctx.lastScores, parsed.score] : ctx.lastScores;
+  const earned =
+    !ctx.fade &&
+    withThis.length >= 3 &&
+    withThis.slice(-3).every((s) => s >= ctx.settings.reward_threshold) &&
+    !ctx.thread.reward_photo_sent;
+  parsed.reward_photo = earned;
   return parsed;
 }
 
@@ -397,7 +409,7 @@ export function splitThem(scene: string) {
   return parts.length ? parts : [scene.trim()].filter(Boolean);
 }
 
-export const VALID_ROLE = new Set(["first-time", "long-distance", "after-a-fight", "hookup", "married-and-bored", "unknown-number"]);
+export const VALID_ROLE = new Set(HEAT_ROLES.map((r) => r.id));
 export const VALID_HEAT = new Set(["tease", "filthy", "nasty"]);
 export const VALID_VOICE = new Set(["shy", "mean", "needy", "funny", "dry"]);
 export const VALID_STARTER = new Set(["they", "you"]);
@@ -407,7 +419,9 @@ export const VALID_PRONOUNS = new Set(["she", "he", "they", "she-they", "he-they
 export const VALID_ORIENTATION = new Set(["straight", "gay", "lesbian", "bi", "pan", "queer", "questioning", "ace"]);
 
 export function asRole(v: unknown): HeatRole {
-  return VALID_ROLE.has(String(v)) ? (v as HeatRole) : "first-time";
+  const s = String(v || "").trim().toLowerCase();
+  if (VALID_ROLE.has(s) || /^[a-z0-9-]{2,40}$/.test(s)) return s;
+  return "first-time";
 }
 export function asHeat(v: unknown): HeatLevel {
   return VALID_HEAT.has(String(v)) ? (v as HeatLevel) : "tease";

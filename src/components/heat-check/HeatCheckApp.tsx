@@ -104,6 +104,9 @@ export function HeatCheckApp() {
   const [photoPath, setPhotoPath] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoName, setPhotoName] = useState<string | null>(null);
+  const [roleOpts, setRoleOpts] = useState(HEAT_ROLES);
+  const [tipsByMsg, setTipsByMsg] = useState<Record<string, HeatTip>>({});
+  const [openTipId, setOpenTipId] = useState<string | null>(null);
 
   const [thread, setThread] = useState<HeatThread | null>(null);
   const [messages, setMessages] = useState<HeatMessage[]>([]);
@@ -127,6 +130,7 @@ export function HeatCheckApp() {
     if (!vv) return;
     const sync = () => {
       document.documentElement.style.setProperty("--hc-vv", `${vv.height}px`);
+      document.documentElement.style.setProperty("--hc-kb", `${Math.max(0, window.innerHeight - vv.height - vv.offsetTop)}px`);
     };
     sync();
     vv.addEventListener("resize", sync);
@@ -150,11 +154,13 @@ export function HeatCheckApp() {
 
   useEffect(() => {
     (async () => {
-      const preview = new URLSearchParams(window.location.search).get("preview");
+      const params = new URLSearchParams(window.location.search);
+      const preview = params.get("preview");
       if (preview === "chat" || preview === "tip" || preview === "recap" || preview === "start" || preview === "soon") {
-        applyPreview(preview, { setScreen, setThread, setMessages, setTip, setRail, setRecap, setSkin });
+        applyPreview(preview, { setScreen, setThread, setMessages, setTip, setRail, setRecap, setSkin, setTipsByMsg, setOpenTipId });
         return;
       }
+      const nightId = params.get("night");
       const { data } = await supabase.auth.getSession();
       if (!data.session?.user) {
         setScreen("gate");
@@ -166,9 +172,30 @@ export function HeatCheckApp() {
       setFaceGenOn(json.faceGen === true);
       if (json.faceGen !== true) setWantFace(false);
       setSkins(json.skins || { ios: true, android: true });
+      if (Array.isArray(json.roles) && json.roles.length) {
+        setRoleOpts(json.roles.map((r: { slug: string; label: string; body?: string }) => ({ id: r.slug, label: r.label, line: r.body || "" })));
+      }
       if (!json.play) {
         setScreen("soon");
         return;
+      }
+      if (nightId) {
+        const night = await fetch(`/api/heat-check/threads/${nightId}`, { headers: await authHeaders() });
+        const data = await readJson(night);
+        if (data.thread) {
+          setThread(data.thread);
+          setSkin(data.thread.skin || "ios");
+          setMessages((data.messages || []).map((m: HeatMessage & { role?: string }) => ({ ...m, sender: m.sender || m.role || "them" })));
+          const map: Record<string, HeatTip> = {};
+          for (const row of data.tips || []) {
+            if (row.message_id) map[row.message_id] = row;
+          }
+          setTipsByMsg(map);
+          const lastTip = (data.tips || [])[(data.tips || []).length - 1] || null;
+          setTip(lastTip);
+          setScreen("chat");
+          return;
+        }
       }
       setScreen("start");
     })();
@@ -208,6 +235,7 @@ export function HeatCheckApp() {
       setPendingThem(incoming);
       setTip(data.tip || null);
       setTipReady(!!data.tip);
+      setTipsByMsg({});
       setScreen("chat");
       setReceipt("sent");
       if (data.faceError) setErr(data.faceError);
@@ -238,6 +266,22 @@ export function HeatCheckApp() {
     };
   }, [pendingThem, screen]);
 
+  useEffect(() => {
+    if (screen !== "chat" || !thread?.id || thread.contact_face_url) return;
+    let n = 0;
+    const tick = window.setInterval(async () => {
+      n += 1;
+      const res = await fetch(`/api/heat-check/threads/${thread.id}`, { headers: await authHeaders() });
+      const data = await readJson(res);
+      if (data.thread?.contact_face_url) {
+        setThread((t) => (t ? { ...t, contact_face_url: data.thread.contact_face_url } : t));
+        window.clearInterval(tick);
+      }
+      if (n > 12) window.clearInterval(tick);
+    }, 2500);
+    return () => window.clearInterval(tick);
+  }, [screen, thread?.id, thread?.contact_face_url]);
+
   const send = async (raw?: string) => {
     const text = (raw ?? draft).trim();
     if (!text || !thread || busy) return;
@@ -267,6 +311,9 @@ export function HeatCheckApp() {
       if (!res.ok) throw new Error(data.error || "Send failed");
       setMessages((m) => m.map((x) => (x.id === optimistic.id ? data.userMessage : x)));
       setTip(data.tip || null);
+      if (data.tip && data.userMessage?.id) {
+        setTipsByMsg((t) => ({ ...t, [data.userMessage.id]: data.tip }));
+      }
       setTipReady(true);
       const delay = Number(data.turn?.read_delay_ms) || 2500;
       window.setTimeout(async () => {
@@ -424,10 +471,20 @@ export function HeatCheckApp() {
             }} options={HEAT_LOOKS} />
             <SelectField label="Pronouns" value={pronouns} onChange={(v) => setPronouns(v as HeatPronouns)} options={HEAT_PRONOUNS} />
             <SelectField label="Orientation" value={orientation} onChange={(v) => setOrientation(v as HeatOrientation)} options={HEAT_ORIENTATIONS} />
-            <SelectField label="Role" value={role} onChange={(v) => setRole(v as HeatRole)} options={HEAT_ROLES} />
+            <SelectField label="Role" value={role} onChange={(v) => setRole(v as HeatRole)} options={roleOpts} />
             <SelectField label="Heat" value={heat} onChange={(v) => setHeat(v as HeatLevel)} options={HEAT_LEVELS} />
             <SelectField label="Voice" value={voice} onChange={(v) => setVoice(v as HeatVoice)} options={HEAT_VOICES} />
-            <SelectField label="Who starts" value={who} onChange={(v) => setWho(v as HeatStarter)} options={HEAT_STARTERS} />
+            <div className="sm:col-span-2">
+              <p className="hc-kicker mb-2">Who starts</p>
+              <div className="flex gap-2">
+                <button type="button" className={cx("hc-chip hc-who-hot flex-1", who === "they" && "is-on")} aria-pressed={who === "they"} onClick={() => setWho("they")}>
+                  They text first
+                </button>
+                <button type="button" className={cx("hc-chip flex-1", who === "you" && "is-on")} aria-pressed={who === "you"} onClick={() => setWho("you")}>
+                  You open
+                </button>
+              </div>
+            </div>
             <SelectField
               label="Phone mock"
               value={skin}
@@ -451,7 +508,7 @@ export function HeatCheckApp() {
               )}
               <span className="flex-1">
                 Their photo
-                <span className="block text-[11px] text-[#9a7f76] mt-0.5">Shows as the round contact picture. Private to this thread.</span>
+                <span className="block text-[11px] text-[#9a7f76] mt-0.5">Shows as the round contact picture. Private to this night.</span>
               </span>
               <input
                 type="file"
@@ -463,11 +520,11 @@ export function HeatCheckApp() {
                 }}
               />
             </label>
-            {photoName ? <p className="text-[11px] text-[#9a7f76]">On the thread · {photoName}</p> : null}
+            {photoName ? <p className="text-[11px] text-[#9a7f76]">On the night · {photoName}</p> : null}
           </div>
           {err ? <p className="text-sm text-rose-300">{err}</p> : null}
           <button type="button" className="hc-cta" disabled={busy} onClick={openThread}>
-            {busy ? "Opening…" : "Open thread"}
+            {busy ? "Opening…" : "Open night"}
           </button>
           <p className="text-[12px] leading-relaxed text-[#8a7670] px-1">{HEAT_FADE_HELP}</p>
         </div>
@@ -528,32 +585,20 @@ export function HeatCheckApp() {
   return (
     <div className="hc-root hc-phone-wrap fixed inset-0 z-[70]">
       <div className="hc-phone hc-rim" data-skin={skin}>
-        <div className="hc-ember w-40 h-40 right-0 top-0 opacity-70" />
         <div className="hc-grain" />
         <header className="hc-header">
           <button type="button" className="text-[#d9c4bb] text-lg px-1" onClick={() => setScreen("start")} aria-label="Back">
             ‹
           </button>
-          {thread?.contact_face_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={thread.contact_face_url} alt="" className="hc-face" />
-          ) : (
-            <div className="hc-face grid place-items-center text-[11px] text-[#c4a59a]">
-              {thread?.contact_name?.slice(0, 1) || "?"}
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-medium truncate">{thread?.contact_name}</p>
-            <p className="text-[11px] text-[#9a7f76] truncate">{thread?.last_seen_label || "Active now"}</p>
-          </div>
-          <div className="relative">
+          <p className="hc-brand">Heat Check</p>
+          <div className="relative justify-self-end">
             <button type="button" className="px-2 text-lg tracking-widest" onClick={() => setMenu((v) => !v)} aria-label="More">
               ⋯
             </button>
             {menu && (
               <div className="hc-menu">
                 <button type="button" onClick={() => switchSkin(skin === "ios" ? "android" : "ios")}>
-                  {skin === "ios" ? "Android mock" : "iOS mock"}
+                  {skin === "ios" ? "Android language" : "iOS language"}
                 </button>
                 <button type="button" onClick={fadeOut}>Fade</button>
                 <button type="button" onClick={() => { setMenu(false); setThread(null); setMessages([]); setScreen("start"); }}>
@@ -563,6 +608,20 @@ export function HeatCheckApp() {
             )}
           </div>
         </header>
+        <div className="hc-contact">
+          {thread?.contact_face_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thread.contact_face_url} alt="" className="hc-face" />
+          ) : (
+            <div className="hc-face grid place-items-center text-[11px] text-[#c4a59a]">
+              {thread?.contact_name?.slice(0, 1) || "?"}
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="text-[15px] font-medium truncate">{thread?.contact_name}</p>
+            <p className="text-[11px] text-[#9a7f76] truncate">{thread?.last_seen_label || "just now"}</p>
+          </div>
+        </div>
 
         <button
           type="button"
@@ -570,38 +629,82 @@ export function HeatCheckApp() {
           onClick={() => { setRail((v) => !v); setTipReady(false); }}
           aria-label="Tip"
         >
-          <FlameMark className="w-3.5 h-4 opacity-90" />
+          <span className="hc-tip-bar" />
         </button>
         <div className={cx("hc-rail", rail ? "open" : "shut")}>
-          <div className="hc-rail-inner">
-            <div className="flex items-baseline gap-3">
-              <span className="text-2xl font-[family-name:var(--font-hc-serif)] text-[#ffb199]">{tip?.score ?? "—"}</span>
-              <p className="text-sm text-[#f0e6e1] leading-snug">{tip?.tip || "Send something. The night grades in private."}</p>
-            </div>
+          <div className="hc-rail-inner flex items-center justify-between gap-3">
+            <p className="text-sm text-[#f0e6e1] leading-snug">
+              <span className="text-[#ffb199] mr-1">{tip?.score ?? "—"}/10</span>
+              {tip?.tip || "Send something. The night grades in private."}
+            </p>
             {tip?.rewrite ? (
-              <p className="mt-2 text-[13px] text-[#ffc7b0]">
-                <span className="uppercase tracking-[0.16em] text-[10px] text-[#c4a59a] mr-2">Use this instead</span>
-                {tip.rewrite}
-              </p>
+              <button type="button" className="shrink-0 text-[11px] border border-white/30 rounded-lg px-2 py-1" onClick={() => { setDraft(tip.rewrite || ""); setRail(false); }}>
+                Use this instead
+              </button>
             ) : null}
           </div>
         </div>
 
         <div ref={threadEl} className="hc-thread" onClick={() => setPress(null)}>
-          {messages.map((msg) => (
-            <Bubble
-              key={msg.id}
-              msg={msg}
-              skin={skin}
-              faceUrl={thread?.contact_face_url || photoUrl}
-              name={thread?.contact_name || "?"}
-              onPress={(e) => {
-                e.preventDefault();
-                const point = "clientX" in e ? e : e.touches?.[0];
-                setPress({ x: point?.clientX || 80, y: point?.clientY || 120, msg });
-              }}
-            />
-          ))}
+          {messages.map((msg) => {
+            const saved = tipsByMsg[msg.id];
+            return (
+              <div key={msg.id} className={cx("hc-stack", msg.sender === "user" && "me")}>
+                <Bubble
+                  msg={msg}
+                  skin={skin}
+                  faceUrl={thread?.contact_face_url || photoUrl}
+                  name={thread?.contact_name || "?"}
+                  onPress={(e) => {
+                    e.preventDefault();
+                    const point = "clientX" in e ? e : e.touches?.[0];
+                    setPress({ x: point?.clientX || 80, y: point?.clientY || 120, msg });
+                  }}
+                />
+                {msg.sender === "user" ? (
+                  <>
+                    <button
+                      type="button"
+                      className="hc-chevron"
+                      onClick={async () => {
+                        const next = openTipId === msg.id ? null : msg.id;
+                        setOpenTipId(next);
+                        if (next && !tipsByMsg[next] && thread?.id && thread.id !== "preview") {
+                          const res = await fetch(`/api/heat-check/threads/${thread.id}`, { headers: await authHeaders() });
+                          const data = await readJson(res);
+                          const map: Record<string, HeatTip> = {};
+                          for (const row of data.tips || []) {
+                            if (row.message_id) map[row.message_id] = row;
+                          }
+                          setTipsByMsg((t) => ({ ...map, ...t }));
+                        }
+                      }}
+                    >
+                      {openTipId === msg.id ? "▾ tip" : "› tip"}
+                    </button>
+                    {openTipId === msg.id && (saved || (tip?.message_id === msg.id ? tip : null)) ? (
+                      <div className="hc-tip-drop">
+                        <p className="text-sm">
+                          <span className="text-[#ffb199]">{(saved || tip)?.score}/10</span>
+                          {" — "}
+                          {(saved || tip)?.tip}
+                        </p>
+                        {(saved || tip)?.rewrite ? (
+                          <button
+                            type="button"
+                            className="mt-2 text-[11px] border border-white/30 rounded-lg px-2 py-1"
+                            onClick={() => { setDraft((saved || tip)?.rewrite || ""); setOpenTipId(null); }}
+                          >
+                            Use this instead
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+            );
+          })}
           {typing && (
             <div className="hc-row them">
               {thread?.contact_face_url || photoUrl ? (
@@ -637,14 +740,7 @@ export function HeatCheckApp() {
             send();
           }}
         >
-          {thread?.contact_face_url || photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={thread?.contact_face_url || photoUrl || ""} alt="" className="hc-face hc-face-sm mb-0.5" />
-          ) : (
-            <div className="hc-face hc-face-sm grid place-items-center text-[10px] text-[#c4a59a] mb-0.5">
-              {thread?.contact_name?.slice(0, 1) || "?"}
-            </div>
-          )}
+          <button type="button" className="hc-plus" aria-label="Attach">+</button>
           <textarea
             ref={inputRef}
             rows={1}
@@ -656,11 +752,11 @@ export function HeatCheckApp() {
                 send();
               }
             }}
-            placeholder={skin === "ios" ? "iMessage" : "RCS"}
+            placeholder={`Reply to ${thread?.contact_name || "them"}…`}
             className="hc-input resize-none max-h-28"
           />
           <button type="submit" className="hc-send" disabled={busy || !draft.trim()} aria-label="Send">
-            {skin === "android" ? "➤" : "↑"}
+            <FlameMark className="w-4 h-5" />
           </button>
         </form>
 
@@ -690,12 +786,14 @@ function applyPreview(
     setRail: (v: boolean) => void;
     setRecap: (r: Recap | null) => void;
     setSkin: (s: HeatSkin) => void;
+    setTipsByMsg: (t: Record<string, HeatTip>) => void;
+    setOpenTipId: (id: string | null) => void;
   },
 ) {
   const thread: HeatThread = {
     id: "preview",
     user_id: "preview",
-    contact_name: "Mara",
+    contact_name: "Maya",
     contact_face_url: null,
     role: "hookup",
     heat: "filthy",
@@ -709,7 +807,7 @@ function applyPreview(
     peek: true,
     ended: false,
     end_reason: null,
-    last_seen_label: "Active 9m ago",
+    last_seen_label: "just now",
     recap: null,
     meta: { look: "woman", pronouns: "she", orientation: "bi" },
     they_look: "woman",
@@ -722,20 +820,20 @@ function applyPreview(
     id: "t1",
     thread_id: "preview",
     message_id: "m2",
-    tip: "She's already warmer. Don't stack a second text before she reads.",
+    tip: "8/10 — make them wait one more text",
     score: 8,
-    rewrite: "tell me what you'd do if I was already in the doorway.",
+    rewrite: "good things take the kind of patience that makes you think about it all night",
     mood: "needy",
     created_at: new Date().toISOString(),
   };
   const messages: HeatMessage[] = [
-    { id: "m1", thread_id: "preview", user_id: "preview", sender: "them", body: "you still up?", image_url: null, score: null, delivered_at: "", read_at: "", created_at: "" },
-    { id: "m2", thread_id: "preview", user_id: "preview", sender: "user", body: "yeah. don't hang up the night yet.", image_url: null, score: 8, delivered_at: "", read_at: "", created_at: "" },
-    { id: "m3", thread_id: "preview", user_id: "preview", sender: "them", body: "then say it like you mean it.", image_url: null, score: null, delivered_at: "", read_at: "", created_at: "" },
+    { id: "m1", thread_id: "preview", user_id: "preview", sender: "them", body: "you went quiet on me", image_url: null, score: null, delivered_at: "", read_at: "", created_at: "" },
+    { id: "m2", thread_id: "preview", user_id: "preview", sender: "user", body: "good things take the kind of patience that makes you think about it all night", image_url: null, score: 8, delivered_at: "", read_at: "", created_at: "" },
   ];
   set.setThread(thread);
   set.setMessages(messages);
   set.setTip(tip);
+  set.setTipsByMsg({ m2: tip });
   set.setSkin("ios");
   if (kind === "soon") set.setScreen("soon");
   else if (kind === "start") set.setScreen("start");
@@ -745,12 +843,13 @@ function applyPreview(
       pacing: 8,
       cringe: 2,
       mood_handled: 9,
-      best_line: "yeah. don't hang up the night yet.",
-      clean_quote: "Don't hang up the night yet.",
+      best_line: "good things take the kind of patience that makes you think about it all night",
+      clean_quote: "Good things take patience.",
     });
     set.setScreen("recap");
   } else {
     set.setRail(kind === "tip");
+    set.setOpenTipId(kind === "tip" ? "m2" : null);
     set.setScreen("chat");
   }
 }
@@ -878,20 +977,29 @@ function Bubble({
   return (
     <div className={cx("hc-row", mine ? "me" : "them")}>
       {!mine ? avatar : null}
-      <button
-        type="button"
-        className={cx("hc-bubble", mine ? "me" : "them")}
-        onContextMenu={onPress}
-        onTouchStart={(e) => {
-          const t = window.setTimeout(() => onPress(e), 480);
-          const clear = () => window.clearTimeout(t);
-          e.currentTarget.addEventListener("touchend", clear, { once: true });
-          e.currentTarget.addEventListener("touchmove", clear, { once: true });
-        }}
-      >
-        {msg.body}
-        <span className="tail" aria-hidden />
-      </button>
+      <div className="hc-bubble-wrap">
+        <button
+          type="button"
+          className={cx("hc-bubble", mine ? "me" : "them")}
+          onContextMenu={onPress}
+          onTouchStart={(e) => {
+            const t = window.setTimeout(() => onPress(e), 480);
+            const clear = () => window.clearTimeout(t);
+            e.currentTarget.addEventListener("touchend", clear, { once: true });
+            e.currentTarget.addEventListener("touchmove", clear, { once: true });
+          }}
+        >
+          {msg.body}
+          <span className="tail" aria-hidden />
+        </button>
+        {mine ? (
+          <p className="hc-stamp">
+            {msg.created_at
+              ? new Date(msg.created_at || Date.now()).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+              : "11:47 PM"}
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }

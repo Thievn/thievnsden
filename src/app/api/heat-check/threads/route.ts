@@ -13,8 +13,8 @@ export async function GET(req: NextRequest) {
     .eq("user_id", user.id)
     .order("updated_at", { ascending: false })
     .limit(40);
-  if (error) return NextResponse.json({ threads: [], error: error.message });
-  return NextResponse.json({ threads: data || [] });
+  if (error) return NextResponse.json({ nights: [], threads: [], error: error.message });
+  return NextResponse.json({ nights: data || [], threads: data || [] });
 }
 
 export async function POST(req: NextRequest) {

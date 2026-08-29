@@ -13,7 +13,7 @@ async function headers(): Promise<Record<string, string>> {
 
 export default function HeatAccountPage() {
   const router = useRouter();
-  const [threads, setThreads] = useState<any[]>([]);
+  const [nights, setNights] = useState<any[]>([]);
   const [saves, setSaves] = useState<any[]>([]);
   const [q, setQ] = useState("");
   const [msg, setMsg] = useState("");
@@ -24,7 +24,7 @@ export default function HeatAccountPage() {
       fetch("/api/heat-check/threads", { headers: h }).then((r) => r.json()),
       fetch(`/api/heat-check/saves?q=${encodeURIComponent(q)}`, { headers: h }).then((r) => r.json()),
     ]);
-    setThreads(t.threads || []);
+    setNights(t.nights || t.threads || []);
     setSaves(s.saves || []);
   };
 
@@ -39,7 +39,7 @@ export default function HeatAccountPage() {
     <div className="max-w-md mx-auto px-4 py-12">
       <Link href="/account" className="text-sm text-neutral-500">← Account</Link>
       <h1 className="text-2xl font-semibold text-neutral-50 mt-4 mb-2">Heat Check</h1>
-      <p className="text-sm text-neutral-500 mb-6">Resume a thread. Search the line stash. Delete the night.</p>
+      <p className="text-sm text-neutral-500 mb-6">Resume a night. Search the line stash. Delete the night.</p>
 
       <input
         value={q}
@@ -49,22 +49,22 @@ export default function HeatAccountPage() {
         className="w-full px-4 py-3 rounded-xl bg-[#0a0a0a] border border-neutral-800 text-sm mb-6"
       />
 
-      <p className="text-[11px] uppercase tracking-[0.18em] text-orange-300/80 mb-2">Threads</p>
+      <p className="text-[11px] uppercase tracking-[0.18em] text-orange-300/80 mb-2">Nights</p>
       <div className="rounded-2xl border border-neutral-800 bg-[#111] divide-y divide-neutral-800/60 mb-8">
-        {threads.length === 0 ? (
-          <p className="p-4 text-sm text-neutral-500">No threads yet.</p>
+        {nights.length === 0 ? (
+          <p className="p-4 text-sm text-neutral-500">No nights yet.</p>
         ) : (
-          threads.map((t) => (
+          nights.map((t) => (
             <div key={t.id} className="p-4 flex items-center justify-between gap-3">
-              <div>
+              <Link href={`/playground/heat-check?night=${t.id}`} className="min-w-0">
                 <p className="text-sm text-neutral-100">{t.contact_name}</p>
                 <p className="text-[11px] text-neutral-500">{t.role} · {t.ended ? "faded" : "open"}</p>
-              </div>
+              </Link>
               <button
                 type="button"
                 className="text-[11px] text-rose-300"
                 onClick={async () => {
-                  if (!confirm("Delete this thread and its images?")) return;
+                  if (!confirm("Delete this night and its images?")) return;
                   await fetch(`/api/heat-check/threads/${t.id}`, { method: "DELETE", headers: await headers() });
                   setMsg("Deleted.");
                   load();

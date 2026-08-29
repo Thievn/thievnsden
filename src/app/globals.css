@@ -445,6 +445,23 @@ body {
   background:
     linear-gradient(to top, rgba(6, 4, 7, 0.78) 0%, rgba(6, 4, 7, 0.28) 48%, rgba(6, 4, 7, 0.08) 100%);
 }
+.pg-card-title {
+  font-family: var(--font-den-serif), "Fraunces", Georgia, serif;
+  font-optical-sizing: auto;
+  font-weight: 560;
+  letter-spacing: -0.035em;
+  line-height: 0.92;
+}
+.pg-card-line {
+  font-family: var(--font-den-serif), "Fraunces", Georgia, serif;
+  font-weight: 420;
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+.pg-card-chip {
+  font-family: var(--font-den-serif), "Fraunces", Georgia, serif;
+  font-weight: 520;
+}
 @media (hover: none) {
   .home-room:hover { transform: none; box-shadow: none; }
   .home-room:active { transform: scale(0.985); }

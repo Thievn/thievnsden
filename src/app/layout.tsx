@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
@@ -22,6 +22,11 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const denSerif = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-den-serif",
 });
 
 const siteTitle = "Thievn's Den";
@@ -141,7 +146,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${denSerif.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#070707] text-neutral-200 overflow-x-hidden">
         <JsonLd />
         <DenBoot />

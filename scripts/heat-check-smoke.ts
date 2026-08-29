@@ -13,6 +13,7 @@ import {
   lookKey,
   vibeForLook,
 } from "../src/lib/heat-check";
+import { HEAT_CHECK_STILL, playgroundStill } from "../src/lib/playground-games";
 import type { User } from "@supabase/supabase-js";
 
 function assert(cond: unknown, msg: string) {
@@ -56,6 +57,9 @@ assert(lookKey("woman", "default", "any") === "woman|feminine", "look key defaul
 assert(lookKey("woman", "feminine", "east-asian") === "woman|feminine|east-asian", "look key appearance");
 assert(HEAT_ROLES.length >= 17, "roles");
 assert(HEAT_TAGLINE.includes("twice"), "tagline");
+assert(HEAT_CHECK_STILL.endsWith("card.jpg"), "heat still");
+assert(playgroundStill("heat-check", { "heat-check": "https://evil.example/text.png" }) === HEAT_CHECK_STILL, "ignore text plate");
+assert(playgroundStill("highway-hunter", { "highway-hunter": "/hh.jpg" }) === "/hh.jpg", "other stills");
 const h1 = sourceHash(["a", "b"]);
 const h2 = sourceHash(["a", "b"]);
 const h3 = sourceHash(["a", "c"]);

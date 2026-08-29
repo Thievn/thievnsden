@@ -3,7 +3,7 @@ import { DenMark } from "@/components/DenMark";
 import { HomeAtmosphere } from "@/components/home/HomeAtmosphere";
 import { HomeGamingRoom, HomePolaroids, HomePrintStrip } from "@/components/home/HomePolaroids";
 import { PlaygroundCardArt } from "@/components/playground/PlaygroundCardArt";
-import { PLAYGROUND_GAMES } from "@/lib/playground-games";
+import { PLAYGROUND_GAMES, playgroundStill } from "@/lib/playground-games";
 
 export type HomeThought = {
   title: string;
@@ -172,12 +172,12 @@ export function HomeDen({
               href={g.href}
               className={`home-room rounded-3xl border ${g.homeBorder} bg-[#0a0608] p-6 min-h-[200px] flex flex-col overflow-hidden`}
             >
-              <PlaygroundCardArt url={playgroundArt[g.id] || (g.id === "heat-check" ? "/heat-check/card.png" : undefined)} tone="home" />
-              <p className={`relative z-[3] text-[11px] uppercase tracking-[0.18em] ${g.homeKicker} mb-3`}>Playground</p>
-              <h2 className="relative z-[3] text-xl font-semibold text-neutral-50 mb-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+              <PlaygroundCardArt url={playgroundStill(g.id, playgroundArt)} tone="home" />
+              <p className={`pg-card-chip relative z-[3] text-[11px] uppercase tracking-[0.2em] ${g.homeKicker} mb-3`}>Playground</p>
+              <h2 className="pg-card-title relative z-[3] text-[1.45rem] text-neutral-50 mb-2 drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)]">
                 {g.title}
               </h2>
-              <p className="relative z-[3] text-sm text-neutral-300 flex-1">{g.homeLine}</p>
+              <p className="pg-card-line relative z-[3] text-[15px] text-neutral-200/90 flex-1">{g.homeLine}</p>
               <p className={`relative z-[3] mt-5 text-sm ${g.homeCta}`}>{g.homeEnter}</p>
             </Link>
           ))}

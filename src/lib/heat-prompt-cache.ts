@@ -16,14 +16,23 @@ export function moduleTable(kind: string): Kind {
   return "openers";
 }
 
+let modulesReady = false;
+
 export async function seedHeatModules() {
+  if (modulesReady) return;
   const supabase = createServiceClient();
+  const { count } = await supabase.from("heat_roles").select("slug", { count: "exact", head: true });
+  if ((count || 0) > 0) {
+    modulesReady = true;
+    return;
+  }
   for (const kind of Object.keys(TABLE) as Kind[]) {
     for (const row of DEFAULT_MODULE_ROWS[kind]) {
       const { data } = await supabase.from(TABLE[kind]).select("slug").eq("slug", row.slug).maybeSingle();
       if (!data) await supabase.from(TABLE[kind]).insert(row);
     }
   }
+  modulesReady = true;
 }
 
 export async function listHeatModules() {

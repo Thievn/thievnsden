@@ -1,4 +1,4 @@
-export async function readJson(res: Response) {
+export async function readJson(res: Response): Promise<Record<string, any>> {
   const text = await res.text();
   if (!text) return {};
   try {

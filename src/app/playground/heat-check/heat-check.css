@@ -140,9 +140,12 @@
   height: 38px;
   border-radius: 50%;
   object-fit: cover;
+  flex-shrink: 0;
   box-shadow: 0 0 0 1px rgba(255, 140, 100, 0.35), 0 0 16px -4px rgba(255, 90, 40, 0.7);
   background: #1a0c10;
 }
+.hc-face-sm { width: 28px; height: 28px; }
+.hc-face-lg { width: 52px; height: 52px; }
 
 .hc-tip-handle {
   position: relative;
@@ -195,7 +198,7 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.hc-row { display: flex; max-width: 86%; }
+.hc-row { display: flex; max-width: 86%; align-items: flex-end; gap: 0.4rem; }
 .hc-row.them { align-self: flex-start; }
 .hc-row.me { align-self: flex-end; justify-content: flex-end; }
 

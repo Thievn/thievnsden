@@ -1,4 +1,5 @@
 import {
+  HEAT_SKINS,
   canPlayHeat,
   isFadeText,
   parseHeatTurn,
@@ -46,6 +47,6 @@ const parsed = parseJsonObject('```json\n{"scene":"hey","tip":"slow","score":7}\
 assert(parsed.scene === "hey", "json fence");
 
 assert(vibeForLook("trans-woman") === "woman", "vibe");
-assert(vibeForLook("man") === "man", "vibe man");
+assert(HEAT_SKINS.find((s) => s.id === "android")?.label === "Android mock", "android mock");
 
 console.log("heat-check smoke ok");

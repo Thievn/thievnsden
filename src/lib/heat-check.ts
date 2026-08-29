@@ -107,7 +107,7 @@ export const HEAT_ORIENTATIONS: HeatOpt[] = [
 
 export const HEAT_SKINS: HeatOpt[] = [
   { id: "ios", label: "iOS mock", line: "Blue-bubble energy. Read receipts." },
-  { id: "android", label: "Pixel mock", line: "Double-checks. A little sharper." },
+  { id: "android", label: "Android mock", line: "Double-checks. A little sharper." },
 ];
 
 export const HEAT_STARTERS: HeatOpt[] = [

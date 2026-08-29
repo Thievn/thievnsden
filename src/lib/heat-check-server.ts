@@ -94,9 +94,68 @@ export async function grokJsonChat(opts: {
     }),
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(text.slice(0, 240));
-  const data = JSON.parse(text);
-  return parseJsonObject(data.choices?.[0]?.message?.content || "{}");
+  if (!res.ok) throw new Error(clipUpstream(text, res.status));
+  let data: { choices?: Array<{ message?: { content?: string } }> };
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(clipUpstream(text, res.status));
+  }
+  const content = data.choices?.[0]?.message?.content || "{}";
+  try {
+    return parseJsonObject(content);
+  } catch {
+    return {
+      scene: String(content).replace(/[{}"\\]/g, " ").slice(0, 180).trim() || "hey. you there?",
+      tip: "Keep it one thought. Let them answer.",
+      score: 6,
+      rewrite: null,
+      mood: "same",
+      read_delay_ms: 2800,
+      reward_photo: false,
+      ended: false,
+      end_reason: null,
+    };
+  }
+}
+
+function clipUpstream(text: string, status: number) {
+  const clip = String(text || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 180);
+  return clip || `Model failed (${status})`;
+}
+
+export function withTimeout<T>(promise: Promise<T>, ms: number, label = "Timed out") {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(label)), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (err) => {
+        clearTimeout(t);
+        reject(err);
+      },
+    );
+  });
+}
+
+export function fallbackHeatTurn(opening: boolean): HeatTurnJson {
+  return parseHeatTurn({
+    scene: opening ? "hey. this a bad time?" : "yeah?",
+    tip: "Match their pace. Don't dump the whole night in one bubble.",
+    score: 6,
+    rewrite: null,
+    mood: "same",
+    read_delay_ms: 2600,
+    reward_photo: false,
+    ended: false,
+    end_reason: null,
+  });
 }
 
 export async function pickContactName(supabase: Service, userId: string, look?: HeatLook | string) {
@@ -287,7 +346,7 @@ You control the night. Stay human. Stay in their body. JSON only.`;
     maxTokens: 800,
     temperature: ctx.fade ? 0.6 : 0.98,
   });
-  const parsed = parseHeatTurn(raw);
+  const parsed = parseHeatTurn(raw || {});
   if (!parsed.scene && !ctx.fade) {
     parsed.scene = ctx.opening ? "you still up?" : "yeah?";
   }

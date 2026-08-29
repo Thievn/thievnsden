@@ -10,12 +10,15 @@ import {
   asSkin,
   asStarter,
   asVoice,
+  fallbackHeatTurn,
   generateContactFace,
   heatMessageRow,
   pickContactName,
   requireHeatPlayer,
   runHeatTurn,
+  signedUploadUrl,
   splitThem,
+  withTimeout,
 } from "@/lib/heat-check-server";
 
 export const runtime = "nodejs";
@@ -40,31 +43,21 @@ export async function POST(req: NextRequest) {
     if (!ctx.settings.skins[skin]) {
       return NextResponse.json({ error: "That skin is off." }, { status: 400 });
     }
-    const generate_face = !!body.generate_face && ctx.settings.face_gen;
     const user_photo_path = typeof body.user_photo_path === "string" ? body.user_photo_path : null;
+    const uploadedUrl = typeof body.user_photo_url === "string" ? body.user_photo_url : null;
+    const generate_face = !!body.generate_face && ctx.settings.face_gen && !user_photo_path;
     const faceSeed = typeof body.face_seed === "string" ? body.face_seed : "";
     const peek = body.peek == null ? ctx.settings.peek_default : !!body.peek;
 
     const supabase = createServiceClient();
     const contact_name = await pickContactName(supabase, user.id, they_look);
 
-    let contact_face_url: string | null = null;
-    let facePrompt: string | null = null;
-    let faceError: string | null = null;
-    if (generate_face) {
-      try {
-        const face = await generateContactFace(user.id, faceSeed, {
-          look: they_look,
-          pronouns: they_pronouns,
-          orientation: they_orientation,
-        });
-        contact_face_url = face.url;
-        facePrompt = face.prompt;
-      } catch (err) {
-        console.error("heat face gen", err);
-        faceError = err instanceof Error ? err.message : "Face didn't render. Thread still opens.";
-      }
+    let contact_face_url: string | null = uploadedUrl;
+    if (!contact_face_url && user_photo_path) {
+      contact_face_url = (await signedUploadUrl(user_photo_path)) || null;
     }
+    let facePrompt: string | null = user_photo_path ? "user-uploaded contact still" : null;
+    let faceError: string | null = null;
 
     const { data: thread, error } = await supabase
       .from("heat_threads")
@@ -109,17 +102,70 @@ export async function POST(req: NextRequest) {
     let messages: unknown[] = [];
     let tip = null;
 
-    if (who_starts === "they") {
-      const turn = await runHeatTurn({
-        thread,
-        history: [],
-        userLine: null,
-        opening: true,
-        fade: false,
-        doubleText: false,
-        lastScores: [],
-        settings: ctx.settings,
-      });
+    const faceJob =
+      generate_face && !contact_face_url
+        ? withTimeout(
+            generateContactFace(user.id, faceSeed, {
+              look: they_look,
+              pronouns: they_pronouns,
+              orientation: they_orientation,
+            }),
+            22000,
+            "Face gen timed out",
+          )
+            .then((face) => {
+              contact_face_url = face.url;
+              facePrompt = face.prompt;
+            })
+            .catch((err: unknown) => {
+              console.error("heat face gen", err);
+              faceError = err instanceof Error ? err.message : "Face didn't render. Thread still opens.";
+            })
+        : Promise.resolve();
+
+    const openingJob =
+      who_starts === "they"
+        ? withTimeout(
+            runHeatTurn({
+              thread,
+              history: [],
+              userLine: null,
+              opening: true,
+              fade: false,
+              doubleText: false,
+              lastScores: [],
+              settings: ctx.settings,
+            }),
+            28000,
+            "Opening timed out",
+          ).catch((err: unknown) => {
+            console.error("heat opening", err);
+            return fallbackHeatTurn(true);
+          })
+        : Promise.resolve(null);
+
+    const [turn] = await Promise.all([openingJob, faceJob]);
+
+    if (contact_face_url || faceError) {
+      await supabase
+        .from("heat_threads")
+        .update({
+          contact_face_url,
+          meta: {
+            face_prompt: facePrompt,
+            face_seed: faceSeed || null,
+            look: they_look,
+            pronouns: they_pronouns,
+            orientation: they_orientation,
+            face_error: faceError,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", thread.id);
+      thread.contact_face_url = contact_face_url;
+    }
+
+    if (turn) {
       const bubbles = splitThem(turn.scene);
       const rows = bubbles.map((bodyText) =>
         heatMessageRow({

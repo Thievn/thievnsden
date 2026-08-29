@@ -14,6 +14,19 @@ export type HeatStarter = "they" | "you";
 export type HeatSkin = "ios" | "android";
 export type HeatMood = "shy" | "bratty" | "cold" | "needy" | "same";
 export type HeatLook = "woman" | "man" | "nonbinary" | "trans-woman" | "trans-man" | "androgynous";
+export type HeatPresentation = "default" | "masculine" | "feminine" | "androgynous" | "andromorph";
+export type HeatAppearance =
+  | "any"
+  | "black"
+  | "east-asian"
+  | "south-asian"
+  | "southeast-asian"
+  | "white"
+  | "mena"
+  | "latino"
+  | "indigenous"
+  | "mixed"
+  | "prefer-not";
 export type HeatPronouns = "she" | "he" | "they" | "she-they" | "he-they" | "any";
 export type HeatOrientation =
   | "straight"
@@ -82,6 +95,28 @@ export const HEAT_VOICES: HeatOpt[] = [
   { id: "dry", label: "Dry", line: "Almost bored. Lethal." },
 ];
 
+export const HEAT_PRESENTATIONS: HeatOpt[] = [
+  { id: "default", label: "Default", line: "Derive from who they are." },
+  { id: "masculine", label: "Masculine", line: "Masculine face and body language." },
+  { id: "feminine", label: "Feminine", line: "Feminine face and body language." },
+  { id: "androgynous", label: "Androgynous", line: "Soft-sharp. Hard to pin." },
+  { id: "andromorph", label: "Andromorph", line: "Feminine cues. Andromorph body. SFW." },
+];
+
+export const HEAT_APPEARANCES: HeatOpt[] = [
+  { id: "any", label: "Any", line: "No appearance lock." },
+  { id: "black", label: "Black / African", line: "" },
+  { id: "east-asian", label: "East Asian", line: "" },
+  { id: "south-asian", label: "South Asian", line: "" },
+  { id: "southeast-asian", label: "Southeast Asian", line: "" },
+  { id: "white", label: "White / European", line: "" },
+  { id: "mena", label: "Middle Eastern / North African", line: "" },
+  { id: "latino", label: "Latino / Hispanic", line: "" },
+  { id: "indigenous", label: "Indigenous", line: "" },
+  { id: "mixed", label: "Mixed", line: "" },
+  { id: "prefer-not", label: "Prefer not to say", line: "" },
+];
+
 export const HEAT_LOOKS: HeatOpt[] = [
   { id: "woman", label: "A woman", line: "She shows up as a woman." },
   { id: "man", label: "A man", line: "He shows up as a man." },
@@ -112,8 +147,8 @@ export const HEAT_ORIENTATIONS: HeatOpt[] = [
 ];
 
 export const HEAT_SKINS: HeatOpt[] = [
-  { id: "ios", label: "iOS language", line: "Read. Delivered. Soft glyphs." },
-  { id: "android", label: "Android language", line: "Double-checks. A little sharper." },
+  { id: "ios", label: "iOS skin", line: "Read. Delivered. Soft glyphs." },
+  { id: "android", label: "Android skin", line: "Double-checks. A little sharper." },
 ];
 
 export const HEAT_STARTERS: HeatOpt[] = [
@@ -321,17 +356,75 @@ export function vibeForLook(look: HeatLook | string): "woman" | "man" | "unisex"
   return "unisex";
 }
 
-export function faceBrief(look: HeatLook | string, pronouns: HeatPronouns | string, orientation: HeatOrientation | string) {
-  const body =
-    look === "woman" || look === "trans-woman"
-      ? "adult woman, feminine face, lived-in beauty"
-      : look === "man" || look === "trans-man"
-        ? "adult man, masculine face, lived-in handsome"
-        : look === "androgynous"
-          ? "androgynous adult, soft-sharp features, unisex styling"
-          : "nonbinary adult, androgynous-to-soft features, not a costume";
+export function defaultPresentation(who: HeatLook | string): Exclude<HeatPresentation, "default"> {
+  if (who === "woman" || who === "trans-woman") return "feminine";
+  if (who === "man" || who === "trans-man") return "masculine";
+  return "androgynous";
+}
+
+export function resolvePresentation(who: HeatLook | string, presentation?: HeatPresentation | string | null) {
+  const p = String(presentation || "default") as HeatPresentation;
+  if (p && p !== "default") return p;
+  return defaultPresentation(who);
+}
+
+export function lookKey(who: string, presentation: string, appearance: string) {
+  const look = resolvePresentation(who, presentation);
+  const app = String(appearance || "any");
+  if (!app || app === "any" || app === "prefer-not") return `${who}|${look}`;
+  return `${who}|${look}|${app}`;
+}
+
+const APPEARANCE_VISUAL: Record<string, string> = {
+  black: "Black / African visual features. Skin, hair, and facial structure only. No culture, no accent, no clothing stereotype.",
+  "east-asian": "East Asian visual features. Skin, hair, and facial structure only. No culture, no accent, no clothing stereotype.",
+  "south-asian": "South Asian visual features. Skin, hair, and facial structure only. No culture, no accent, no clothing stereotype.",
+  "southeast-asian": "Southeast Asian visual features. Skin, hair, and facial structure only. No culture, no accent, no clothing stereotype.",
+  white: "White / European visual features. Skin, hair, and facial structure only. No culture, no accent, no clothing stereotype.",
+  mena: "Middle Eastern / North African visual features. Skin, hair, and facial structure only. No culture, no accent, no clothing stereotype.",
+  latino: "Latino / Hispanic visual features. Skin, hair, and facial structure only. No culture, no accent, no clothing stereotype.",
+  indigenous: "Indigenous visual features. Skin, hair, and facial structure only. No culture, no accent, no clothing stereotype.",
+  mixed: "Mixed visual features. Specific, not a blur. No culture, no accent, no clothing stereotype.",
+};
+
+export function appearanceVisual(appearance?: string | null) {
+  const a = String(appearance || "any");
+  if (!a || a === "any" || a === "prefer-not") return "";
+  return APPEARANCE_VISUAL[a] || "";
+}
+
+export function imageFacePrompt(who: string, presentation: string, appearance?: string | null) {
+  const look = resolvePresentation(who, presentation);
+  const whoLine =
+    who === "woman" || who === "trans-woman"
+      ? "adult woman"
+      : who === "man" || who === "trans-man"
+        ? "adult man"
+        : who === "androgynous"
+          ? "androgynous adult"
+          : "nonbinary adult";
+  const trans = who === "trans-woman" || who === "trans-man" ? "Trans adult. Natural. Not fetishized. Not a stereotype." : "";
+  const lookLine =
+    look === "masculine"
+      ? "masculine face and body language"
+      : look === "feminine"
+        ? "feminine face and body language"
+        : look === "andromorph"
+          ? "andromorph presentation: feminine face and body cues, SFW, clothes on, not a costume, not fetish-coded"
+          : "androgynous face and styling";
+  const vis = appearanceVisual(appearance);
+  return [`Who they are: ${whoLine}.`, `Look: ${lookLine}.`, trans, vis ? `Appearance (visual only): ${vis}` : ""]
+    .filter(Boolean)
+    .join(" ");
+}
+
+export function chatIdentityBrief(look: HeatLook | string, pronouns: HeatPronouns | string, orientation: HeatOrientation | string) {
   const trans = look === "trans-woman" || look === "trans-man" ? "Trans adult. Natural. Not fetishized. Not a stereotype." : "";
-  return `${body}. Pronouns in life: ${pronouns}. Orientation: ${orientation}. ${trans} Attractive, specific, not stock.`.trim();
+  return `They are: ${look}. Pronouns: ${pronouns}. Orientation: ${orientation}. ${trans}`.trim();
+}
+
+export function faceBrief(look: HeatLook | string, pronouns: HeatPronouns | string, orientation: HeatOrientation | string) {
+  return chatIdentityBrief(look, pronouns, orientation);
 }
 
 export type HeatTurnJson = {
@@ -412,6 +505,11 @@ export type HeatThread = {
   they_look?: HeatLook | string | null;
   they_pronouns?: HeatPronouns | string | null;
   they_orientation?: HeatOrientation | string | null;
+  presentation?: HeatPresentation | string | null;
+  appearance?: HeatAppearance | string | null;
+  look_key?: string | null;
+  contact_id?: string | null;
+  user_photo_url?: string | null;
   recap: Record<string, unknown> | null;
   meta: Record<string, unknown> | null;
   created_at: string;

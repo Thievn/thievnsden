@@ -152,8 +152,8 @@ export function HeatTab() {
               ["public", "Public for everyone", settings.public],
               ["peek_default", "Tip peek on by default", settings.peek_default],
               ["face_gen", "Show generate-their-face", settings.face_gen],
-              ["ios", "iOS language", settings.skins.ios],
-              ["android", "Android language", settings.skins.android],
+              ["ios", "iOS skin", settings.skins.ios],
+              ["android", "Android skin", settings.skins.android],
             ] as const
           ).map(([key, label, on]) => (
             <label key={key} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/30 px-3 py-2.5">

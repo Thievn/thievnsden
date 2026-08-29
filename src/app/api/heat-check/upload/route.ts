@@ -25,24 +25,31 @@ export async function POST(req: NextRequest) {
     if (parsed.bytes.length > 5 * 1024 * 1024) {
       return NextResponse.json({ error: "Photo is too large." }, { status: 400 });
     }
+    const kind = body.kind === "chat" || body.kind === "mine" ? "heat-uploads" : "heat-faces";
+    const intent = body.kind === "chat" ? "chat" : body.kind === "mine" ? "mine" : "contact";
     const ext = parsed.mime === "image/png" ? "png" : parsed.mime === "image/webp" ? "webp" : "jpg";
     const path = `${user.id}/${Date.now()}.${ext}`;
     const up = await uploadHeatBytes({
-      bucket: "heat-faces",
+      bucket: kind,
       path,
       bytes: parsed.bytes,
       contentType: parsed.mime,
     });
     const supabase = createServiceClient();
+    let url = up.url;
+    if (kind === "heat-uploads") {
+      const signed = await supabase.storage.from("heat-uploads").createSignedUrl(path, 60 * 60 * 24 * 7);
+      url = signed.data?.signedUrl || url;
+    }
     await supabase.from("heat_assets").insert({
       user_id: user.id,
-      kind: "upload",
-      bucket: "heat-faces",
+      kind: intent === "chat" ? "chat" : intent === "mine" ? "upload" : "upload",
+      bucket: kind,
       path,
-      url: up.url,
+      url,
       status: "pending",
     });
-    return NextResponse.json({ path: up.path, url: up.url });
+    return NextResponse.json({ path: up.path, url, bucket: kind });
   } catch (err: unknown) {
     console.error("heat upload", err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "Upload failed" }, { status: 500 });

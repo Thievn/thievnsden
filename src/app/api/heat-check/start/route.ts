@@ -2,17 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { lastSeenLabel } from "@/lib/heat-check";
 import { lookupCompiledPrompt } from "@/lib/heat-prompt-cache";
+import { mintHeatContact, pickHeatFace } from "@/lib/heat-face-cache";
 import {
+  asAppearance,
   asHeat,
   asLook,
   asOrientation,
+  asPresentation,
   asPronouns,
   asRole,
   asSkin,
   asStarter,
   asVoice,
   fallbackHeatTurn,
-  generateContactFace,
   heatMessageRow,
   pickContactName,
   requireHeatPlayer,
@@ -41,24 +43,37 @@ export async function POST(req: NextRequest) {
     const they_look = asLook(body.they_look);
     const they_pronouns = asPronouns(body.they_pronouns);
     const they_orientation = asOrientation(body.they_orientation);
+    const presentation = asPresentation(body.presentation ?? body.look);
+    const appearance = asAppearance(body.appearance);
+    const newContact = !!body.new_contact;
     if (!ctx.settings.skins[skin]) {
       return NextResponse.json({ error: "That skin is off." }, { status: 400 });
     }
-    const user_photo_path = typeof body.user_photo_path === "string" ? body.user_photo_path : null;
-    const uploadedUrl = typeof body.user_photo_url === "string" ? body.user_photo_url : null;
-    const generate_face = !!body.generate_face && ctx.settings.face_gen && !user_photo_path;
+    const contactOverridePath = typeof body.user_photo_path === "string" ? body.user_photo_path : null;
+    const contactOverrideUrl = typeof body.user_photo_url === "string" ? body.user_photo_url : null;
+    const generate_face = !!body.generate_face && ctx.settings.face_gen && !contactOverridePath && !contactOverrideUrl;
     const faceSeed = typeof body.face_seed === "string" ? body.face_seed : "";
     const peek = body.peek == null ? ctx.settings.peek_default : !!body.peek;
 
     const supabase = createServiceClient();
     const contact_name = await pickContactName(supabase, user.id, they_look);
 
-    let contact_face_url: string | null = uploadedUrl;
-    if (!contact_face_url && user_photo_path) {
-      contact_face_url = (await signedUploadUrl(user_photo_path)) || null;
+    const facePick = await pickHeatFace({
+      userId: user.id,
+      who: they_look,
+      presentation,
+      appearance,
+      name: contact_name,
+      generate: generate_face,
+      newContact,
+    });
+
+    let contact_face_url: string | null = contactOverrideUrl;
+    if (!contact_face_url && contactOverridePath) {
+      contact_face_url = (await signedUploadUrl(contactOverridePath)) || contactOverridePath;
     }
-    let facePrompt: string | null = user_photo_path ? "user-uploaded contact still" : null;
-    let faceError: string | null = null;
+    if (!contact_face_url) contact_face_url = facePick.face_url;
+    const facePrompt = facePick.face_prompt;
 
     const compiled = await lookupCompiledPrompt({ role, heat, voice, opener: who_starts });
 
@@ -66,7 +81,7 @@ export async function POST(req: NextRequest) {
       .from("heat_threads")
       .insert({
         user_id: user.id,
-        contact_name,
+        contact_name: facePick.contact_name || contact_name,
         contact_face_url,
         role,
         heat,
@@ -76,10 +91,14 @@ export async function POST(req: NextRequest) {
         they_look,
         they_pronouns,
         they_orientation,
+        presentation: facePick.presentation,
+        appearance: facePick.appearance,
+        look_key: facePick.look_key,
+        contact_id: facePick.contact_id,
         skin,
         mood: "same",
-        user_photo_path,
-        user_photo_url: user_photo_path,
+        user_photo_path: null,
+        user_photo_url: null,
         generate_face,
         reward_photo_sent: false,
         peek,
@@ -92,9 +111,10 @@ export async function POST(req: NextRequest) {
           face_prompt: facePrompt,
           face_seed: faceSeed || null,
           look: they_look,
+          presentation: facePick.presentation,
+          appearance: facePick.appearance,
           pronouns: they_pronouns,
           orientation: they_orientation,
-          face_error: faceError,
         },
       })
       .select("*")
@@ -107,32 +127,19 @@ export async function POST(req: NextRequest) {
     let messages: unknown[] = [];
 
     const faceRetry = async () => {
-      if (!generate_face || contact_face_url) return;
+      if (!facePick.mint || contact_face_url) return;
       for (let i = 0; i < 2; i++) {
         try {
-          const face = await withTimeout(
-            generateContactFace(user.id, faceSeed, {
-              look: they_look,
-              pronouns: they_pronouns,
-              orientation: they_orientation,
-            }),
-            25000,
-            "Face gen timed out",
-          );
-          await supabase
-            .from("heat_threads")
-            .update({
-              contact_face_url: face.url,
-              meta: {
-                face_prompt: face.prompt,
-                face_seed: faceSeed || null,
-                look: they_look,
-                pronouns: they_pronouns,
-                orientation: they_orientation,
-              },
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", thread.id);
+          await mintHeatContact({
+            userId: user.id,
+            threadId: thread.id,
+            name: thread.contact_name,
+            who: they_look,
+            presentation: facePick.presentation,
+            appearance: facePick.appearance,
+            look_key: facePick.look_key,
+            face_prompt: facePrompt,
+          });
           return;
         } catch (err) {
           console.error("heat face gen", err);

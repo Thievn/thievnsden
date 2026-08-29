@@ -4,12 +4,14 @@ import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import {
+  HEAT_APPEARANCES,
   HEAT_FADE_HELP,
   HEAT_JOIN,
   HEAT_LEVELS,
   HEAT_LOGIN,
   HEAT_LOOKS,
   HEAT_ORIENTATIONS,
+  HEAT_PRESENTATIONS,
   HEAT_PRONOUNS,
   HEAT_ROLES,
   HEAT_SKINS,
@@ -17,10 +19,12 @@ import {
   HEAT_TAGLINE,
   HEAT_VOICES,
   isFadeText,
+  type HeatAppearance,
   type HeatLevel,
   type HeatLook,
   type HeatMessage,
   type HeatOrientation,
+  type HeatPresentation,
   type HeatPronouns,
   type HeatRole,
   type HeatSkin,
@@ -98,6 +102,8 @@ export function HeatCheckApp() {
   const [who, setWho] = useState<HeatStarter>("they");
   const [skin, setSkin] = useState<HeatSkin>("ios");
   const [look, setLook] = useState<HeatLook>("woman");
+  const [presentation, setPresentation] = useState<HeatPresentation>("default");
+  const [appearance, setAppearance] = useState<HeatAppearance>("any");
   const [pronouns, setPronouns] = useState<HeatPronouns>("she");
   const [orientation, setOrientation] = useState<HeatOrientation>("bi");
   const [wantFace, setWantFace] = useState(false);
@@ -120,6 +126,15 @@ export function HeatCheckApp() {
   const [press, setPress] = useState<{ x: number; y: number; msg: HeatMessage } | null>(null);
   const [recap, setRecap] = useState<Recap | null>(null);
   const [pendingThem, setPendingThem] = useState<HeatMessage[]>([]);
+  const [plusOpen, setPlusOpen] = useState(false);
+  const [meInitial, setMeInitial] = useState("U");
+  const [myFaceUrl, setMyFaceUrl] = useState<string | null>(null);
+  const [newContact, setNewContact] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const camRef = useRef<HTMLInputElement>(null);
+  const libRef = useRef<HTMLInputElement>(null);
+  const plusIntent = useRef<"mine" | "chat" | "pick">("pick");
+  const pendingRef = useRef<File | null>(null);
 
   const threadEl = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -162,6 +177,8 @@ export function HeatCheckApp() {
       }
       const nightId = params.get("night");
       const { data } = await supabase.auth.getSession();
+      const uname = String(data.session?.user?.user_metadata?.username || data.session?.user?.email || "U");
+      setMeInitial(uname.slice(0, 1).toUpperCase());
       if (!data.session?.user) {
         setScreen("gate");
         return;
@@ -185,6 +202,7 @@ export function HeatCheckApp() {
         if (data.thread) {
           setThread(data.thread);
           setSkin(data.thread.skin || "ios");
+          setMyFaceUrl(data.thread.user_photo_url || null);
           setMessages((data.messages || []).map((m: HeatMessage & { role?: string }) => ({ ...m, sender: m.sender || m.role || "them" })));
           const map: Record<string, HeatTip> = {};
           for (const row of data.tips || []) {
@@ -215,18 +233,23 @@ export function HeatCheckApp() {
           who_starts: who,
           skin,
           they_look: look,
+          presentation,
+          appearance,
           they_pronouns: pronouns,
           they_orientation: orientation,
           generate_face: faceGenOn && wantFace && !photoPath,
           user_photo_path: photoPath,
           user_photo_url: photoUrl,
           peek: peekDefault,
+          new_contact: newContact,
         }),
       });
       const data = await readJson(res);
       if (!res.ok) throw new Error(data.error === "coming_soon" ? "Still warming up." : data.error || "Could not open.");
       setThread(data.thread);
       setSkin(data.thread.skin);
+      setMyFaceUrl(data.thread.user_photo_url || null);
+      setNewContact(false);
       const incoming: HeatMessage[] = (data.messages || []).map((m: HeatMessage & { role?: string }) => ({
         ...m,
         sender: m.sender || m.role || "them",
@@ -282,19 +305,20 @@ export function HeatCheckApp() {
     return () => window.clearInterval(tick);
   }, [screen, thread?.id, thread?.contact_face_url]);
 
-  const send = async (raw?: string) => {
+  const send = async (raw?: string, image?: { url: string; path?: string }) => {
     const text = (raw ?? draft).trim();
-    if (!text || !thread || busy) return;
+    if ((!text && !image) || !thread || busy) return;
     setDraft("");
     setBusy(true);
     setReceipt("delivered");
+    setNote(null);
     const optimistic: HeatMessage = {
       id: `local-${Date.now()}`,
       thread_id: thread.id,
       user_id: thread.user_id,
       sender: "user",
       body: text,
-      image_url: null,
+      image_url: image?.url || null,
       score: null,
       delivered_at: new Date().toISOString(),
       read_at: null,
@@ -305,7 +329,7 @@ export function HeatCheckApp() {
       const res = await fetch("/api/heat-check/turn", {
         method: "POST",
         headers: await authHeaders(),
-        body: JSON.stringify({ threadId: thread.id, text, fade: isFadeText(text) }),
+        body: JSON.stringify({ threadId: thread.id, text, fade: isFadeText(text), imageUrl: image?.url, imagePath: image?.path }),
       });
       const data = await readJson(res);
       if (!res.ok) throw new Error(data.error || "Send failed");
@@ -342,10 +366,23 @@ export function HeatCheckApp() {
       }
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Send failed");
+      if (image) setNote("couldn't use that photo");
     } finally {
       setBusy(false);
       inputRef.current?.focus();
     }
+  };
+
+  const uploadFile = async (file: File, kind: "mine" | "chat" | "contact") => {
+    const dataUrl = await fileToDataUrl(file);
+    const res = await fetch("/api/heat-check/upload", {
+      method: "POST",
+      headers: await authHeaders(),
+      body: JSON.stringify({ image: dataUrl, kind }),
+    });
+    const data = await readJson(res);
+    if (!res.ok) throw new Error(data.error || "Upload failed");
+    return { path: data.path as string, url: data.url as string };
   };
 
   const uploadMine = async (file: File) => {
@@ -355,7 +392,7 @@ export function HeatCheckApp() {
       const res = await fetch("/api/heat-check/upload", {
         method: "POST",
         headers: await authHeaders(),
-        body: JSON.stringify({ image: dataUrl }),
+        body: JSON.stringify({ image: dataUrl, kind: "contact" }),
       });
       const data = await readJson(res);
       if (!res.ok) throw new Error(data.error || "Upload failed");
@@ -367,6 +404,48 @@ export function HeatCheckApp() {
       setErr(e instanceof Error ? e.message : "Upload failed");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const applyMyFace = async (file: File) => {
+    try {
+      const up = await uploadFile(file, "mine");
+      setMyFaceUrl(up.url);
+      setThread((t) => (t ? { ...t, user_photo_url: up.url, user_photo_path: up.path } : t));
+      if (thread?.id && thread.id !== "preview") {
+        await fetch(`/api/heat-check/threads/${thread.id}`, {
+          method: "PATCH",
+          headers: await authHeaders(),
+          body: JSON.stringify({ action: "my-face", path: up.path, url: up.url }),
+        });
+      }
+      setPlusOpen(false);
+      pendingRef.current = null;
+    } catch {
+      setNote("couldn't use that photo");
+    }
+  };
+
+  const sendChatPhoto = async (file: File) => {
+    try {
+      const up = await uploadFile(file, "chat");
+      setPlusOpen(false);
+      pendingRef.current = null;
+      await send(undefined, up);
+    } catch {
+      setNote("couldn't use that photo");
+    }
+  };
+
+  const removeMyFace = async () => {
+    setMyFaceUrl(null);
+    setPlusOpen(false);
+    if (thread?.id && thread.id !== "preview") {
+      await fetch(`/api/heat-check/threads/${thread.id}`, {
+        method: "PATCH",
+        headers: await authHeaders(),
+        body: JSON.stringify({ action: "remove-face" }),
+      });
     }
   };
 
@@ -470,6 +549,8 @@ export function HeatCheckApp() {
               else setPronouns("they");
             }} options={HEAT_LOOKS} />
             <SelectField label="Pronouns" value={pronouns} onChange={(v) => setPronouns(v as HeatPronouns)} options={HEAT_PRONOUNS} />
+            <SelectField label="Look" value={presentation} onChange={(v) => setPresentation(v as HeatPresentation)} options={HEAT_PRESENTATIONS} />
+            <SelectField label="Appearance" value={appearance} onChange={(v) => setAppearance(v as HeatAppearance)} options={HEAT_APPEARANCES} />
             <SelectField label="Orientation" value={orientation} onChange={(v) => setOrientation(v as HeatOrientation)} options={HEAT_ORIENTATIONS} />
             <SelectField label="Role" value={role} onChange={(v) => setRole(v as HeatRole)} options={roleOpts} />
             <SelectField label="Heat" value={heat} onChange={(v) => setHeat(v as HeatLevel)} options={HEAT_LEVELS} />
@@ -570,6 +651,7 @@ export function HeatCheckApp() {
                   setThread(null);
                   setMessages([]);
                   setWho("they");
+                  setNewContact(true);
                   setScreen("start");
                 }}
               >
@@ -598,10 +680,10 @@ export function HeatCheckApp() {
             {menu && (
               <div className="hc-menu">
                 <button type="button" onClick={() => switchSkin(skin === "ios" ? "android" : "ios")}>
-                  {skin === "ios" ? "Android language" : "iOS language"}
+                  {skin === "ios" ? "Android skin" : "iOS skin"}
                 </button>
                 <button type="button" onClick={fadeOut}>Fade</button>
-                <button type="button" onClick={() => { setMenu(false); setThread(null); setMessages([]); setScreen("start"); }}>
+                <button type="button" onClick={() => { setMenu(false); setThread(null); setMessages([]); setNewContact(true); setScreen("start"); }}>
                   New contact
                 </button>
               </div>
@@ -655,6 +737,8 @@ export function HeatCheckApp() {
                   skin={skin}
                   faceUrl={thread?.contact_face_url || photoUrl}
                   name={thread?.contact_name || "?"}
+                  meFaceUrl={myFaceUrl}
+                  meInitial={meInitial}
                   onPress={(e) => {
                     e.preventDefault();
                     const point = "clientX" in e ? e : e.touches?.[0];
@@ -740,7 +824,7 @@ export function HeatCheckApp() {
             send();
           }}
         >
-          <button type="button" className="hc-plus" aria-label="Attach">+</button>
+          <button type="button" className="hc-plus" aria-label="Attach" onClick={() => setPlusOpen((v) => !v)}>+</button>
           <textarea
             ref={inputRef}
             rows={1}
@@ -759,6 +843,51 @@ export function HeatCheckApp() {
             <FlameMark className="w-4 h-5" />
           </button>
         </form>
+        {note ? <p className="hc-quiet">{note}</p> : null}
+        {plusOpen ? (
+          <div className="hc-sheet">
+            <button type="button" onClick={() => { plusIntent.current = "pick"; camRef.current?.click(); }}>Camera</button>
+            <button type="button" onClick={() => { plusIntent.current = "pick"; libRef.current?.click(); }}>Photo library</button>
+            <button type="button" onClick={() => {
+              if (pendingRef.current) applyMyFace(pendingRef.current);
+              else { plusIntent.current = "mine"; libRef.current?.click(); }
+            }}>Use as my face</button>
+            <button type="button" onClick={() => {
+              if (pendingRef.current) sendChatPhoto(pendingRef.current);
+              else { plusIntent.current = "chat"; libRef.current?.click(); }
+            }}>Send in chat</button>
+            <button type="button" onClick={removeMyFace}>Remove my face</button>
+          </div>
+        ) : null}
+        <input
+          ref={camRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (!f) return;
+            if (plusIntent.current === "mine") applyMyFace(f);
+            else if (plusIntent.current === "chat") sendChatPhoto(f);
+            else pendingRef.current = f;
+          }}
+        />
+        <input
+          ref={libRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (!f) return;
+            if (plusIntent.current === "chat") sendChatPhoto(f);
+            else if (plusIntent.current === "mine") applyMyFace(f);
+            else pendingRef.current = f;
+          }}
+        />
 
         {press && (
           <div className="hc-press" style={{ left: Math.min(press.x, 220), top: Math.min(press.y, 420) }}>
@@ -946,15 +1075,19 @@ function Bubble({
   skin,
   faceUrl,
   name,
+  meFaceUrl,
+  meInitial,
   onPress,
 }: {
   msg: HeatMessage;
   skin: HeatSkin;
   faceUrl?: string | null;
   name?: string;
+  meFaceUrl?: string | null;
+  meInitial?: string;
   onPress: (e: React.MouseEvent | React.TouchEvent) => void;
 }) {
-  const avatar = !msg.sender || msg.sender === "them" || msg.sender === "photo" ? (
+  const theirAvatar = (
     faceUrl ? (
       // eslint-disable-next-line @next/next/no-img-element
       <img src={faceUrl} alt="" className="hc-face hc-face-sm self-end" />
@@ -963,11 +1096,19 @@ function Bubble({
         {(name || "?").slice(0, 1)}
       </div>
     )
-  ) : null;
+  );
+  const myAvatar = meFaceUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={meFaceUrl} alt="" className="hc-face hc-face-sm self-end" />
+  ) : (
+    <div className="hc-face hc-face-sm grid place-items-center text-[10px] text-[#c4a59a] self-end">
+      {(meInitial || "U").slice(0, 1)}
+    </div>
+  );
   if (msg.sender === "photo" && msg.image_url) {
     return (
       <div className="hc-row them">
-        {avatar}
+        {theirAvatar}
         <div className="hc-photo">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={msg.image_url} alt="" />
@@ -978,22 +1119,30 @@ function Bubble({
   const mine = msg.sender === "user";
   return (
     <div className={cx("hc-row", mine ? "me" : "them")}>
-      {!mine ? avatar : null}
+      {!mine ? theirAvatar : null}
       <div className="hc-bubble-wrap">
-        <button
-          type="button"
-          className={cx("hc-bubble", mine ? "me" : "them")}
-          onContextMenu={onPress}
-          onTouchStart={(e) => {
-            const t = window.setTimeout(() => onPress(e), 480);
-            const clear = () => window.clearTimeout(t);
-            e.currentTarget.addEventListener("touchend", clear, { once: true });
-            e.currentTarget.addEventListener("touchmove", clear, { once: true });
-          }}
-        >
-          {msg.body}
-          <span className="tail" aria-hidden />
-        </button>
+        {msg.image_url ? (
+          <div className={cx("hc-photo", mine && "me")}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={msg.image_url} alt="" />
+          </div>
+        ) : null}
+        {msg.body && msg.body !== "(sent a photo)" ? (
+          <button
+            type="button"
+            className={cx("hc-bubble", mine ? "me" : "them")}
+            onContextMenu={onPress}
+            onTouchStart={(e) => {
+              const t = window.setTimeout(() => onPress(e), 480);
+              const clear = () => window.clearTimeout(t);
+              e.currentTarget.addEventListener("touchend", clear, { once: true });
+              e.currentTarget.addEventListener("touchmove", clear, { once: true });
+            }}
+          >
+            {msg.body}
+            <span className="tail" aria-hidden />
+          </button>
+        ) : null}
         {mine ? (
           <p className="hc-stamp">
             {msg.created_at
@@ -1002,6 +1151,7 @@ function Bubble({
           </p>
         ) : null}
       </div>
+      {mine ? myAvatar : null}
     </div>
   );
 }

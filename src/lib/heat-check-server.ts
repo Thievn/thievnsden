@@ -22,7 +22,8 @@ import {
   type HeatPronouns,
   type HeatOrientation,
   SEED_NAME_ROWS,
-  faceBrief,
+  chatIdentityBrief,
+  imageFacePrompt,
   vibeForLook,
 } from "@/lib/heat-check";
 
@@ -246,11 +247,12 @@ export async function uploadHeatBytes(opts: {
 export async function generateContactFace(
   userId: string,
   seed?: string,
-  identity?: { look?: string; pronouns?: string; orientation?: string },
+  identity?: { who?: string; look?: string; presentation?: string; appearance?: string },
 ) {
   const extra = (seed || "").trim().slice(0, 180);
-  const who = faceBrief(identity?.look || "woman", identity?.pronouns || "she", identity?.orientation || "bi");
-  const prompt = `${FACE_BASE} ${who} ${extra || "night indoor lamp, messy hair, lived-in room."} STRICT: clothes on or implied, no hardcore.`;
+  const who = identity?.who || identity?.look || "woman";
+  const visual = imageFacePrompt(who, identity?.presentation || "default", identity?.appearance);
+  const prompt = `${FACE_BASE} ${visual} ${extra || "night indoor lamp, messy hair, lived-in room."} STRICT: clothes on or implied, no hardcore. Do not use pronouns or orientation. No celebrities. No real-person likeness. No 'look like my ex'.`;
   const bytes = await imagineStill(prompt);
   const path = `${userId}/${Date.now().toString(36)}.jpg`;
   const up = await uploadHeatBytes({ bucket: "heat-faces", path, bytes });
@@ -301,6 +303,7 @@ export type TurnContext = {
   lastScores: number[];
   settings: HeatSettings;
   photoUrl?: string | null;
+  visionImageUrl?: string | null;
   compiledSystem?: string;
 };
 
@@ -324,8 +327,7 @@ export async function runHeatTurn(ctx: TurnContext): Promise<HeatTurnJson> {
   const pronouns = String(ctx.thread.they_pronouns || meta.pronouns || "she");
   const orientation = String(ctx.thread.they_orientation || meta.orientation || "bi");
   const user = `Contact name: ${ctx.thread.contact_name}
-They are: ${look}. Pronouns: ${pronouns}. Orientation: ${orientation}.
-${faceBrief(look, pronouns, orientation)}
+${chatIdentityBrief(look, pronouns, orientation)}
 Role: ${ctx.thread.role} — ${role}
 Heat: ${ctx.thread.heat} — ${heat}
 Voice: ${ctx.thread.voice} — ${voice}
@@ -336,7 +338,8 @@ Fade requested: ${ctx.fade ? "yes — wind down, ended true, end_reason fade" : 
 Player double-texted while unread: ${ctx.doubleText ? "yes — flag it in tip" : "no"}
 Last user scores: ${ctx.lastScores.join(", ") || "none"}
 Reward photo allowed this turn: ${maybeReward ? "yes, maybe one still of the SAME contact, sexier, not hardcore, if this score is also high" : "no"}
-Player photo attached: ${ctx.photoUrl ? "yes, you may comment on lighting/crop in the TIP only, never in scene" : "no"}
+Player sent a photo in chat: ${ctx.visionImageUrl ? "yes — you can see it. React in character in scene. Tip may note crop, lighting, heat, whether it fits. Do NOT dump a Face-the-Den score unless they asked to be judged. Match heat + mood. Mean = sharper. Shy = softer." : "no"}
+Player profile still on file: ${ctx.photoUrl && !ctx.visionImageUrl ? "yes — you may mention lighting/crop in the TIP only, never in scene" : ctx.photoUrl ? "yes, separate from the chat photo" : "no"}
 
 Night:
 ${transcript || "(empty)"}
@@ -348,7 +351,7 @@ You control the night. Stay human. Stay in their body. JSON only.`;
   const raw = await grokJsonChat({
     system: compiled,
     user,
-    imageUrl: ctx.photoUrl || undefined,
+    imageUrl: ctx.visionImageUrl || undefined,
     maxTokens: 800,
     temperature: ctx.fade ? 0.6 : 0.98,
   });
@@ -417,6 +420,20 @@ export const VALID_SKIN = new Set(["ios", "android"]);
 export const VALID_LOOK = new Set(["woman", "man", "nonbinary", "trans-woman", "trans-man", "androgynous"]);
 export const VALID_PRONOUNS = new Set(["she", "he", "they", "she-they", "he-they", "any"]);
 export const VALID_ORIENTATION = new Set(["straight", "gay", "lesbian", "bi", "pan", "queer", "questioning", "ace"]);
+export const VALID_PRESENTATION = new Set(["default", "masculine", "feminine", "androgynous", "andromorph"]);
+export const VALID_APPEARANCE = new Set([
+  "any",
+  "black",
+  "east-asian",
+  "south-asian",
+  "southeast-asian",
+  "white",
+  "mena",
+  "latino",
+  "indigenous",
+  "mixed",
+  "prefer-not",
+]);
 
 export function asRole(v: unknown): HeatRole {
   const s = String(v || "").trim().toLowerCase();
@@ -443,6 +460,12 @@ export function asPronouns(v: unknown): HeatPronouns {
 }
 export function asOrientation(v: unknown): HeatOrientation {
   return VALID_ORIENTATION.has(String(v)) ? (v as HeatOrientation) : "bi";
+}
+export function asPresentation(v: unknown) {
+  return VALID_PRESENTATION.has(String(v)) ? String(v) : "default";
+}
+export function asAppearance(v: unknown) {
+  return VALID_APPEARANCE.has(String(v)) ? String(v) : "any";
 }
 
 export function heatMessageRow(opts: {

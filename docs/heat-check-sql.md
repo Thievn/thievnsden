@@ -181,6 +181,26 @@ create table if not exists public.heat_compiled_prompts (
 alter table public.heat_threads add column if not exists opener text;
 alter table public.heat_threads add column if not exists compiled_hash text;
 alter table public.heat_names add column if not exists vibe text;
+
+create table if not exists public.heat_contacts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  look_key text not null,
+  presentation text not null default 'default',
+  appearance text not null default 'any',
+  face_url text,
+  pose_urls jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists heat_contacts_user_key_idx
+  on public.heat_contacts (user_id, look_key, created_at desc);
+
+alter table public.heat_threads add column if not exists presentation text;
+alter table public.heat_threads add column if not exists appearance text;
+alter table public.heat_threads add column if not exists look_key text;
+alter table public.heat_threads add column if not exists contact_id uuid references public.heat_contacts(id) on delete set null;
+alter table public.heat_threads add column if not exists user_photo_url text;
 ```
 
 ## RLS
@@ -199,6 +219,7 @@ alter table public.heat_heats enable row level security;
 alter table public.heat_voices enable row level security;
 alter table public.heat_openers enable row level security;
 alter table public.heat_compiled_prompts enable row level security;
+alter table public.heat_contacts enable row level security;
 ```
 
 create policy heat_threads_own on public.heat_threads
@@ -227,6 +248,9 @@ create policy heat_credits_own on public.heat_credits
 
 create policy heat_names_read on public.heat_names
   for select using (true);
+
+create policy heat_contacts_own on public.heat_contacts
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
 
 Storage: the app writes with the service role. Users never get a public drop.

@@ -87,6 +87,14 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   }
   if (body.skin === "ios" || body.skin === "android") patch.skin = body.skin;
   if (typeof body.peek === "boolean") patch.peek = body.peek;
+  if (body.action === "my-face") {
+    patch.user_photo_path = body.path || null;
+    patch.user_photo_url = body.url || null;
+  }
+  if (body.action === "remove-face") {
+    patch.user_photo_path = null;
+    patch.user_photo_url = null;
+  }
   if (Object.keys(patch).length) {
     patch.updated_at = new Date().toISOString();
     const { data, error } = await supabase

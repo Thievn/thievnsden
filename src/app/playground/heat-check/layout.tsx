@@ -14,11 +14,11 @@ const sans = Outfit({
 
 export const metadata: Metadata = {
   title: "Heat Check",
-  description: "Late night. One thread. They stay a person.",
+  description: "They'll read it twice.",
   alternates: { canonical: "/playground/heat-check" },
   openGraph: {
     title: "Heat Check · Thievn's Den",
-    description: "Late night. One thread. They stay a person.",
+    description: "They'll read it twice.",
     url: "https://thievnsden.com/playground/heat-check",
   },
   robots: { index: false, follow: false },

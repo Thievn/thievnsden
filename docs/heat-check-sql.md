@@ -128,13 +128,59 @@ create table if not exists public.heat_assets (
 create index if not exists heat_assets_status_idx
   on public.heat_assets (status, created_at desc);
 
--- Credits stub only. 1 free round/day later. No checkout.
+-- Credits stub only. 1 free round/day later. No checkout. Failed gens never increment.
 create table if not exists public.heat_credits (
   user_id uuid primary key references auth.users(id) on delete cascade,
   extra int not null default 0,
   free_used_on date,
   updated_at timestamptz not null default now()
 );
+
+create table if not exists public.heat_roles (
+  slug text primary key,
+  label text not null,
+  body text not null default '',
+  sort int not null default 0,
+  updated_at timestamptz not null default now()
+);
+create table if not exists public.heat_heats (
+  slug text primary key,
+  label text not null,
+  body text not null default '',
+  sort int not null default 0,
+  updated_at timestamptz not null default now()
+);
+create table if not exists public.heat_voices (
+  slug text primary key,
+  label text not null,
+  body text not null default '',
+  sort int not null default 0,
+  updated_at timestamptz not null default now()
+);
+create table if not exists public.heat_openers (
+  slug text primary key,
+  label text not null,
+  body text not null default '',
+  sort int not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.heat_compiled_prompts (
+  id uuid primary key default gen_random_uuid(),
+  role text not null,
+  heat text not null,
+  voice text not null,
+  opener text not null,
+  compiled_text text not null,
+  source_hash text not null,
+  stale boolean not null default false,
+  updated_at timestamptz not null default now(),
+  unique (role, heat, voice, opener)
+);
+
+alter table public.heat_threads add column if not exists opener text;
+alter table public.heat_threads add column if not exists compiled_hash text;
+alter table public.heat_names add column if not exists vibe text;
 ```
 
 ## RLS
@@ -148,8 +194,12 @@ alter table public.heat_tips enable row level security;
 alter table public.heat_saves enable row level security;
 alter table public.heat_reports enable row level security;
 alter table public.heat_assets enable row level security;
-alter table public.heat_credits enable row level security;
-alter table public.heat_names enable row level security;
+alter table public.heat_roles enable row level security;
+alter table public.heat_heats enable row level security;
+alter table public.heat_voices enable row level security;
+alter table public.heat_openers enable row level security;
+alter table public.heat_compiled_prompts enable row level security;
+```
 
 create policy heat_threads_own on public.heat_threads
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

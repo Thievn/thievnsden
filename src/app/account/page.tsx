@@ -146,7 +146,7 @@ export default function AccountPage() {
           href="/account/heat-check"
           className="p-4 text-sm text-neutral-300 hover:text-neutral-100 flex items-center justify-between"
         >
-          <span>Heat Check threads</span>
+          <span>Heat Check nights</span>
           <span className="text-neutral-600">→</span>
         </Link>
       </div>

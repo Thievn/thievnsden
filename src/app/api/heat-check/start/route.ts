@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { lastSeenLabel } from "@/lib/heat-check";
+import { lookupCompiledPrompt } from "@/lib/heat-prompt-cache";
 import {
   asHeat,
   asLook,
@@ -59,6 +60,8 @@ export async function POST(req: NextRequest) {
     let facePrompt: string | null = user_photo_path ? "user-uploaded contact still" : null;
     let faceError: string | null = null;
 
+    const compiled = await lookupCompiledPrompt({ role, heat, voice, opener: who_starts });
+
     const { data: thread, error } = await supabase
       .from("heat_threads")
       .insert({
@@ -83,6 +86,8 @@ export async function POST(req: NextRequest) {
         ended: false,
         status: "active",
         last_seen_label: lastSeenLabel(),
+        opener: who_starts,
+        compiled_hash: compiled.hash || null,
         meta: {
           face_prompt: facePrompt,
           face_seed: faceSeed || null,
@@ -96,76 +101,65 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error || !thread) {
-      return NextResponse.json({ error: error?.message || "Could not open the thread." }, { status: 500 });
+      return NextResponse.json({ error: error?.message || "Could not open the night." }, { status: 500 });
     }
 
     let messages: unknown[] = [];
-    let tip = null;
 
-    const faceJob =
-      generate_face && !contact_face_url
-        ? withTimeout(
+    const faceRetry = async () => {
+      if (!generate_face || contact_face_url) return;
+      for (let i = 0; i < 2; i++) {
+        try {
+          const face = await withTimeout(
             generateContactFace(user.id, faceSeed, {
               look: they_look,
               pronouns: they_pronouns,
               orientation: they_orientation,
             }),
-            22000,
+            25000,
             "Face gen timed out",
-          )
-            .then((face) => {
-              contact_face_url = face.url;
-              facePrompt = face.prompt;
+          );
+          await supabase
+            .from("heat_threads")
+            .update({
+              contact_face_url: face.url,
+              meta: {
+                face_prompt: face.prompt,
+                face_seed: faceSeed || null,
+                look: they_look,
+                pronouns: they_pronouns,
+                orientation: they_orientation,
+              },
+              updated_at: new Date().toISOString(),
             })
-            .catch((err: unknown) => {
-              console.error("heat face gen", err);
-              faceError = err instanceof Error ? err.message : "Face didn't render. Thread still opens.";
-            })
-        : Promise.resolve();
+            .eq("id", thread.id);
+          return;
+        } catch (err) {
+          console.error("heat face gen", err);
+        }
+      }
+    };
+    void faceRetry();
 
-    const openingJob =
-      who_starts === "they"
-        ? withTimeout(
-            runHeatTurn({
-              thread,
-              history: [],
-              userLine: null,
-              opening: true,
-              fade: false,
-              doubleText: false,
-              lastScores: [],
-              settings: ctx.settings,
-            }),
-            28000,
-            "Opening timed out",
-          ).catch((err: unknown) => {
-            console.error("heat opening", err);
-            return fallbackHeatTurn(true);
-          })
-        : Promise.resolve(null);
-
-    const [turn] = await Promise.all([openingJob, faceJob]);
-
-    if (contact_face_url || faceError) {
-      await supabase
-        .from("heat_threads")
-        .update({
-          contact_face_url,
-          meta: {
-            face_prompt: facePrompt,
-            face_seed: faceSeed || null,
-            look: they_look,
-            pronouns: they_pronouns,
-            orientation: they_orientation,
-            face_error: faceError,
-          },
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", thread.id);
-      thread.contact_face_url = contact_face_url;
-    }
-
-    if (turn) {
+    if (who_starts === "they") {
+      const turn = await withTimeout(
+        runHeatTurn({
+          thread,
+          history: [],
+          userLine: null,
+          opening: true,
+          fade: false,
+          doubleText: false,
+          lastScores: [],
+          settings: ctx.settings,
+          compiledSystem: compiled.compiled || undefined,
+        }),
+        28000,
+        "Opening timed out",
+      ).catch((err: unknown) => {
+        console.error("heat opening", err);
+        return fallbackHeatTurn(true);
+      });
       const bubbles = splitThem(turn.scene);
       const rows = bubbles.map((bodyText) =>
         heatMessageRow({
@@ -179,28 +173,13 @@ export async function POST(req: NextRequest) {
       );
       const { data: inserted } = await supabase.from("heat_messages").insert(rows).select("*");
       messages = inserted || [];
-      const firstId = (inserted && inserted[0]?.id) || null;
-      const { data: tipRow } = await supabase
-        .from("heat_tips")
-        .insert({
-          thread_id: thread.id,
-          message_id: firstId,
-          user_id: user.id,
-          tip: turn.tip || "Match their pace. Don't dump the whole night in one bubble.",
-          score: turn.score,
-          rewrite: turn.rewrite,
-          mood: turn.mood,
-        })
-        .select("*")
-        .single();
-      tip = tipRow;
       if (turn.mood && turn.mood !== "same") {
         await supabase.from("heat_threads").update({ mood: turn.mood, updated_at: new Date().toISOString() }).eq("id", thread.id);
         thread.mood = turn.mood;
       }
     }
 
-    return NextResponse.json({ thread, messages, tip, faceError });
+    return NextResponse.json({ thread, messages, tip: null, faceError: null, promptHit: compiled.hit });
   } catch (err: unknown) {
     console.error("heat start", err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "Start failed" }, { status: 500 });

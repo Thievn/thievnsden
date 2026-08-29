@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isFadeText, type HeatThread } from "@/lib/heat-check";
+import { lookupCompiledPrompt } from "@/lib/heat-prompt-cache";
 import {
   buildRecap,
   fallbackHeatTurn,
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
       .eq("id", threadId)
       .eq("user_id", user.id)
       .maybeSingle();
-    if (!thread) return NextResponse.json({ error: "Thread gone." }, { status: 404 });
+    if (!thread) return NextResponse.json({ error: "Night gone." }, { status: 404 });
     if (thread.ended) return NextResponse.json({ error: "This one already faded." }, { status: 409 });
 
     const { data: history } = await supabase
@@ -75,6 +76,12 @@ export async function POST(req: NextRequest) {
       photoUrl = await signedUploadUrl(thread.user_photo_path);
     }
 
+    const compiled = await lookupCompiledPrompt({
+      role: String(thread.role),
+      heat: String(thread.heat),
+      voice: String(thread.voice),
+      opener: String(thread.opener || thread.who_starts || "they"),
+    });
     let turn;
     try {
       turn = await withTimeout(
@@ -88,6 +95,7 @@ export async function POST(req: NextRequest) {
           lastScores,
           settings: ctx.settings,
           photoUrl,
+          compiledSystem: compiled.compiled || undefined,
         }),
         28000,
         "Reply timed out",

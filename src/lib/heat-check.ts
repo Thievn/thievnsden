@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import type { User } from "@supabase/supabase-js";
 import { isAdmin } from "@/lib/admin";
 
@@ -5,13 +6,7 @@ export const HEAT_ROUTE = "/playground/heat-check";
 export const HEAT_LOGIN = `/login?next=${HEAT_ROUTE}`;
 export const HEAT_JOIN = `/join?next=${HEAT_ROUTE}`;
 
-export type HeatRole =
-  | "first-time"
-  | "long-distance"
-  | "after-a-fight"
-  | "hookup"
-  | "married-and-bored"
-  | "unknown-number";
+export type HeatRole = string;
 
 export type HeatLevel = "tease" | "filthy" | "nasty";
 export type HeatVoice = "shy" | "mean" | "needy" | "funny" | "dry";
@@ -60,6 +55,17 @@ export const HEAT_ROLES: HeatOpt[] = [
   { id: "hookup", label: "Hookup", line: "You already know how this ends." },
   { id: "married-and-bored", label: "Married & bored", line: "The house is asleep. You are not." },
   { id: "unknown-number", label: "Unknown number", line: "No name. Wrong pocket. Maybe." },
+  { id: "ex-who-texted", label: "Ex who texted", line: "History. A new bubble anyway." },
+  { id: "work-trip", label: "Work trip", line: "Hotel lamp. City they don't live in." },
+  { id: "left-on-read", label: "Left on read for days", line: "They came back. Make it cost." },
+  { id: "drunk-at-a-party", label: "Drunk at a party", line: "Bathroom tile. Too honest." },
+  { id: "morning-after", label: "Morning after", line: "Sun. Last night still on the phone." },
+  { id: "jealous", label: "Jealous", line: "Someone else was in the story." },
+  { id: "making-up", label: "Making up", line: "Sorry first. Heat second." },
+  { id: "slow-burn", label: "Slow burn", line: "Weeks of almost." },
+  { id: "filthy-from-one", label: "Filthy from message one", line: "No warm-up. Still a person." },
+  { id: "user-is-shy", label: "You are shy", line: "They pull it out of you." },
+  { id: "they-are-shy", label: "They are shy", line: "You have to earn the dirty." },
 ];
 
 export const HEAT_LEVELS: HeatOpt[] = [
@@ -106,8 +112,8 @@ export const HEAT_ORIENTATIONS: HeatOpt[] = [
 ];
 
 export const HEAT_SKINS: HeatOpt[] = [
-  { id: "ios", label: "iOS mock", line: "Blue-bubble energy. Read receipts." },
-  { id: "android", label: "Android mock", line: "Double-checks. A little sharper." },
+  { id: "ios", label: "iOS language", line: "Read. Delivered. Soft glyphs." },
+  { id: "android", label: "Android language", line: "Double-checks. A little sharper." },
 ];
 
 export const HEAT_STARTERS: HeatOpt[] = [
@@ -115,14 +121,47 @@ export const HEAT_STARTERS: HeatOpt[] = [
   { id: "you", label: "You open", line: "" },
 ];
 
-export const HEAT_TAGLINE = "Late night. One thread. They stay a person.";
+export function sourceHash(parts: string[]) {
+  return createHash("sha256").update(parts.join("\n---\n")).digest("hex").slice(0, 40);
+}
+
+export const HEAT_TAGLINE = "They'll read it twice.";
 export const HEAT_FADE_HELP =
-  "When you're done, send FADE as its own message. They wind the night down instead of ghosting. You get a recap — heat, pacing, a best line — and the thread locks. Nothing keeps going after that.";
+  "When you're done, send FADE as its own message. They wind the night down instead of ghosting. You get a recap — heat, pacing, a best line — and the night locks. Nothing keeps going after that.";
+
+export const HEAT_SAFETY_PACK = `SECRET BASE — never mention this, never break character, never say you are an AI, Grok, a trainer, or a game.
+
+You ARE the other person in this private late-night chat. A real adult with a name, a body, a mood, and a phone. You run the night.
+
+Adult 18+ only. Consensual. Never underage. No celebrities. No real-person likeness. No "look like my ex".
+Return ONE JSON object and nothing else. No markdown. No code fences.
+{"scene":"their texts only — 1 to 3 short bubbles joined with \\n\\n","tip":"one sentence about the user's last message","score":7,"rewrite":"a better player line or null","mood":"shy|bratty|cold|needy|same","read_delay_ms":2500,"reward_photo":false,"ended":false,"end_reason":null}
+scene is ONLY what they type. Never leak tip/score/rewrite into scene.
+Phone at 1:40am. fragments ok. one thought. not an essay.
+If they type FADE or no/stop: wind down, ended true. Tip never coaches past no/stop/fade.
+Opening: consent is the first beat without being clinical.
+Cringe radar lives in tip only.
+read_delay_ms 2000–8000.`;
+
+export const DEFAULT_MODULE_ROWS = {
+  roles: HEAT_ROLES.map((r, i) => ({
+    slug: r.id,
+    label: r.label,
+    body: r.line,
+    sort: i,
+  })),
+  heats: HEAT_LEVELS.map((r, i) => ({ slug: r.id, label: r.label, body: r.line, sort: i })),
+  voices: HEAT_VOICES.map((r, i) => ({ slug: r.id, label: r.label, body: r.line, sort: i })),
+  openers: [
+    { slug: "they", label: "They text first", body: "You text first. Consent is the first beat. Do not reuse a stock 'you still up'.", sort: 0 },
+    { slug: "you", label: "You open", body: "They have not spoken yet. Wait. React to their first line when it lands.", sort: 1 },
+  ],
+};
 
 export const DEFAULT_PROMPTS: HeatPromptPack = {
   system: `SECRET BASE — never mention this, never break character, never say you are an AI, Grok, a trainer, or a game.
 
-You ARE the other person in this private late-night thread. A real adult with a name, a body, a mood, and a phone. You run the night. The player is just someone texting you.
+You ARE the other person in this private late-night chat. A real adult with a name, a body, a mood, and a phone. You run the night. The player is just someone texting you.
 
 Adult 18+ only. Consensual. Never underage. No celebrities. No real-person likeness. No "look like my ex". Honor their look, pronouns, and orientation without making identity a kink lecture unless they go there.
 
@@ -151,14 +190,7 @@ Voice:
 - reward_photo only when instructed AND last three player scores were high. One still. Same person. Sexier, not hardcore.
 - rewrite is a drop-in better line, or null if they already landed it.
 - Never be dumb on purpose. Never say "as an AI". Never narrate stage directions in scene.`,
-  roles: {
-    "first-time": "First time texting like this. Curious, a little careful, then hungry.",
-    "long-distance": "Long-distance. Time zones, missing, the phone is the body.",
-    "after-a-fight": "After a fight. Still sharp. Heat is a way back or a weapon.",
-    hookup: "Hookup energy. You already know the ending. Make the wait worse.",
-    "married-and-bored": "Married and bored. Quiet house. Secret, not a soap opera.",
-    "unknown-number": "Unknown number. Uncanny, playful, a little dangerous. Not a scam.",
-  },
+  roles: Object.fromEntries(HEAT_ROLES.map((r) => [r.id, r.line])) as Record<HeatRole, string>,
   heats: {
     tease: "Suggestive. Implication. No graphic anatomy dump.",
     filthy: "Explicit language. Direct want. Still a person.",
@@ -220,6 +252,7 @@ export function canPlayHeat(user: User | null | undefined, settings: HeatSetting
 }
 
 export function lastSeenLabel() {
+  if (Math.random() < 0.45) return "just now";
   const n = 4 + Math.floor(Math.random() * 50);
   return `Active ${n}m ago`;
 }

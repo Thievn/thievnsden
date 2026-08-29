@@ -1,5 +1,8 @@
 import {
   HEAT_SKINS,
+  HEAT_ROLES,
+  HEAT_TAGLINE,
+  sourceHash,
   canPlayHeat,
   isFadeText,
   parseHeatTurn,
@@ -47,6 +50,12 @@ const parsed = parseJsonObject('```json\n{"scene":"hey","tip":"slow","score":7}\
 assert(parsed.scene === "hey", "json fence");
 
 assert(vibeForLook("trans-woman") === "woman", "vibe");
-assert(HEAT_SKINS.find((s) => s.id === "android")?.label === "Android mock", "android mock");
+assert(HEAT_SKINS.find((s) => s.id === "android")?.label === "Android language", "android language");
+assert(HEAT_ROLES.length >= 17, "roles");
+assert(HEAT_TAGLINE.includes("twice"), "tagline");
+const h1 = sourceHash(["a", "b"]);
+const h2 = sourceHash(["a", "b"]);
+const h3 = sourceHash(["a", "c"]);
+assert(h1 === h2 && h1 !== h3, "combo hash");
 
 console.log("heat-check smoke ok");

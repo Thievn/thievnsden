@@ -21,9 +21,9 @@ export function HeatTab() {
   const [settings, setSettings] = useState<HeatSettings>(DEFAULT_HEAT_SETTINGS);
   const [nameCount, setNameCount] = useState(0);
   const [assets, setAssets] = useState<any[]>([]);
-  const [threads, setThreads] = useState<any[]>([]);
+  const [nights, setNights] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
-  const [usage, setUsage] = useState({ threads: 0, messages: 0, names: 0, reports: 0 });
+  const [usage, setUsage] = useState({ nights: 0, messages: 0, names: 0, reports: 0 });
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [testLine, setTestLine] = useState("you still up?");
@@ -36,27 +36,36 @@ export function HeatTab() {
   const [contactSeed, setContactSeed] = useState("");
   const [promptPack, setPromptPack] = useState("system");
 
+  const [modules, setModules] = useState<{ roles: any[]; heats: any[]; voices: any[]; openers: any[] }>({
+    roles: [], heats: [], voices: [], openers: [],
+  });
+  const [compiled, setCompiled] = useState<any[]>([]);
+  const [modKind, setModKind] = useState<"roles" | "heats" | "voices" | "openers">("roles");
+
   const load = async () => {
     const h = await headers();
-    const [s, n, m, t, r, u] = await Promise.all([
+    const [s, n, m, t, r, u, mods] = await Promise.all([
       fetch("/api/admin/heat-check?view=settings", { headers: h }).then((x) => x.json()),
       fetch("/api/admin/heat-check?view=names", { headers: h }).then((x) => x.json()),
       fetch("/api/admin/heat-check?view=mod", { headers: h }).then((x) => x.json()),
-      fetch("/api/admin/heat-check?view=threads", { headers: h }).then((x) => x.json()),
+      fetch("/api/admin/heat-check?view=nights", { headers: h }).then((x) => x.json()),
       fetch("/api/admin/heat-check?view=reports", { headers: h }).then((x) => x.json()),
       fetch("/api/admin/heat-check?view=usage", { headers: h }).then((x) => x.json()),
+      fetch("/api/admin/heat-check?view=modules", { headers: h }).then((x) => x.json()),
     ]);
     if (s.settings) setSettings(s.settings);
     setNameCount((n.names || []).length);
     setAssets(m.assets || []);
-    setThreads(t.threads || []);
+    setNights(t.nights || t.threads || []);
     setReports(r.reports || []);
     setUsage({
-      threads: u.threads || 0,
+      nights: u.nights || u.threads || 0,
       messages: u.messages || 0,
       names: u.names || 0,
       reports: u.reports || 0,
     });
+    if (mods.modules) setModules(mods.modules);
+    if (mods.compiled) setCompiled(mods.compiled);
     if (s.error) setMsg(s.error);
   };
 
@@ -115,14 +124,14 @@ export function HeatTab() {
         <div>
           <p className="text-[11px] uppercase tracking-[0.18em] text-orange-300/80 mb-1">Playground</p>
           <h2 className="text-2xl font-semibold text-neutral-50">Heat Check</h2>
-          <p className="text-sm text-neutral-500 mt-1">Controls, secret-base prompt, faces, threads. Name list stays off this page.</p>
+          <p className="text-sm text-neutral-500 mt-1">Kill switch, modules, compiled cache, nights. Credits are a stub — failed gens never bill.</p>
         </div>
         {msg ? <p className="text-xs text-orange-200/80 max-w-sm text-right">{msg}</p> : null}
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          ["Open threads", usage.threads],
+          ["Open nights", usage.nights],
           ["Messages", usage.messages],
           ["Name pool", usage.names || nameCount],
           ["Reports", usage.reports],
@@ -143,8 +152,8 @@ export function HeatTab() {
               ["public", "Public for everyone", settings.public],
               ["peek_default", "Tip peek on by default", settings.peek_default],
               ["face_gen", "Show generate-their-face", settings.face_gen],
-              ["ios", "iOS mock", settings.skins.ios],
-              ["android", "Android mock", settings.skins.android],
+              ["ios", "iOS language", settings.skins.ios],
+              ["android", "Android language", settings.skins.android],
             ] as const
           ).map(([key, label, on]) => (
             <label key={key} className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-black/30 px-3 py-2.5">
@@ -209,7 +218,7 @@ export function HeatTab() {
                 <textarea
                   className={`${field} mt-1`}
                   rows={2}
-                  value={settings.prompts.roles[r.id as keyof typeof settings.prompts.roles]}
+                  value={settings.prompts.roles[r.id] || ""}
                   onChange={(e) =>
                     setSettings({
                       ...settings,
@@ -295,6 +304,56 @@ export function HeatTab() {
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium">Prompt modules</p>
+          <select className={`${field} max-w-[12rem]`} value={modKind} onChange={(e) => setModKind(e.target.value as typeof modKind)}>
+            <option value="roles">Roles</option>
+            <option value="heats">Heat</option>
+            <option value="voices">Voice</option>
+            <option value="openers">Who starts</option>
+          </select>
+        </div>
+        <p className="text-xs text-neutral-500">Combo cache concatenates these + the safety pack. Skin is not in the key. Edit marks compiled rows stale.</p>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" disabled={busy} onClick={() => act("seed-modules")} className={ghost}>Seed missing modules</button>
+          <button type="button" disabled={busy} onClick={() => act("prewarm")} className={btn}>Prewarm cache</button>
+          <button type="button" disabled={busy} onClick={() => act("regenerate")} className={ghost}>Regenerate stale</button>
+        </div>
+        {(modules[modKind] || []).map((row) => (
+          <label key={row.slug} className="block text-[11px] text-neutral-500">
+            {row.label} · {row.slug}
+            <textarea
+              className={`${field} mt-1 font-mono text-[12px]`}
+              rows={3}
+              defaultValue={row.body}
+              onBlur={(e) => {
+                if (e.target.value !== row.body) {
+                  act("module", { kind: modKind, slug: row.slug, label: row.label, body: e.target.value });
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="mt-1 text-[11px] text-orange-200"
+              disabled={busy}
+              onClick={() => act("generate-module", { kind: modKind.replace(/s$/, ""), slug: row.slug, label: row.label })}
+            >
+              Generate with Grok
+            </button>
+          </label>
+        ))}
+        <p className="text-sm font-medium pt-2">Compiled combos</p>
+        <div className="max-h-56 overflow-auto space-y-1">
+          {compiled.length ? compiled.map((c) => (
+            <div key={c.id} className="flex items-center justify-between gap-2 text-[11px] text-neutral-400 border-b border-neutral-800 py-1">
+              <span>{c.role} · {c.heat} · {c.voice} · {c.opener} {c.stale ? "· STALE" : ""}</span>
+              <button type="button" className="text-orange-200" onClick={() => act("regenerate", { id: c.id })}>rebuild</button>
+            </div>
+          )) : <p className="text-xs text-neutral-600">Empty until someone opens a night.</p>}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
         <p className="text-sm font-medium">Prompt lab · does not save as a user</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
           <select className={field} value={testLook} onChange={(e) => setTestLook(e.target.value)}>
@@ -362,8 +421,8 @@ export function HeatTab() {
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
-        <p className="text-sm font-medium">Threads</p>
-        {threads.length ? threads.map((t) => (
+        <p className="text-sm font-medium">Nights</p>
+        {nights.length ? nights.map((t) => (
           <div key={t.id} className="flex items-center justify-between gap-3 text-xs border-b border-neutral-800 py-2">
             <span className="text-neutral-300">
               {t.contact_name} · {t.they_look || "—"} · {t.role} · {t.heat} {t.ended ? "· faded" : ""}
@@ -372,7 +431,7 @@ export function HeatTab() {
               type="button"
               className="text-rose-300"
               onClick={async () => {
-                if (!confirm("Wipe thread + images?")) return;
+                if (!confirm("Wipe this night + images?")) return;
                 await fetch("/api/admin/heat-check", { method: "DELETE", headers: await headers(), body: JSON.stringify({ threadId: t.id }) });
                 load();
               }}
@@ -380,7 +439,7 @@ export function HeatTab() {
               wipe
             </button>
           </div>
-        )) : <p className="text-xs text-neutral-600">No threads yet.</p>}
+        )) : <p className="text-xs text-neutral-600">No nights yet.</p>}
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-2">

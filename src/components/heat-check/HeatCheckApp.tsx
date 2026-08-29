@@ -311,7 +311,7 @@ export function HeatCheckApp() {
   }, [pendingThem, screen]);
 
   useEffect(() => {
-    if (screen !== "chat" || !thread?.id || thread.contact_face_url) return;
+    if (screen !== "chat" || !thread?.id || thread.id === "preview" || thread.contact_face_url) return;
     let n = 0;
     const tick = window.setInterval(async () => {
       n += 1;
@@ -1054,7 +1054,7 @@ function FlameMark({ className = "w-8 h-10" }: { className?: string }) {
         <path
           className="hc-flame-outer"
           fill={`url(#${outer})`}
-          d="M24 62c-11.4 0-18-9.6-18-20.8 0-6.2 2.4-11.4 5.6-16.2-1.6-1.8-2.2-5.4.6-7.2 2.2 4.4 4.4 6.8 5.2 6.2-1.4-8.2 2.6-16.4 6.6-22.2 1.6 5.6 2.2 10.2 1.2 14.4 3.8-5.8 9.6-8.6 11.4-6.2-2.6 4.8-3.2 8.2-1.8 11.2 5.2-1.4 8.8 2.6 8.2 7.2 4.4 4.6 7 10.2 7 16.8C49 52.4 37.8 62 24 62z"
+          d="M24 63c-12 0-19.5-10.2-19.5-22.4 0-7.2 3.2-12.6 6.4-17.2C8.4 20 9.2 15.6 13 16.8c1.6 4.8 3.6 7.6 4.2 7-2.8-10.4 1.8-18.8 7-25.8 2.2 7.2 2.4 12.6.8 17.2 4.6-7.4 11.8-10.2 14-6.8-3.6 5.6-3.8 9.6-1.8 13.2 6-2 10.4 2.6 9.6 8 4.8 5.2 7.2 11 7.2 17C53.8 53.6 39.6 63 24 63z"
         />
         <path
           className="hc-flame-mid"

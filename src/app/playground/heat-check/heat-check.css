@@ -37,16 +37,14 @@
 }
 
 @keyframes hcFlicker {
-  0%, 100% { transform: scaleY(1) scaleX(1); filter: brightness(1); }
-  18% { transform: scaleY(1.07) scaleX(0.95); filter: brightness(1.18); }
-  42% { transform: scaleY(0.93) scaleX(1.05); filter: brightness(0.88); }
-  67% { transform: scaleY(1.05) scaleX(0.97); filter: brightness(1.1); }
-  84% { transform: scaleY(0.97) scaleX(1.03); filter: brightness(0.96); }
+  0%, 100% { transform: scaleY(1); opacity: 1; }
+  50% { transform: scaleY(1.02); opacity: 0.92; }
 }
 .hc-flame {
   display: inline-flex;
   align-items: flex-end;
   justify-content: center;
+  filter: drop-shadow(0 0 8px rgba(255, 90, 40, 0.28));
 }
 .hc-flame svg {
   width: 100%;
@@ -57,11 +55,11 @@
 .hc-flame-mid,
 .hc-flame-core {
   transform-box: fill-box;
-  transform-origin: 50% 100%;
+  transform-origin: 50% 92%;
 }
-.hc-flame-outer { animation: hcFlicker 0.62s ease-in-out infinite; }
-.hc-flame-mid { animation: hcFlicker 0.44s ease-in-out infinite reverse; }
-.hc-flame-core { animation: hcFlicker 0.32s ease-in-out infinite; }
+.hc-flame-outer { animation: hcFlicker 3.6s ease-in-out infinite; }
+.hc-flame-mid { animation: hcFlicker 4.8s ease-in-out infinite reverse; }
+.hc-flame-core { animation: none; }
 
 @keyframes hcPulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 106, 61, 0.0), 0 0 18px -6px rgba(255, 106, 61, 0.55); }

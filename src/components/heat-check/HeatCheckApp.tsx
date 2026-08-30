@@ -1033,39 +1033,36 @@ function FlameMark({ className = "w-8 h-10" }: { className?: string }) {
   const core = `hcFlameC-${raw}`;
   return (
     <span className={cx("hc-flame", className)} aria-hidden>
-      <svg viewBox="0 0 48 64" fill="none">
+      <svg viewBox="0 0 40 56" fill="none">
         <defs>
-          <linearGradient id={outer} x1="24" y1="62" x2="24" y2="4">
-            <stop offset="0%" stopColor="#7a1230" />
-            <stop offset="42%" stopColor="#e23a1f" />
-            <stop offset="78%" stopColor="#ff8a2a" />
-            <stop offset="100%" stopColor="#ffd36a" />
+          <linearGradient id={outer} x1="20" y1="54" x2="20" y2="2">
+            <stop offset="0%" stopColor="#8a1838" />
+            <stop offset="38%" stopColor="#e23a28" />
+            <stop offset="72%" stopColor="#ff7a32" />
+            <stop offset="100%" stopColor="#ffc86a" />
           </linearGradient>
-          <linearGradient id={mid} x1="24" y1="58" x2="24" y2="16">
-            <stop offset="0%" stopColor="#ff5a1a" />
-            <stop offset="60%" stopColor="#ffb040" />
-            <stop offset="100%" stopColor="#ffe28a" />
+          <linearGradient id={mid} x1="20" y1="50" x2="20" y2="14">
+            <stop offset="0%" stopColor="#ff6a28" />
+            <stop offset="55%" stopColor="#ffb04a" />
+            <stop offset="100%" stopColor="#ffe29a" />
           </linearGradient>
-          <linearGradient id={core} x1="24" y1="54" x2="24" y2="28">
-            <stop offset="0%" stopColor="#fff3c4" />
-            <stop offset="100%" stopColor="#ffe27a" />
-          </linearGradient>
+          <radialGradient id={core} cx="50%" cy="72%" r="48%">
+            <stop offset="0%" stopColor="#fff6d6" />
+            <stop offset="70%" stopColor="#ffd878" />
+            <stop offset="100%" stopColor="#ffd878" stopOpacity="0" />
+          </radialGradient>
         </defs>
         <path
           className="hc-flame-outer"
           fill={`url(#${outer})`}
-          d="M24 63c-12 0-19.5-10.2-19.5-22.4 0-7.2 3.2-12.6 6.4-17.2C8.4 20 9.2 15.6 13 16.8c1.6 4.8 3.6 7.6 4.2 7-2.8-10.4 1.8-18.8 7-25.8 2.2 7.2 2.4 12.6.8 17.2 4.6-7.4 11.8-10.2 14-6.8-3.6 5.6-3.8 9.6-1.8 13.2 6-2 10.4 2.6 9.6 8 4.8 5.2 7.2 11 7.2 17C53.8 53.6 39.6 63 24 63z"
+          d="M20 54c-7.6 0-13-6.4-13-15.2 0-6.4 3.2-11.6 6.6-16.4C11.2 17.6 14 12.4 20 4c1.6 6.8 2.2 11.2.8 15.2 2.8-3.6 6.6-5.6 8.4-3.6-1.6 3.8-1.4 6.8.2 9.4 3.6 1.2 5.6 5.4 5.6 10.8C35 46.8 28.8 54 20 54z"
         />
         <path
           className="hc-flame-mid"
           fill={`url(#${mid})`}
-          d="M24 56c-7.4 0-11.6-6.2-11.6-13.4 0-4.2 1.6-7.6 3.8-10.6-.4-2.2.8-4.2 2.4-4.4-.2 3.4 1.4 5.6 2.6 6.2.2-5.2 2.6-9.8 5-13.6.6 3.6.4 6.6-.2 8.8 2.2-3.2 5.4-4.8 6.4-3.4-1.2 2.8-1.2 4.8-.2 6.6 2.8-.4 4.8 1.8 4.6 4.4 2.6 2.8 4 6 4 9.6C40.8 49.8 33.4 56 24 56z"
+          d="M20 48.5c-4.8 0-8-4-8-9.4 0-4 2-7.2 4.2-10.2-.2 3 .8 5.2 2 6.2C17.8 30.4 18.6 26.6 20 22c1 3.8 1.2 6.6.4 8.8 1.6-1.8 3.6-2.6 4.4-1.6-.6 2.2-.2 3.8.8 5.2 1.8.8 2.8 3.2 2.8 6.1 0 5-3 8-8.4 8z"
         />
-        <path
-          className="hc-flame-core"
-          fill={`url(#${core})`}
-          d="M24 50c-3.6 0-5.6-3.2-5.6-6.8 0-2.4 1-4.2 2.2-5.6.6 1.8 1.6 2.8 2.4 3 .2-2.6 1.2-4.8 2.4-6.6.2 1.8 0 3.2-.2 4.2 1.2-1.4 2.6-2 3.2-1.2-.4 1.4-.2 2.4.4 3.2 1.4 0 2.4 1.2 2.2 2.6 1.2 1.4 1.8 2.8 1.8 4.4C32.8 47.2 28.6 50 24 50z"
-        />
+        <ellipse className="hc-flame-core" cx="20" cy="42" rx="3.2" ry="5.2" fill={`url(#${core})`} />
       </svg>
     </span>
   );

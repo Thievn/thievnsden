@@ -145,6 +145,7 @@ export async function POST(req: NextRequest) {
       thread,
       messages: [],
       opening: who_starts === "they",
+      minting: !!(facePick.mint && !contact_face_url),
       tip: null,
       faceError: null,
       promptHit: compiled.hit,

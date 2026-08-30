@@ -269,6 +269,20 @@ export function HeatCheckApp() {
       setScreen("chat");
       setReceipt("sent");
       if (data.faceError) setErr(data.faceError);
+      if ((data.minting || (data.thread.generate_face && !data.thread.contact_face_url)) && data.thread.id) {
+        void fetch("/api/heat-check/face", {
+          method: "POST",
+          headers: await authHeaders(),
+          body: JSON.stringify({ threadId: data.thread.id }),
+        })
+          .then((r) => readJson(r))
+          .then((face) => {
+            if (face?.url) {
+              setThread((t) => (t ? { ...t, contact_face_url: face.url, contact_id: face.contact_id || t.contact_id } : t));
+            }
+          })
+          .catch(() => {});
+      }
       if (data.opening) {
         setTyping(true);
         const open = await fetch("/api/heat-check/turn", {
@@ -391,7 +405,6 @@ export function HeatCheckApp() {
       if (image) setNote("couldn't use that photo");
     } finally {
       setBusy(false);
-      inputRef.current?.focus();
     }
   };
 

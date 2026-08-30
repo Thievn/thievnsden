@@ -13,6 +13,7 @@ import {
   DEFAULT_HEAT_SETTINGS,
   lookKey,
   vibeForLook,
+  calibrateHeatScore,
 } from "../src/lib/heat-check";
 import { HEAT_CHECK_STILL, playgroundStill } from "../src/lib/playground-games";
 import type { User } from "@supabase/supabase-js";
@@ -59,6 +60,9 @@ assert(lookKey("woman", "default", "any") === "woman|feminine", "look key defaul
 assert(lookKey("woman", "feminine", "east-asian") === "woman|feminine|east-asian", "look key appearance");
 assert(HEAT_ROLES.length >= 17, "roles");
 assert(HEAT_TAGLINE.includes("twice"), "tagline");
+assert(calibrateHeatScore(7, "ok") !== 7, "no copied 7");
+assert(calibrateHeatScore(8, "stay tonight?") === 8, "keep a real 8");
+assert(calibrateHeatScore(7, "k") <= 5, "stub score");
 assert(HEAT_CHECK_STILL.endsWith("card.jpg"), "heat still");
 assert(playgroundStill("heat-check", { "heat-check": "https://evil.example/text.png" }) === HEAT_CHECK_STILL, "ignore text plate");
 assert(playgroundStill("highway-hunter", { "highway-hunter": "/hh.jpg" }) === "/hh.jpg", "other stills");

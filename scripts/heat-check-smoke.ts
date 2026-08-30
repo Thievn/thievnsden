@@ -37,6 +37,7 @@ assert(wantsPicText("send me one dont be shy") && insistsOnPic("dont be shy"), "
 assert(namedPicKind("send me a selfie to prove it") === "selfie", "selfie prove");
 assert(HEAT_PIC_OOPS.length >= 3 && HEAT_PIC_OOPS.every((s) => /bill|charge|pocket|house/i.test(s)), "oops copy");
 assert(!parseHeatSettings({}).auto_end && parseHeatSettings({}).pics_on, "nights stay open");
+assert(parseHeatSettings({}).nudge_on && parseHeatSettings({ nudge_on: false }).nudge_on === false, "nudge default");
 assert(!isFadeText("fade out"), "not fade phrase");
 
 const turn = parseHeatTurn({

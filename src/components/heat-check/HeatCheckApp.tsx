@@ -142,6 +142,8 @@ export function HeatCheckApp() {
   const [picToast, setPicToast] = useState<string | null>(null);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [picsOpen, setPicsOpen] = useState(false);
+  const [nudgeOn, setNudgeOn] = useState(true);
+  const nudgeLocal = useRef(0);
   const [companionHouse, setCompanionHouse] = useState(false);
   const [companionOn, setCompanionOn] = useState(false);
   const [companionPing, setCompanionPing] = useState<{ nightId: string | null; name: string; line: string } | null>(null);
@@ -215,6 +217,7 @@ export function HeatCheckApp() {
       setSkins(json.skins || { ios: true, android: true });
       setPicsOn(json.picsOn !== false);
       setPicCost(Number(json.picCost) || 1);
+      setNudgeOn(json.nudgeOn !== false);
       setCompanionHouse(json.companionOn === true);
       if (json.companionOn) {
         fetch("/api/heat-check/companion", { headers: await authHeaders() })
@@ -297,6 +300,7 @@ export function HeatCheckApp() {
       setTipsByMsg({});
       setScreen("chat");
       setReceipt("sent");
+      nudgeLocal.current = 0;
       if (data.faceError) setErr(data.faceError);
       if ((data.minting || (data.thread.generate_face && !data.thread.contact_face_url)) && data.thread.id) {
         void fetch("/api/heat-check/face", {
@@ -353,6 +357,40 @@ export function HeatCheckApp() {
       cancelled = true;
     };
   }, [pendingThem, screen]);
+
+  useEffect(() => {
+    if (screen !== "chat" || !nudgeOn || !thread?.id || thread.id === "preview") return;
+    if (pendingThem.length || typing || sendingPic || busy || picBusy) return;
+    if (draft.trim()) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.sender === "user") return;
+    if (nudgeLocal.current >= 2) return;
+    const nightId = thread.id;
+    const waitMs = 18000 + Math.floor(Math.random() * 24000);
+    const tick = window.setTimeout(async () => {
+      if (nudgeLocal.current >= 2) return;
+      if (Math.random() > (nudgeLocal.current === 0 ? 0.62 : 0.38)) return;
+      try {
+        const res = await fetch("/api/heat-check/turn", {
+          method: "POST",
+          headers: await authHeaders(),
+          body: JSON.stringify({ threadId: nightId, nudge: true }),
+        });
+        const data = await readJson(res);
+        const them: HeatMessage[] = (data.them || []).map((m: HeatMessage & { role?: string }) => ({
+          ...m,
+          sender: m.sender || m.role || "them",
+        }));
+        if (them.length) {
+          nudgeLocal.current += 1;
+          setPendingThem(them);
+        }
+      } catch {
+        /* stay quiet */
+      }
+    }, waitMs);
+    return () => window.clearTimeout(tick);
+  }, [screen, messages, pendingThem.length, typing, sendingPic, busy, picBusy, draft, nudgeOn, thread?.id]);
 
   useEffect(() => {
     if (screen !== "chat" || !thread?.id || thread.id === "preview" || thread.contact_face_url) return;

@@ -159,6 +159,7 @@ export function HeatTab() {
               ["pic_cache", "Reuse pics by appearance", settings.pic_cache],
               ["surprise_pics", "Old surprise reward pics", settings.surprise_pics],
               ["companion_on", "Companion check-ins", settings.companion_on],
+              ["nudge_on", "Nudge if they go quiet", settings.nudge_on],
               ["ios", "iOS skin", settings.skins.ios],
               ["android", "Android skin", settings.skins.android],
             ] as const

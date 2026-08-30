@@ -315,6 +315,7 @@ export type TurnContext = {
   userLine: string | null;
   opening: boolean;
   fade: boolean;
+  nudge?: boolean;
   doubleText: boolean;
   lastScores: number[];
   settings: HeatSettings;
@@ -351,6 +352,7 @@ Current mood: ${ctx.thread.mood}
 Who starts: ${ctx.thread.who_starts}
 Opening turn: ${ctx.opening ? "yes — consent first beat. They have not spoken yet. Do not reuse a stock 'you still up'." : "no"}
 Fade requested: ${ctx.fade ? "yes — wind down, ended true, end_reason fade" : "no"}
+Silence follow-up: ${ctx.nudge ? "yes — they went quiet. 1–2 short bubbles about the last thing said. Tease or check in. Do not restart. Do not fade. Do not mention being a trainer." : "no"}
 Player double-texted while unread: ${ctx.doubleText ? "yes — flag it in tip" : "no"}
 Last user scores: ${ctx.lastScores.join(", ") || "none"}
 Reward photo allowed this turn: ${maybeReward ? "yes, maybe one still of the SAME contact, sexier, not hardcore, if this score is also high" : "no"}
@@ -360,7 +362,7 @@ Player profile still on file: ${ctx.photoUrl && !ctx.visionImageUrl ? "yes — y
 Night:
 ${transcript || "(empty)"}
 
-${ctx.userLine ? `Latest player text: ${ctx.userLine}` : "No player text yet. You text first."}
+${ctx.nudge ? "They have not answered. Text them like a person who is still in this thread." : ctx.userLine ? `Latest player text: ${ctx.userLine}` : "No player text yet. You text first."}
 
 You control the night. Stay human. Stay in their body. JSON only.`;
 

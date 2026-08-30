@@ -31,9 +31,10 @@ export async function POST(req: NextRequest) {
     const threadId = String(body.threadId || "");
     const text = String(body.text || "").trim();
     const opening = !!body.opening;
+    const nudge = !!body.nudge;
     const chatImageUrl = typeof body.imageUrl === "string" ? body.imageUrl : null;
     const chatImagePath = typeof body.imagePath === "string" ? body.imagePath : null;
-    if (!threadId || (!text && !chatImageUrl && !chatImagePath && !opening)) {
+    if (!threadId || (!text && !chatImageUrl && !chatImagePath && !opening && !nudge)) {
       return NextResponse.json({ error: "Need a line." }, { status: 400 });
     }
 
@@ -66,6 +67,64 @@ export async function POST(req: NextRequest) {
         userMessage: null,
         recap: null,
       });
+    }
+
+    if (nudge) {
+      if (!ctx.settings.nudge_on) return NextResponse.json({ them: [], nudge: true });
+      const { data: history } = await supabase
+        .from("heat_messages")
+        .select("id, sender, role, body, created_at")
+        .eq("thread_id", threadId)
+        .order("created_at", { ascending: true });
+      const prior = (history || []).map((m) => ({ ...m, sender: m.sender || m.role }));
+      const last = prior[prior.length - 1];
+      if (last?.sender === "user") return NextResponse.json({ them: [], nudge: true, skipped: true });
+      const meta = (thread.meta && typeof thread.meta === "object" ? { ...(thread.meta as Record<string, unknown>) } : {}) as Record<string, unknown>;
+      const nudgesSoFar = Number(meta.nudge_count || 0);
+      if (nudgesSoFar >= 2) return NextResponse.json({ them: [], nudge: true, skipped: true });
+      const compiled = await lookupCompiledPrompt({
+        role: String(thread.role),
+        heat: String(thread.heat),
+        voice: String(thread.voice),
+        opener: String(thread.opener || thread.who_starts || "they"),
+      });
+      let turn;
+      try {
+        turn = await withTimeout(
+          runHeatTurn({
+            thread: thread as HeatThread,
+            history: prior,
+            userLine: null,
+            opening: false,
+            fade: false,
+            nudge: true,
+            doubleText: false,
+            lastScores: [],
+            settings: ctx.settings,
+            compiledSystem: compiled.compiled || undefined,
+          }),
+          18000,
+          "Nudge timed out",
+        );
+      } catch {
+        turn = fallbackHeatTurn(false);
+        turn.scene = "you still there or did i lose you";
+      }
+      if (!turn.scene?.trim()) return NextResponse.json({ them: [], nudge: true });
+      const themRows = splitThem(turn.scene).slice(0, 2).map((bodyText) =>
+        heatMessageRow({
+          thread_id: threadId,
+          user_id: user.id,
+          sender: "them",
+          body: bodyText,
+        }),
+      );
+      const { data: inserted } = await supabase.from("heat_messages").insert(themRows).select("*");
+      await supabase.from("heat_threads").update({
+        meta: { ...meta, nudge_count: nudgesSoFar + 1 },
+        updated_at: new Date().toISOString(),
+      }).eq("id", threadId);
+      return NextResponse.json({ them: inserted || [], nudge: true, tip: null, userMessage: null });
     }
 
     const { data: history } = await supabase

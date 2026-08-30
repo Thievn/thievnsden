@@ -11,7 +11,7 @@ import {
   HEAT_LEVELS,
   HEAT_LOGIN,
   HEAT_LOOKS,
-  HEAT_POSE_KINDS,
+  HEAT_PIC_CHIPS,
   HEAT_ORIENTATIONS,
   HEAT_PRESENTATIONS,
   HEAT_PRONOUNS,
@@ -135,7 +135,10 @@ export function HeatCheckApp() {
   const [note, setNote] = useState<string | null>(null);
   const [picsOn, setPicsOn] = useState(true);
   const [picCost, setPicCost] = useState(1);
-  const [picAsk, setPicAsk] = useState(false);
+  const [picSuggest, setPicSuggest] = useState(false);
+  const [picBusy, setPicBusy] = useState(false);
+  const [viewerUrl, setViewerUrl] = useState<string | null>(null);
+  const [picsOpen, setPicsOpen] = useState(false);
   const [companionHouse, setCompanionHouse] = useState(false);
   const [companionOn, setCompanionOn] = useState(false);
   const [companionPing, setCompanionPing] = useState<{ nightId: string | null; name: string; line: string } | null>(null);
@@ -415,13 +418,17 @@ export function HeatCheckApp() {
       }
       const them: HeatMessage[] = data.them || [];
       if (them.length) setPendingThem(them);
-      if (data.picAsk) setPicAsk(true);
+      setPicSuggest(!!data.picSuggest);
+      if (data.sendPic) {
+        window.setTimeout(() => pullPic(String(data.sendPic), text), 900);
+      }
       if (data.recap) {
         setRecap(data.recap);
         window.setTimeout(() => setScreen("recap"), 1600);
       }
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Send failed");
+      const msg = e instanceof Error ? e.message : "Send failed";
+      setNote(/timeout|too long/i.test(msg) ? msg : "couldn't send that.");
       if (image) setNote("couldn't use that photo");
     } finally {
       setBusy(false);
@@ -538,28 +545,47 @@ export function HeatCheckApp() {
     send("FADE");
   };
 
-  const askPic = async (kind: string) => {
-    if (!thread || busy) return;
-    setPicAsk(false);
+  const pullPic = async (kind: string, ask?: string) => {
+    if (!thread || picBusy || thread.id === "preview") return;
+    setPicSuggest(false);
     setPlusOpen(false);
-    setBusy(true);
+    setPicBusy(true);
+    setTyping(true);
     try {
       const res = await fetch("/api/heat-check/pic", {
         method: "POST",
         headers: await authHeaders(),
-        body: JSON.stringify({ threadId: thread.id, kind, ask: draft }),
+        body: JSON.stringify({ threadId: thread.id, kind, ask: ask || draft }),
       });
       const data = await readJson(res);
-      if (!res.ok) throw new Error(data.error || "Couldn't send that still.");
+      if (!res.ok) throw new Error(data.error || "They couldn't send that one.");
       const them: HeatMessage[] = (data.them || []).map((m: HeatMessage & { role?: string }) => ({
         ...m,
         sender: m.sender || m.role || "photo",
       }));
       if (them.length) setPendingThem(them);
+      else if (data.url) {
+        setPendingThem([
+          {
+            id: `pic-${Date.now()}`,
+            thread_id: thread.id,
+            user_id: thread.user_id,
+            sender: "photo",
+            body: null,
+            image_url: data.url,
+            score: null,
+            delivered_at: new Date().toISOString(),
+            read_at: null,
+            created_at: new Date().toISOString(),
+          },
+        ]);
+      }
     } catch (e: unknown) {
-      setNote(e instanceof Error ? e.message : "Couldn't send that still.");
+      const msg = e instanceof Error ? e.message : "They couldn't send that one.";
+      setNote(/timeout|too long/i.test(msg) ? msg : "that one didn't send. ask again.");
     } finally {
-      setBusy(false);
+      setTyping(false);
+      setPicBusy(false);
     }
   };
 
@@ -796,6 +822,7 @@ export function HeatCheckApp() {
                   {skin === "ios" ? "Android skin" : "iOS skin"}
                 </button>
                 <button type="button" onClick={fadeOut}>End night · recap</button>
+                <button type="button" onClick={() => { setMenu(false); setPicsOpen(true); }}>Pics</button>
                 <button type="button" onClick={() => { setMenu(false); setThread(null); setMessages([]); setNewContact(true); setScreen("start"); }}>
                   New contact
                 </button>
@@ -852,6 +879,7 @@ export function HeatCheckApp() {
                   name={thread?.contact_name || "?"}
                   meFaceUrl={myFaceUrl}
                   meInitial={meInitial}
+                  onOpen={msg.image_url ? () => setViewerUrl(msg.image_url) : undefined}
                   onPress={(e) => {
                     e.preventDefault();
                     const point = "clientX" in e ? e : e.touches?.[0];
@@ -956,6 +984,20 @@ export function HeatCheckApp() {
             <FlameMark className="w-4 h-5" />
           </button>
         </form>
+        {picSuggest && picsOn ? (
+          <div className="hc-suggest" role="list">
+            {HEAT_PIC_CHIPS.map((chip) => (
+              <button
+                key={chip.label}
+                type="button"
+                className="hc-suggest-chip"
+                onClick={() => send(chip.label)}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
         {note ? <p className="hc-quiet">{note}</p> : null}
         {plusOpen ? (
           <div className="hc-sheet">
@@ -971,7 +1013,7 @@ export function HeatCheckApp() {
             }}>Send in chat</button>
             <button type="button" className="hc-sheet-row" onClick={removeMyFace}>Remove my face</button>
             {picsOn ? (
-              <button type="button" className="hc-sheet-row" onClick={() => { setPlusOpen(false); setPicAsk(true); }}>
+              <button type="button" className="hc-sheet-row" onClick={() => { setPlusOpen(false); send("send me a pic"); }}>
                 Ask for a pic
               </button>
             ) : null}
@@ -995,17 +1037,35 @@ export function HeatCheckApp() {
             </div>
           </div>
         ) : null}
-        {picAsk && picsOn ? (
-          <div className="hc-sheet">
-            <p className="hc-sheet-label">A still</p>
-            <p className="hc-quiet">Clothes on. Same person. Costs {picCost} credit, or today&apos;s free one.</p>
-            {HEAT_POSE_KINDS.map((p) => (
-              <button key={p.id} type="button" className="hc-sheet-row" onClick={() => askPic(p.id)}>
-                {p.label}
-              </button>
-            ))}
-            <button type="button" className="hc-sheet-row" onClick={() => setPicAsk(false)}>Not now</button>
+        {picsOpen ? (
+          <div className="hc-sheet hc-pics">
+            <p className="hc-sheet-label">Pics</p>
+            <div className="hc-pics-grid">
+              {messages.filter((m) => m.image_url).length === 0 ? (
+                <p className="hc-quiet">None yet. Ask in chat.</p>
+              ) : (
+                messages.filter((m) => m.image_url).map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className="hc-pics-cell"
+                    onClick={() => { setPicsOpen(false); setViewerUrl(m.image_url); }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={m.image_url || ""} alt="" />
+                  </button>
+                ))
+              )}
+            </div>
+            <button type="button" className="hc-sheet-row" onClick={() => setPicsOpen(false)}>Close</button>
           </div>
+        ) : null}
+        {viewerUrl ? (
+          <button type="button" className="hc-lightbox" onClick={() => setViewerUrl(null)} aria-label="Close photo">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={viewerUrl} alt="" onClick={(e) => e.stopPropagation()} />
+            <span className="hc-lightbox-x">Close</span>
+          </button>
         ) : null}
         <input
           ref={camRef}
@@ -1107,6 +1167,7 @@ function applyPreview(
   const messages: HeatMessage[] = [
     { id: "m1", thread_id: "preview", user_id: "preview", sender: "them", body: "you went quiet on me", image_url: null, score: null, delivered_at: "", read_at: "", created_at: "" },
     { id: "m2", thread_id: "preview", user_id: "preview", sender: "user", body: "good things take the kind of patience that makes you think about it all night", image_url: null, score: 8, delivered_at: "", read_at: "", created_at: "" },
+    { id: "m3", thread_id: "preview", user_id: "preview", sender: "photo", body: null, image_url: "/heat-check/card.jpg", score: null, delivered_at: "", read_at: "", created_at: "" },
   ];
   set.setThread(thread);
   set.setMessages(messages);
@@ -1247,6 +1308,7 @@ function Bubble({
   meFaceUrl,
   meInitial,
   onPress,
+  onOpen,
 }: {
   msg: HeatMessage;
   skin: HeatSkin;
@@ -1255,6 +1317,7 @@ function Bubble({
   meFaceUrl?: string | null;
   meInitial?: string;
   onPress: (e: React.MouseEvent | React.TouchEvent) => void;
+  onOpen?: () => void;
 }) {
   const theirAvatar = (
     faceUrl ? (
@@ -1278,10 +1341,10 @@ function Bubble({
     return (
       <div className="hc-row them">
         {theirAvatar}
-        <div className="hc-photo">
+        <button type="button" className="hc-photo" onClick={onOpen} aria-label="Open photo">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={msg.image_url} alt="" />
-        </div>
+        </button>
       </div>
     );
   }
@@ -1291,10 +1354,10 @@ function Bubble({
       {!mine ? theirAvatar : null}
       <div className="hc-bubble-wrap">
         {msg.image_url ? (
-          <div className={cx("hc-photo", mine && "me")}>
+          <button type="button" className={cx("hc-photo", mine && "me")} onClick={onOpen} aria-label="Open photo">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={msg.image_url} alt="" />
-          </div>
+          </button>
         ) : null}
         {msg.body && msg.body !== "(sent a photo)" ? (
           <button

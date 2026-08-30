@@ -194,7 +194,9 @@ Score the player's LAST line only. 1–3 stub/miss, 4–5 generic, 6 decent, 8 t
 Phone at 1:40am. fragments ok. one thought. not an essay.
 If they type FADE or no/stop: wind down, ended true. Tip never coaches past no/stop/fade.
 Never end the night unless they faded or asked to stop. Do not set ended true after a few messages.
-If they ask for a pic: stay in character. No nudes. The app sends the still. Clothes on.
+If they ask for a pic: stay in character. No nudes. Clothes on. Never mention menus or credits.
+If they named a still (selfie, mirror, lamp, close): do not stall with "no selfie yet". One short tease. The photo lands after your text.
+If they asked vaguely: one in-character question — selfie, mirror, or the lamp. The app sends it when they answer.
 Opening: consent is the first beat without being clinical.
 Cringe radar lives in tip only.
 read_delay_ms 2000–8000.`;
@@ -243,7 +245,7 @@ Voice:
 - Opening: if you text first, consent is the first beat without being clinical. A check-in that still sounds like them.
 - If they type FADE or want to stop: wind down kindly in scene, ended true, end_reason "fade".
 - Never end the night on your own. ended stays false unless they faded or asked to stop.
-- If they ask for a pic or selfie: stay in character. No nudes. No explicit anatomy. The app delivers the still.
+- If they ask for a pic or selfie: stay in character. No nudes. No explicit anatomy. Never mention menus. If they named the still, do not refuse it. If they were vague, ask which kind in one short line. The app delivers the photo after you text.
 - read_delay_ms 2000–8000.
 - reward_photo only when instructed AND last three player scores were high. One still. Same person. Sexier, not hardcore.
 - rewrite is a drop-in better line, or null if they already landed it.
@@ -565,18 +567,37 @@ export const HEAT_POSE_KINDS = [
 export type HeatPoseKind = (typeof HEAT_POSE_KINDS)[number]["id"];
 
 export function wantsPicText(text: string) {
-  return /\b(send|show|give).{0,18}\b(pic|pics|photo|photos|selfie|picture|nude|nudes)\b|\b(pic|photo|selfie)\s*(please|pls|\?)?/i.test(
+  return /\b(send|show|give).{0,24}\b(pic|pics|photo|photos|selfie|picture|nude|nudes|one)\b|\b(pic|photo|selfie)\s*(please|pls|\?)?|\bdon'?t be shy\b/i.test(
     String(text || ""),
   );
 }
 
 export function poseKindFromAsk(text: string): HeatPoseKind {
-  const t = String(text || "").toLowerCase();
-  if (/mirror|bathroom/.test(t)) return "mirror";
-  if (/bed|laying|lying|night/.test(t)) return "night";
-  if (/close|face|lips/.test(t)) return "close";
-  return "selfie";
+  return namedPicKind(text) || "selfie";
 }
+
+export function namedPicKind(text: string): HeatPoseKind | null {
+  const t = String(text || "").toLowerCase().trim();
+  if (/mirror|bathroom/.test(t)) return "mirror";
+  if (/\b(bed|laying|lying|lamp|night)\b/.test(t)) return "night";
+  if (/\b(close-?up|close one|lips)\b/.test(t)) return "close";
+  if (/\bselfie\b/.test(t)) return "selfie";
+  if (/^(a selfie|selfie|just send it|just send|send it)$/.test(t)) return "selfie";
+  if (/^(mirror one|the mirror)$/.test(t)) return "mirror";
+  if (/^(the lamp one|lamp one)$/.test(t)) return "night";
+  return null;
+}
+
+export function insistsOnPic(text: string) {
+  return /\b(don'?t be shy|just send|send it|send one|send me one|now|please|pls)\b/i.test(String(text || ""));
+}
+
+export const HEAT_PIC_CHIPS = [
+  { label: "a selfie", kind: "selfie" as const },
+  { label: "mirror one", kind: "mirror" as const },
+  { label: "the lamp one", kind: "night" as const },
+  { label: "just send it", kind: "selfie" as const },
+];
 
 export const HEAT_PINGS = [
   "was thinking about you",

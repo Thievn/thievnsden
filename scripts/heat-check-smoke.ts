@@ -8,6 +8,8 @@ import {
   isFadeText,
   wantsPicText,
   poseKindFromAsk,
+  namedPicKind,
+  insistsOnPic,
   parseHeatTurn,
   parseJsonObject,
   splitScene,
@@ -29,6 +31,8 @@ const rando = { email: "x@y.z", user_metadata: { username: "guest" } } as unknow
 
 assert(isFadeText("FADE") && isFadeText(" fade "), "fade");
 assert(wantsPicText("send me a pic") && poseKindFromAsk("mirror selfie") === "mirror", "pic ask");
+assert(namedPicKind("send a selfie") === "selfie" && namedPicKind("send me a pic") === null, "named still");
+assert(wantsPicText("send me one dont be shy") && insistsOnPic("dont be shy"), "insist pic");
 assert(!parseHeatSettings({}).auto_end && parseHeatSettings({}).pics_on, "nights stay open");
 assert(!isFadeText("fade out"), "not fade phrase");
 

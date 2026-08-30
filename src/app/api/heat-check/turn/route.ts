@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { isFadeText, wantsPicText, type HeatThread } from "@/lib/heat-check";
+import { insistsOnPic, isFadeText, namedPicKind, wantsPicText, type HeatThread } from "@/lib/heat-check";
 import { lookupCompiledPrompt } from "@/lib/heat-prompt-cache";
 import { cacheRewardPose } from "@/lib/heat-face-cache";
 import {
@@ -195,10 +195,18 @@ export async function POST(req: NextRequest) {
 
     const userAskedEnd = fade || !!body.end_night;
     const shouldEnd = userAskedEnd || (!!ctx.settings.auto_end && (turn.ended || prior.filter((m) => m.sender === "user").length + 1 >= 8));
-    const picAsk = ctx.settings.pics_on && wantsPicText(text);
+    const meta = (thread.meta && typeof thread.meta === "object" ? { ...(thread.meta as Record<string, unknown>) } : {}) as Record<string, unknown>;
+    const pendingPic = meta.pending_pic === true;
+    const named = namedPicKind(text);
+    const wantsPic = ctx.settings.pics_on && (wantsPicText(text) || (pendingPic && (!!named || insistsOnPic(text))));
+    const sendPic = wantsPic && (named || insistsOnPic(text) || pendingPic) ? named || "selfie" : null;
+    const picSuggest = wantsPic && !sendPic;
+    if (sendPic) meta.pending_pic = false;
+    else if (picSuggest) meta.pending_pic = true;
     let recap = thread.recap;
     const patch: Record<string, unknown> = {
       mood: turn.mood && turn.mood !== "same" ? turn.mood : thread.mood,
+      meta,
       updated_at: new Date().toISOString(),
     };
     if (shouldEnd) {
@@ -234,7 +242,8 @@ export async function POST(req: NextRequest) {
         ended: shouldEnd,
       },
       recap: shouldEnd ? recap : null,
-      picAsk,
+      sendPic,
+      picSuggest,
       doubleText,
     });
   } catch (err: unknown) {

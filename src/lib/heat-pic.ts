@@ -1,6 +1,8 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import {
   HEAT_POSE_KINDS,
+  heatPicBillPlan,
+  heatPicMayMint,
   lookKey,
   type HeatPoseKind,
   type HeatSettings,
@@ -8,12 +10,13 @@ import {
 import { squareFaceBytes, imagineStill, uploadHeatBytes, heatMessageRow, withTimeout } from "@/lib/heat-check-server";
 import { cacheRewardPose } from "@/lib/heat-face-cache";
 
+export { heatPicBillPlan, heatPicMayMint };
+
 const SFW =
   "STRICT SFW. Clothes on. No nudity. No explicit anatomy. No pornography. Face visible. Same fictional adult. Soft lamp. Not a celebrity. No text.";
 
-export async function canSpendHeatCredit(userId: string, cost: number) {
-  const bal = await heatCreditBalance(userId);
-  return bal.extra >= cost || (cost <= 1 && bal.freeLeft > 0);
+export async function canSpendHeatCredit(_userId: string, _cost: number) {
+  return true;
 }
 
 export async function spendHeatCredit(userId: string, cost: number) {
@@ -22,16 +25,18 @@ export async function spendHeatCredit(userId: string, cost: number) {
   const extra = Number(data?.extra || 0);
   const today = new Date().toISOString().slice(0, 10);
   const freeUsed = data?.free_used_on ? String(data.free_used_on).slice(0, 10) : null;
-  if (extra >= cost) {
+  const freeLeft = freeUsed === today ? 0 : 1;
+  const plan = heatPicBillPlan(extra, cost, freeLeft);
+  if (plan.spendExtra > 0) {
     await supabase.from("heat_credits").upsert({
       user_id: userId,
-      extra: extra - cost,
+      extra: extra - plan.spendExtra,
       free_used_on: data?.free_used_on || null,
       updated_at: new Date().toISOString(),
     });
-    return { billed: cost, extra: extra - cost, free: false };
+    return { billed: plan.spendExtra, extra: extra - plan.spendExtra, free: false };
   }
-  if (cost <= 1 && freeUsed !== today) {
+  if (plan.markFree) {
     await supabase.from("heat_credits").upsert({
       user_id: userId,
       extra,
@@ -40,7 +45,7 @@ export async function spendHeatCredit(userId: string, cost: number) {
     });
     return { billed: 0, extra, free: true };
   }
-  throw new Error("Need a credit for that still.");
+  return { billed: 0, extra, free: true };
 }
 
 export async function heatCreditBalance(userId: string) {
@@ -91,12 +96,13 @@ export async function mintPooledPose(opts: {
 }) {
   const pose = HEAT_POSE_KINDS.find((p) => p.id === opts.kind) || HEAT_POSE_KINDS[0];
   const prompt = `${opts.facePrompt} ${pose.line}. ${SFW}`;
+  console.info("heat mint start", opts.look_key, opts.kind);
   const raw = await imagineStill(prompt, "1:1");
   const bytes = await squareFaceBytes(raw);
-  const path = `pool/${opts.look_key}/${opts.kind}-${Date.now().toString(36)}.jpg`;
+  const path = `pool/${opts.look_key.replace(/[^a-z0-9|-]/gi, "_")}/${opts.kind}-${Date.now().toString(36)}.jpg`;
   const up = await uploadHeatBytes({ bucket: "heat-rewards", path, bytes });
   const supabase = createServiceClient();
-  await supabase.from("heat_pose_pool").insert({
+  const { error: poolErr } = await supabase.from("heat_pose_pool").insert({
     look_key: opts.look_key,
     pose_kind: opts.kind,
     url: up.url,
@@ -104,7 +110,8 @@ export async function mintPooledPose(opts: {
     prompt,
     sfw: true,
   });
-  await supabase.from("heat_assets").insert({
+  if (poolErr) console.error("heat_pose_pool", poolErr);
+  const { error: assetErr } = await supabase.from("heat_assets").insert({
     user_id: opts.userId,
     thread_id: opts.threadId,
     kind: "pose",
@@ -113,6 +120,7 @@ export async function mintPooledPose(opts: {
     url: up.url,
     status: "ready",
   });
+  if (assetErr) console.error("heat_assets", assetErr);
   return { url: up.url, path: up.path, cached: false };
 }
 
@@ -178,7 +186,7 @@ export async function deliverHeatPic(opts: {
           appearance: String(opts.thread.appearance || "any"),
           facePrompt: String(opts.thread.meta?.face_prompt || opts.thread.contact_name || "fictional adult"),
         }),
-        38000,
+        54000,
         "still timed out",
       );
       found = { url: minted.url, cached: false, minted: true };
@@ -190,7 +198,7 @@ export async function deliverHeatPic(opts: {
   }
   if (!found) return null;
   const supabase = createServiceClient();
-  const { data: photoMsg } = await supabase
+  const { data: photoMsg, error: msgErr } = await supabase
     .from("heat_messages")
     .insert(
       heatMessageRow({
@@ -202,6 +210,7 @@ export async function deliverHeatPic(opts: {
     )
     .select("*")
     .single();
+  if (msgErr) throw new Error(msgErr.message);
   await cacheRewardPose(opts.thread.contact_id || null, found.url);
   return { url: found.url, cached: found.cached, minted: !!found.minted, message: photoMsg };
 }

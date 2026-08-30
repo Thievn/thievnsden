@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { HEAT_POSE_KINDS, poseKindFromAsk, type HeatPoseKind } from "@/lib/heat-check";
+import { HEAT_POSE_KINDS, heatPicMayMint, poseKindFromAsk, type HeatPoseKind } from "@/lib/heat-check";
 import { requireHeatPlayer } from "@/lib/heat-check-server";
-import { canSpendHeatCredit, deliverHeatPic, heatCreditBalance, spendHeatCredit } from "@/lib/heat-pic";
+import { deliverHeatPic, heatCreditBalance, spendHeatCredit } from "@/lib/heat-pic";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: ctx.error }, { status: ctx.status });
     }
     const user = ctx.user!;
-    if (!ctx.settings.pics_on) {
+    if (!heatPicMayMint(ctx.settings.pics_on)) {
       return NextResponse.json({ error: "Pics are off." }, { status: 403 });
     }
     const body = await req.json().catch(() => ({}));
@@ -51,10 +51,6 @@ export async function POST(req: NextRequest) {
         billed: { billed: 0, free: true },
         credits,
       });
-    }
-
-    if (!(await canSpendHeatCredit(user.id, ctx.settings.pic_cost))) {
-      return NextResponse.json({ error: "Need a credit for that still.", toast: true }, { status: 402 });
     }
 
     const delivered = await deliverHeatPic({

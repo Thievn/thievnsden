@@ -130,7 +130,7 @@ export async function mintHeatContact(opts: {
       appearance: opts.appearance,
       threadId: opts.threadId,
     }),
-    25000,
+    52000,
     "Face gen timed out",
   );
   const supabase = createServiceClient();
@@ -147,12 +147,20 @@ export async function mintHeatContact(opts: {
     })
     .select("id, face_url")
     .single();
+  const { data: prior } = await supabase.from("heat_threads").select("meta").eq("id", opts.threadId).maybeSingle();
+  const meta = prior?.meta && typeof prior.meta === "object" ? { ...(prior.meta as Record<string, unknown>) } : {};
   await supabase
     .from("heat_threads")
     .update({
       contact_face_url: face.url,
       contact_id: contact?.id || null,
-      meta: { face_prompt: face.prompt, look: opts.who, presentation: opts.presentation, appearance: opts.appearance },
+      meta: {
+        ...meta,
+        face_prompt: face.prompt,
+        look: opts.who,
+        presentation: opts.presentation,
+        appearance: opts.appearance,
+      },
       updated_at: new Date().toISOString(),
     })
     .eq("id", opts.threadId);

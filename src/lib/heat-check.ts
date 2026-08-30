@@ -597,6 +597,15 @@ export function insistsOnPic(text: string) {
   return /\b(don'?t be shy|just send|send it|send one|send me one|now|please|pls)\b/i.test(String(text || ""));
 }
 
+export function heatPicMayMint(picsOn: boolean) {
+  return picsOn !== false;
+}
+
+export function heatPicBillPlan(extra: number, cost: number, freeLeft: number) {
+  if (extra >= cost) return { spendExtra: cost, markFree: false };
+  return { spendExtra: 0, markFree: freeLeft > 0 };
+}
+
 export const HEAT_PIC_CHIPS = [
   { label: "a selfie", kind: "selfie" as const },
   { label: "mirror one", kind: "mirror" as const },

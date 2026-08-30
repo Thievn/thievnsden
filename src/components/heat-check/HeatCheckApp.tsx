@@ -151,6 +151,10 @@ export function HeatCheckApp() {
   const libRef = useRef<HTMLInputElement>(null);
   const plusIntent = useRef<"mine" | "chat" | "pick">("pick");
   const pendingRef = useRef<File | null>(null);
+  const threadRef = useRef<HeatThread | null>(null);
+  const messagesRef = useRef<HeatMessage[]>([]);
+  const picInFlight = useRef(false);
+  const pullPicRef = useRef<(kind: string, ask?: string) => Promise<void>>(async () => {});
 
   const threadEl = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -171,6 +175,9 @@ export function HeatCheckApp() {
       vv.removeEventListener("scroll", sync);
     };
   }, []);
+
+  threadRef.current = thread;
+  messagesRef.current = messages;
 
   const scrollEnd = () => {
     requestAnimationFrame(() => {
@@ -470,7 +477,7 @@ export function HeatCheckApp() {
       setPicSuggest(!!data.picSuggest);
       if (data.sendPic && !alreadyPic) {
         setSendingPic(true);
-        window.setTimeout(() => pullPic(String(data.sendPic), text), 400);
+        window.setTimeout(() => pullPicRef.current(String(data.sendPic), text), 400);
       }
       if (data.recap) {
         setRecap(data.recap);
@@ -600,20 +607,44 @@ export function HeatCheckApp() {
     window.setTimeout(() => setPicToast(null), 5200);
   };
 
+  const waitForNewPhoto = async (nightId: string, seen: Set<string>) => {
+    for (let i = 0; i < 10; i++) {
+      await new Promise((r) => window.setTimeout(r, 2500));
+      const res = await fetch(`/api/heat-check/threads/${nightId}`, { headers: await authHeaders() });
+      const data = await readJson(res);
+      const rows: HeatMessage[] = (data.messages || []).map((m: HeatMessage & { role?: string }) => ({
+        ...m,
+        sender: m.sender || m.role || "photo",
+      }));
+      const fresh = rows.filter((m) => m.image_url && !seen.has(m.id));
+      if (fresh.length) {
+        setMessages(rows);
+        return true;
+      }
+    }
+    return false;
+  };
+
   const pullPic = async (kind: string, ask?: string) => {
-    if (!thread || picBusy || thread.id === "preview") return;
+    const night = threadRef.current;
+    if (!night || night.id === "preview" || picInFlight.current) return;
+    picInFlight.current = true;
     setPicSuggest(false);
     setPlusOpen(false);
     setPicBusy(true);
     setSendingPic(true);
+    const seen = new Set(messagesRef.current.filter((m) => m.image_url).map((m) => m.id));
     try {
       const res = await fetch("/api/heat-check/pic", {
         method: "POST",
         headers: await authHeaders(),
-        body: JSON.stringify({ threadId: thread.id, kind, ask: ask || draft }),
+        body: JSON.stringify({ threadId: night.id, kind, ask: ask || draft }),
       });
       const data = await readJson(res);
-      if (!res.ok) throw new Error(data.error || "They couldn't send that one.");
+      if (!res.ok) {
+        if (await waitForNewPhoto(night.id, seen)) return;
+        throw new Error(data.error || "They couldn't send that one.");
+      }
       const them: HeatMessage[] = (data.them || []).map((m: HeatMessage & { role?: string }) => ({
         ...m,
         sender: m.sender || m.role || "photo",
@@ -623,8 +654,8 @@ export function HeatCheckApp() {
         : data.url
           ? [{
               id: `pic-${Date.now()}`,
-              thread_id: thread.id,
-              user_id: thread.user_id,
+              thread_id: night.id,
+              user_id: night.user_id,
               sender: "photo" as const,
               body: null,
               image_url: data.url,
@@ -634,14 +665,23 @@ export function HeatCheckApp() {
               created_at: new Date().toISOString(),
             }]
           : [];
-      if (incoming.length) setMessages((m) => [...m, ...incoming]);
-    } catch {
-      showPicToast();
+      if (incoming.length) {
+        setMessages((m) => [...m, ...incoming.filter((row) => !m.some((x) => x.id === row.id || x.image_url === row.image_url))]);
+        return;
+      }
+      if (!(await waitForNewPhoto(night.id, seen))) {
+        throw new Error(data.error || "They couldn't send that one.");
+      }
+    } catch (e: unknown) {
+      if (await waitForNewPhoto(night.id, seen)) return;
+      showPicToast(e instanceof Error ? e.message : undefined);
     } finally {
+      picInFlight.current = false;
       setSendingPic(false);
       setPicBusy(false);
     }
   };
+  pullPicRef.current = pullPic;
 
   if (screen === "boot") {
     return (

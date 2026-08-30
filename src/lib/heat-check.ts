@@ -599,6 +599,13 @@ export const HEAT_PIC_CHIPS = [
   { label: "just send it", kind: "selfie" as const },
 ];
 
+export const HEAT_PIC_OOPS = [
+  "that still got camera shy. you weren't billed.",
+  "pic ghosted mid-send. credits stayed in your pocket.",
+  "they dropped the phone. try again — on the house.",
+  "lamp ate the file. no charge. ask once more.",
+];
+
 export const HEAT_PINGS = [
   "was thinking about you",
   "you eat yet",

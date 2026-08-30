@@ -15,6 +15,7 @@ import {
   withTimeout,
   writeOpeningMessages,
 } from "@/lib/heat-check-server";
+import { deliverHeatPic } from "@/lib/heat-pic";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -199,10 +200,27 @@ export async function POST(req: NextRequest) {
     const pendingPic = meta.pending_pic === true;
     const named = namedPicKind(text);
     const wantsPic = ctx.settings.pics_on && (wantsPicText(text) || (pendingPic && (!!named || insistsOnPic(text))));
-    const sendPic = wantsPic && (named || insistsOnPic(text) || pendingPic) ? named || "selfie" : null;
+    let sendPic = wantsPic && (named || insistsOnPic(text) || pendingPic) ? named || "selfie" : null;
     const picSuggest = wantsPic && !sendPic;
     if (sendPic) meta.pending_pic = false;
     else if (picSuggest) meta.pending_pic = true;
+    if (sendPic) {
+      try {
+        const fast = await deliverHeatPic({
+          userId: user.id,
+          threadId,
+          kind: sendPic,
+          ask: text,
+          settings: ctx.settings,
+          thread,
+          mint: false,
+        });
+        if (fast?.message) themMessages.push(fast.message);
+        if (fast) sendPic = null;
+      } catch (err) {
+        console.error("heat turn pic", err);
+      }
+    }
     let recap = thread.recap;
     const patch: Record<string, unknown> = {
       mood: turn.mood && turn.mood !== "same" ? turn.mood : thread.mood,

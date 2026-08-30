@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { HEAT_POSE_KINDS, poseKindFromAsk, type HeatPoseKind } from "@/lib/heat-check";
 import { requireHeatPlayer } from "@/lib/heat-check-server";
-import { deliverHeatPic, heatCreditBalance, spendHeatCredit } from "@/lib/heat-pic";
+import { canSpendHeatCredit, deliverHeatPic, heatCreditBalance, spendHeatCredit } from "@/lib/heat-pic";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -33,36 +33,59 @@ export async function POST(req: NextRequest) {
     if (!thread) return NextResponse.json({ error: "Night gone." }, { status: 404 });
     if (thread.ended) return NextResponse.json({ error: "This one already faded." }, { status: 409 });
 
-    const spent = await spendHeatCredit(user.id, ctx.settings.pic_cost);
-    try {
-      const delivered = await deliverHeatPic({
-        userId: user.id,
-        threadId,
-        kind,
-        ask,
-        settings: ctx.settings,
-        thread,
-      });
+    const fast = await deliverHeatPic({
+      userId: user.id,
+      threadId,
+      kind,
+      ask,
+      settings: ctx.settings,
+      thread,
+      mint: false,
+    });
+    if (fast) {
       const credits = await heatCreditBalance(user.id);
       return NextResponse.json({
-        them: delivered.message ? [delivered.message] : [],
-        url: delivered.url,
-        cached: delivered.cached,
-        billed: spent,
+        them: fast.message ? [fast.message] : [],
+        url: fast.url,
+        cached: true,
+        billed: { billed: 0, free: true },
         credits,
       });
-    } catch (err) {
-      const today = new Date().toISOString().slice(0, 10);
-      await supabase.from("heat_credits").upsert({
-        user_id: user.id,
-        extra: spent.free ? spent.extra : spent.extra + spent.billed,
-        free_used_on: spent.free ? null : today,
-        updated_at: new Date().toISOString(),
-      });
-      throw err;
     }
+
+    if (!(await canSpendHeatCredit(user.id, ctx.settings.pic_cost))) {
+      return NextResponse.json({ error: "Need a credit for that still.", toast: true }, { status: 402 });
+    }
+
+    const delivered = await deliverHeatPic({
+      userId: user.id,
+      threadId,
+      kind,
+      ask,
+      settings: ctx.settings,
+      thread,
+      mint: true,
+    });
+    if (!delivered) {
+      return NextResponse.json({ error: "That still took too long. Ask again in a second.", toast: true }, { status: 504 });
+    }
+    let billed = { billed: 0, extra: 0, free: true };
+    if (delivered.minted) {
+      billed = await spendHeatCredit(user.id, ctx.settings.pic_cost);
+    }
+    const credits = await heatCreditBalance(user.id);
+    return NextResponse.json({
+      them: delivered.message ? [delivered.message] : [],
+      url: delivered.url,
+      cached: delivered.cached,
+      billed,
+      credits,
+    });
   } catch (err: unknown) {
     console.error("heat pic", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Pic failed" }, { status: 500 });
+    return NextResponse.json({
+      error: err instanceof Error ? err.message : "Pic failed",
+      toast: true,
+    }, { status: 500 });
   }
 }

@@ -12,6 +12,7 @@ import {
   HEAT_LOGIN,
   HEAT_LOOKS,
   HEAT_PIC_CHIPS,
+  HEAT_PIC_OOPS,
   HEAT_ORIENTATIONS,
   HEAT_PRESENTATIONS,
   HEAT_PRONOUNS,
@@ -137,6 +138,8 @@ export function HeatCheckApp() {
   const [picCost, setPicCost] = useState(1);
   const [picSuggest, setPicSuggest] = useState(false);
   const [picBusy, setPicBusy] = useState(false);
+  const [sendingPic, setSendingPic] = useState(false);
+  const [picToast, setPicToast] = useState<string | null>(null);
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [picsOpen, setPicsOpen] = useState(false);
   const [companionHouse, setCompanionHouse] = useState(false);
@@ -416,11 +419,16 @@ export function HeatCheckApp() {
           peekTimer.current = window.setTimeout(() => setRail(false), 2200);
         }, 2000);
       }
-      const them: HeatMessage[] = data.them || [];
+      const them: HeatMessage[] = (data.them || []).map((m: HeatMessage & { role?: string }) => ({
+        ...m,
+        sender: m.sender || m.role || "them",
+      }));
+      const alreadyPic = them.some((m) => m.sender === "photo" || !!m.image_url);
       if (them.length) setPendingThem(them);
       setPicSuggest(!!data.picSuggest);
-      if (data.sendPic) {
-        window.setTimeout(() => pullPic(String(data.sendPic), text), 900);
+      if (data.sendPic && !alreadyPic) {
+        setSendingPic(true);
+        window.setTimeout(() => pullPic(String(data.sendPic), text), 400);
       }
       if (data.recap) {
         setRecap(data.recap);
@@ -545,12 +553,17 @@ export function HeatCheckApp() {
     send("FADE");
   };
 
+  const showPicToast = (line?: string) => {
+    setPicToast(line || HEAT_PIC_OOPS[Math.floor(Math.random() * HEAT_PIC_OOPS.length)]);
+    window.setTimeout(() => setPicToast(null), 5200);
+  };
+
   const pullPic = async (kind: string, ask?: string) => {
     if (!thread || picBusy || thread.id === "preview") return;
     setPicSuggest(false);
     setPlusOpen(false);
     setPicBusy(true);
-    setTyping(true);
+    setSendingPic(true);
     try {
       const res = await fetch("/api/heat-check/pic", {
         method: "POST",
@@ -563,28 +576,27 @@ export function HeatCheckApp() {
         ...m,
         sender: m.sender || m.role || "photo",
       }));
-      if (them.length) setPendingThem(them);
-      else if (data.url) {
-        setPendingThem([
-          {
-            id: `pic-${Date.now()}`,
-            thread_id: thread.id,
-            user_id: thread.user_id,
-            sender: "photo",
-            body: null,
-            image_url: data.url,
-            score: null,
-            delivered_at: new Date().toISOString(),
-            read_at: null,
-            created_at: new Date().toISOString(),
-          },
-        ]);
-      }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "They couldn't send that one.";
-      setNote(/timeout|too long/i.test(msg) ? msg : "that one didn't send. ask again.");
+      const incoming = them.length
+        ? them
+        : data.url
+          ? [{
+              id: `pic-${Date.now()}`,
+              thread_id: thread.id,
+              user_id: thread.user_id,
+              sender: "photo" as const,
+              body: null,
+              image_url: data.url,
+              score: null,
+              delivered_at: new Date().toISOString(),
+              read_at: null,
+              created_at: new Date().toISOString(),
+            }]
+          : [];
+      if (incoming.length) setMessages((m) => [...m, ...incoming]);
+    } catch {
+      showPicToast();
     } finally {
-      setTyping(false);
+      setSendingPic(false);
       setPicBusy(false);
     }
   };
@@ -930,6 +942,21 @@ export function HeatCheckApp() {
               </div>
             );
           })}
+          {sendingPic && (
+            <div className="hc-row them">
+              {thread?.contact_face_url || photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={thread?.contact_face_url || photoUrl || ""} alt="" className="hc-face hc-face-sm self-end" />
+              ) : (
+                <div className="hc-face hc-face-sm grid place-items-center text-[10px] text-[#c4a59a] self-end">
+                  {thread?.contact_name?.slice(0, 1) || "?"}
+                </div>
+              )}
+              <div className="hc-photo hc-photo-wait" aria-label="Sending a photo">
+                <span>sending a pic…</span>
+              </div>
+            </div>
+          )}
           {typing && (
             <div className="hc-row them">
               {thread?.contact_face_url || photoUrl ? (
@@ -1105,6 +1132,7 @@ export function HeatCheckApp() {
           </div>
         )}
       </div>
+      {picToast ? <p className="hc-desk-note">{picToast}</p> : null}
     </div>
   );
 }

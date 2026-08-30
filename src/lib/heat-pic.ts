@@ -11,6 +11,11 @@ import { cacheRewardPose } from "@/lib/heat-face-cache";
 const SFW =
   "STRICT SFW. Clothes on. No nudity. No explicit anatomy. No pornography. Face visible. Same fictional adult. Soft lamp. Not a celebrity. No text.";
 
+export async function canSpendHeatCredit(userId: string, cost: number) {
+  const bal = await heatCreditBalance(userId);
+  return bal.extra >= cost || (cost <= 1 && bal.freeLeft > 0);
+}
+
 export async function spendHeatCredit(userId: string, cost: number) {
   const supabase = createServiceClient();
   const { data } = await supabase.from("heat_credits").select("extra, free_used_on").eq("user_id", userId).maybeSingle();
@@ -111,51 +116,56 @@ export async function mintPooledPose(opts: {
   return { url: up.url, path: up.path, cached: false };
 }
 
+export type HeatPicThread = {
+  look_key?: string | null;
+  they_look?: string | null;
+  presentation?: string | null;
+  appearance?: string | null;
+  contact_id?: string | null;
+  contact_name?: string | null;
+  contact_face_url?: string | null;
+  meta?: { face_prompt?: string } | null;
+};
+
+export function threadLookKey(thread: HeatPicThread) {
+  return (
+    thread.look_key ||
+    lookKey(String(thread.they_look || "woman"), String(thread.presentation || "default"), String(thread.appearance || "any"))
+  );
+}
+
+export async function findReadyStill(thread: HeatPicThread, kind: HeatPoseKind, settings: HeatSettings) {
+  const look_key = threadLookKey(thread);
+  let hit = settings.pic_cache ? await pickPooledPose(look_key, kind) : null;
+  if (!hit && settings.pic_cache) hit = await pickAnyPooledPose(look_key);
+  if (hit?.url) return { url: String(hit.url), cached: true, minted: false };
+  if (thread.contact_id) {
+    const supabase = createServiceClient();
+    const { data: contact } = await supabase
+      .from("heat_contacts")
+      .select("pose_urls, face_url")
+      .eq("id", thread.contact_id)
+      .maybeSingle();
+    const poses = Array.isArray(contact?.pose_urls) ? contact.pose_urls.filter((u: unknown) => typeof u === "string" && u) : [];
+    if (poses.length) return { url: String(poses[Math.floor(Math.random() * poses.length)]), cached: true, minted: false };
+    if (contact?.face_url) return { url: String(contact.face_url), cached: true, minted: false };
+  }
+  if (thread.contact_face_url) return { url: String(thread.contact_face_url), cached: true, minted: false };
+  return null;
+}
+
 export async function deliverHeatPic(opts: {
   userId: string;
   threadId: string;
   kind: HeatPoseKind;
   ask?: string;
   settings: HeatSettings;
-  thread: {
-    look_key?: string | null;
-    they_look?: string | null;
-    presentation?: string | null;
-    appearance?: string | null;
-    contact_id?: string | null;
-    contact_name?: string | null;
-    contact_face_url?: string | null;
-    meta?: { face_prompt?: string } | null;
-  };
+  thread: HeatPicThread;
+  mint?: boolean;
 }) {
-  const look_key =
-    opts.thread.look_key ||
-    lookKey(String(opts.thread.they_look || "woman"), String(opts.thread.presentation || "default"), String(opts.thread.appearance || "any"));
-  let hit = opts.settings.pic_cache ? await pickPooledPose(look_key, opts.kind) : null;
-  if (!hit && opts.settings.pic_cache) hit = await pickAnyPooledPose(look_key);
-  let url = hit?.url || null;
-  let cached = !!hit;
-  if (!url && opts.thread.contact_id) {
-    const supabase = createServiceClient();
-    const { data: contact } = await supabase
-      .from("heat_contacts")
-      .select("pose_urls, face_url")
-      .eq("id", opts.thread.contact_id)
-      .maybeSingle();
-    const poses = Array.isArray(contact?.pose_urls) ? contact.pose_urls.filter((u: unknown) => typeof u === "string") : [];
-    if (poses.length) {
-      url = String(poses[Math.floor(Math.random() * poses.length)]);
-      cached = true;
-    } else if (contact?.face_url) {
-      url = String(contact.face_url);
-      cached = true;
-    }
-  }
-  if (!url && opts.thread.contact_face_url) {
-    url = opts.thread.contact_face_url;
-    cached = true;
-  }
-  if (!url) {
+  const look_key = threadLookKey(opts.thread);
+  let found = await findReadyStill(opts.thread, opts.kind, opts.settings);
+  if (!found && opts.mint !== false) {
     try {
       const minted = await withTimeout(
         mintPooledPose({
@@ -171,13 +181,14 @@ export async function deliverHeatPic(opts: {
         38000,
         "still timed out",
       );
-      url = minted.url;
-      cached = false;
+      found = { url: minted.url, cached: false, minted: true };
     } catch (err) {
       console.error("heat mint", err);
-      throw new Error("That still took too long. Ask again in a second.");
+      found = await findReadyStill(opts.thread, opts.kind, { ...opts.settings, pic_cache: true });
+      if (!found) throw new Error("That still took too long. Ask again in a second.");
     }
   }
+  if (!found) return null;
   const supabase = createServiceClient();
   const { data: photoMsg } = await supabase
     .from("heat_messages")
@@ -186,13 +197,13 @@ export async function deliverHeatPic(opts: {
         thread_id: opts.threadId,
         user_id: opts.userId,
         sender: "photo",
-        image_url: url,
+        image_url: found.url,
       }),
     )
     .select("*")
     .single();
-  await cacheRewardPose(opts.thread.contact_id || null, url);
-  return { url, cached, message: photoMsg };
+  await cacheRewardPose(opts.thread.contact_id || null, found.url);
+  return { url: found.url, cached: found.cached, minted: !!found.minted, message: photoMsg };
 }
 
 export async function grantHeatCredits(userId: string, add: number) {

@@ -12,8 +12,13 @@ import {
   insistsOnPic,
   HEAT_PIC_CHIPS,
   HEAT_PIC_OOPS,
+  HEAT_PIC_BEATS,
   heatPicBillPlan,
   heatPicMayMint,
+  buildHeatPicPrompt,
+  pickUnusedStill,
+  pickHeatPicBeat,
+  imageIdentityLock,
   parseHeatTurn,
   parseJsonObject,
   splitScene,
@@ -44,6 +49,27 @@ assert(heatPicMayMint(true) && !heatPicMayMint(false), "pics switch");
 assert(heatPicBillPlan(0, 1, 0).spendExtra === 0, "empty extra still delivers");
 assert(heatPicBillPlan(3, 1, 0).spendExtra === 1, "extra bills after mint");
 assert(heatPicBillPlan(0, 1, 1).markFree, "mark free only after a still lands");
+assert(namedPicKind("send a kitchen pic") === "kitchen" && namedPicKind("couch selfie") === "couch", "scene kinds");
+const lock = imageIdentityLock("woman", "feminine", "mena");
+assert(/SAME fictional adult/.test(lock) && !/Tight head-and-shoulders/.test(lock), "identity lock");
+const picPrompt = buildHeatPicPrompt({
+  who: "woman",
+  presentation: "feminine",
+  appearance: "mena",
+  facePrompt: "adult woman. Look: feminine.",
+  kind: "selfie",
+  ask: "send a selfie",
+  mood: "needy",
+  heat: "filthy",
+  recent: ["you still up?", "send a selfie"],
+  beat: HEAT_PIC_BEATS[0],
+});
+assert(/SAME fictional adult/.test(picPrompt) && /send a selfie/.test(picPrompt) && /3:4/.test(picPrompt), "smart still prompt");
+assert(picPrompt !== lock, "pose prompt is not the portrait");
+assert(pickUnusedStill(["face", "pose-a"], ["pose-a"], "face") === null, "never reuse face or a sent still");
+assert(pickUnusedStill(["face", "pose-a", "pose-b"], ["pose-a"], "face") === "pose-b", "fresh pose only");
+assert(HEAT_PIC_BEATS.length >= 6, "beats");
+assert(pickHeatPicBeat(HEAT_PIC_BEATS.map((b) => b.id).slice(0, -1)).id === HEAT_PIC_BEATS[HEAT_PIC_BEATS.length - 1].id, "last unused beat");
 assert(!parseHeatSettings({}).auto_end && parseHeatSettings({}).pics_on, "nights stay open");
 assert(parseHeatSettings({}).nudge_on && parseHeatSettings({ nudge_on: false }).nudge_on === false, "nudge default");
 assert(!isFadeText("fade out"), "not fade phrase");

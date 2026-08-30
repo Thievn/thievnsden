@@ -191,8 +191,16 @@ html.hc-kb-lock body {
   display: flex;
   align-items: center;
   gap: 0.65rem;
+  width: 100%;
   padding: 0.35rem 0.85rem 0.55rem;
   background: linear-gradient(180deg, rgba(12,6,10,0.35), transparent);
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.hc-contact:disabled {
+  cursor: default;
 }
 
 .hc-face {

@@ -924,7 +924,15 @@ export function HeatCheckApp() {
             )}
           </div>
         </header>
-        <div className="hc-contact">
+        <button
+          type="button"
+          className="hc-contact"
+          disabled={!thread?.contact_face_url}
+          onClick={() => {
+            if (thread?.contact_face_url) setViewerUrl(thread.contact_face_url);
+          }}
+          aria-label={thread?.contact_face_url ? `Open ${thread.contact_name}'s photo` : undefined}
+        >
           {thread?.contact_face_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={thread.contact_face_url} alt="" className="hc-face" />
@@ -933,11 +941,11 @@ export function HeatCheckApp() {
               {thread?.contact_name?.slice(0, 1) || "?"}
             </div>
           )}
-          <div className="min-w-0">
+          <div className="min-w-0 text-left">
             <p className="text-[15px] font-medium truncate">{thread?.contact_name}</p>
             <p className="text-[11px] text-[#9a7f76] truncate">{thread?.last_seen_label || "just now"}</p>
           </div>
-        </div>
+        </button>
 
         <button
           type="button"

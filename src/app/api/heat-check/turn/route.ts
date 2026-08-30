@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
 
     const { data: history } = await supabase
       .from("heat_messages")
-      .select("id, sender, role, body, score, read_at, created_at")
+      .select("id, sender, role, body, score, read_at, created_at, image_url")
       .eq("thread_id", threadId)
       .order("created_at", { ascending: true });
 
@@ -265,6 +265,10 @@ export async function POST(req: NextRequest) {
     else if (picSuggest) meta.pending_pic = true;
     if (sendPic) {
       try {
+        const usedUrls = [...prior, userMsg]
+          .map((m) => String((m as { image_url?: string | null }).image_url || ""))
+          .filter(Boolean);
+        const recent = [...prior.map((m) => String(m.body || "")), text].filter(Boolean).slice(-6);
         const fast = await deliverHeatPic({
           userId: user.id,
           threadId,
@@ -273,6 +277,8 @@ export async function POST(req: NextRequest) {
           settings: ctx.settings,
           thread,
           mint: false,
+          usedUrls,
+          recent,
         });
         if (fast?.message) themMessages.push(fast.message);
         if (fast) sendPic = null;

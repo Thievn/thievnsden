@@ -26,12 +26,23 @@ export async function POST(req: NextRequest) {
     const supabase = createServiceClient();
     const { data: thread } = await supabase
       .from("heat_threads")
-      .select("id, look_key, they_look, presentation, appearance, contact_id, contact_name, contact_face_url, meta, ended")
+      .select("id, look_key, they_look, presentation, appearance, contact_id, contact_name, contact_face_url, meta, ended, mood, heat")
       .eq("id", threadId)
       .eq("user_id", user.id)
       .maybeSingle();
     if (!thread) return NextResponse.json({ error: "Night gone." }, { status: 404 });
     if (thread.ended) return NextResponse.json({ error: "This one already faded." }, { status: 409 });
+
+    const { data: history } = await supabase
+      .from("heat_messages")
+      .select("sender, role, body, image_url")
+      .eq("thread_id", threadId)
+      .order("created_at", { ascending: true });
+    const usedUrls = (history || []).map((m) => String(m.image_url || "")).filter(Boolean);
+    const recent = (history || [])
+      .map((m) => String(m.body || "").trim())
+      .filter(Boolean)
+      .slice(-6);
 
     const fast = await deliverHeatPic({
       userId: user.id,
@@ -41,6 +52,8 @@ export async function POST(req: NextRequest) {
       settings: ctx.settings,
       thread,
       mint: false,
+      usedUrls,
+      recent,
     });
     if (fast) {
       const credits = await heatCreditBalance(user.id);
@@ -61,6 +74,8 @@ export async function POST(req: NextRequest) {
       settings: ctx.settings,
       thread,
       mint: true,
+      usedUrls,
+      recent,
     });
     if (!delivered) {
       return NextResponse.json({ error: "That still took too long. Ask again in a second.", toast: true }, { status: 504 });

@@ -563,13 +563,107 @@ export function isFadeText(text: string) {
 }
 
 export const HEAT_POSE_KINDS = [
-  { id: "selfie", label: "Selfie", line: "close selfie, face and shoulders, clothes on, looking at camera" },
-  { id: "mirror", label: "Mirror", line: "bathroom mirror selfie, phone up, clothes on, SFW" },
-  { id: "night", label: "Night lamp", line: "sitting on a bed in a shirt, warm lamp, face visible, clothes on, SFW" },
-  { id: "close", label: "Close", line: "tight face crop, soft lamp, looking at camera, clothes implied, SFW" },
+  { id: "selfie", label: "Selfie", line: "held-out arm selfie, face and upper body, clothes on, looking at camera" },
+  { id: "mirror", label: "Mirror", line: "bathroom mirror selfie, phone up, clothes on, room behind them, SFW" },
+  { id: "night", label: "Night lamp", line: "on a bed in a shirt, warm lamp, mid-shot, face visible, clothes on, SFW" },
+  { id: "close", label: "Close", line: "tight candid, face and collarbone, soft lamp, clothes implied, SFW" },
+  { id: "couch", label: "Couch", line: "on a couch, phone selfie, lived-in room, clothes on, SFW" },
+  { id: "kitchen", label: "Kitchen", line: "kitchen at night, phone in hand, clothes on, SFW" },
+  { id: "outside", label: "Outside", line: "outside at night, street lamp, clothes on, SFW" },
+  { id: "messy", label: "Messy", line: "just-woke-up still, messy hair, oversized shirt, clothes on, SFW" },
 ] as const;
 
 export type HeatPoseKind = (typeof HEAT_POSE_KINDS)[number]["id"];
+
+export const HEAT_PIC_BEATS = [
+  { id: "smirk-hoodie", expression: "half-smirk, one eyebrow", clothes: "dark hoodie, worn in", scene: "bedroom lamp, sitting on the edge of the bed" },
+  { id: "shy-tee", expression: "shy, looking up through lashes", clothes: "soft tee, no text on the shirt", scene: "sitting on the floor against the bed" },
+  { id: "sleepy-shirt", expression: "sleepy, soft mouth", clothes: "oversized button shirt, still on", scene: "in bed, lamp, covers at the waist" },
+  { id: "mirror-tank", expression: "knowing look", clothes: "tank and shorts, clothes on", scene: "steamy bathroom mirror, phone up" },
+  { id: "couch-laugh", expression: "caught mid-laugh", clothes: "knit sweater", scene: "couch, TV glow, messy blanket" },
+  { id: "kitchen-bite", expression: "biting the inside of their cheek", clothes: "old band tee with the print blurred", scene: "kitchen counter, leftover takeout" },
+  { id: "window-night", expression: "quiet, a little cold", clothes: "coat over a shirt", scene: "by a night window, city smear" },
+  { id: "close-need", expression: "needy eyes, almost a whisper", clothes: "thin long-sleeve, clothes on", scene: "close candid, lamp over one shoulder" },
+] as const;
+
+export function imageIdentityLock(who: string, presentation: string, appearance?: string | null, facePrompt?: string | null) {
+  const portrait = imageFacePrompt(who, presentation, appearance).replace(/Tight head-and-shoulders[^.]*\./gi, "").trim();
+  const extra = String(facePrompt || "")
+    .replace(/Tight head-and-shoulders[^.]*\./gi, "")
+    .replace(/Square-crop friendly[^.]*\./gi, "")
+    .trim();
+  return [
+    "SAME fictional adult as the reference portrait. Keep the exact face: bone structure, eyes, nose, lips, skin, hair color, hairline, age.",
+    "Do not invent a new person. Do not celebrity-wash. Do not change ethnicity.",
+    portrait,
+    extra,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+export function pickHeatPicBeat(usedIds: string[] = []) {
+  const fresh = HEAT_PIC_BEATS.filter((b) => !usedIds.includes(b.id));
+  const bag = fresh.length ? fresh : HEAT_PIC_BEATS;
+  return bag[Math.floor(Math.random() * bag.length)];
+}
+
+export function heatPicExpression(mood?: string | null, heat?: string | null) {
+  if (mood === "shy") return "shy, looking up, small nervous smile";
+  if (mood === "bratty") return "bratty smirk, eyebrow up";
+  if (mood === "cold") return "flat mouth, half-lidded, unimpressed";
+  if (mood === "needy") return "soft needy eyes, lips slightly parted";
+  if (heat === "nasty") return "hungry look, still a person, clothes on";
+  if (heat === "filthy") return "knowing, a little ruined, clothes on";
+  return "lived-in, almost-smile, looking at the person they are texting";
+}
+
+export function heatPicClothes(heat?: string | null, kind?: HeatPoseKind) {
+  if (kind === "mirror") return "tank or tee, shorts or sweats, clothes fully on";
+  if (kind === "messy") return "oversized sleep shirt, clothes on";
+  if (kind === "outside") return "coat or hoodie, night street, clothes on";
+  if (kind === "kitchen") return "old tee, home clothes, clothes on";
+  if (heat === "nasty" || heat === "filthy") return "clothes on, a little undone, nothing nude";
+  return "casual clothes on, lived-in, not a photoshoot";
+}
+
+export function buildHeatPicPrompt(opts: {
+  who: string;
+  presentation: string;
+  appearance?: string | null;
+  facePrompt?: string | null;
+  kind: HeatPoseKind;
+  ask?: string;
+  mood?: string | null;
+  heat?: string | null;
+  recent?: string[];
+  beat?: (typeof HEAT_PIC_BEATS)[number];
+}) {
+  const pose = HEAT_POSE_KINDS.find((p) => p.id === opts.kind) || HEAT_POSE_KINDS[0];
+  const beat = opts.beat || pickHeatPicBeat();
+  const ask = String(opts.ask || "").replace(/\s+/g, " ").trim().slice(0, 160);
+  const chat = (opts.recent || []).filter(Boolean).slice(-3).join(" / ").slice(0, 220);
+  return [
+    imageIdentityLock(opts.who, opts.presentation, opts.appearance, opts.facePrompt),
+    `New iPhone photo, not the profile portrait. 3:4 vertical. Mid-shot or selfie. Body in frame. Face visible.`,
+    `Pose: ${pose.line}.`,
+    `Expression: ${heatPicExpression(opts.mood, opts.heat)}. Also: ${beat.expression}.`,
+    `Clothes: ${heatPicClothes(opts.heat, opts.kind)}. Also: ${beat.clothes}.`,
+    `Scenery: ${beat.scene}.`,
+    ask ? `They asked: "${ask}". Match the vibe of that ask without going nude.` : "",
+    chat ? `This night so far: ${chat}.` : "",
+    "Amateur candid. Film grain. One person. STRICT SFW. Clothes on. No nudity. No explicit anatomy. No pornography. No text on the image. Not a celebrity.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+export function pickUnusedStill(candidates: string[], used: string[], faceUrl?: string | null) {
+  const blocked = new Set([faceUrl || "", ...used].filter(Boolean));
+  const fresh = candidates.filter((u) => typeof u === "string" && u && !blocked.has(u));
+  if (!fresh.length) return null;
+  return fresh[Math.floor(Math.random() * fresh.length)];
+}
 
 export function wantsPicText(text: string) {
   return /\b(send|show|give).{0,24}\b(pic|pics|photo|photos|selfie|picture|nude|nudes|one)\b|\b(pic|photo|selfie)\s*(please|pls|\?)?|\bdon'?t be shy\b/i.test(
@@ -584,6 +678,10 @@ export function poseKindFromAsk(text: string): HeatPoseKind {
 export function namedPicKind(text: string): HeatPoseKind | null {
   const t = String(text || "").toLowerCase().trim();
   if (/mirror|bathroom/.test(t)) return "mirror";
+  if (/\b(couch|sofa)\b/.test(t)) return "couch";
+  if (/\b(kitchen|fridge|snack)\b/.test(t)) return "kitchen";
+  if (/\b(outside|street|car|balcony)\b/.test(t)) return "outside";
+  if (/\b(messy|woke|morning|just got up)\b/.test(t)) return "messy";
   if (/\b(bed|laying|lying|lamp|night)\b/.test(t)) return "night";
   if (/\b(close-?up|close one|lips)\b/.test(t)) return "close";
   if (/\bselfie\b/.test(t)) return "selfie";

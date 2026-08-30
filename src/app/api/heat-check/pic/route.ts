@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const supabase = createServiceClient();
     const { data: thread } = await supabase
       .from("heat_threads")
-      .select("id, look_key, they_look, presentation, appearance, contact_id, contact_name, meta, ended")
+      .select("id, look_key, they_look, presentation, appearance, contact_id, contact_name, contact_face_url, meta, ended")
       .eq("id", threadId)
       .eq("user_id", user.id)
       .maybeSingle();

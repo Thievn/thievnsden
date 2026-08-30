@@ -209,6 +209,7 @@ export async function imagineStill(prompt: string, aspect: "3:4" | "1:1" = "3:4"
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(32000),
     });
     const text = await res.text();
     if (!res.ok) {

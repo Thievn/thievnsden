@@ -382,6 +382,7 @@ You control the night. Stay human. Stay in their body. JSON only.`;
     withThis.slice(-3).every((s) => s >= ctx.settings.reward_threshold) &&
     !ctx.thread.reward_photo_sent;
   parsed.reward_photo = earned;
+  if (!ctx.fade) parsed.ended = false;
   return parsed;
 }
 

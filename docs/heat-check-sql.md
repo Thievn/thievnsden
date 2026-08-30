@@ -201,6 +201,28 @@ alter table public.heat_threads add column if not exists appearance text;
 alter table public.heat_threads add column if not exists look_key text;
 alter table public.heat_threads add column if not exists contact_id uuid references public.heat_contacts(id) on delete set null;
 alter table public.heat_threads add column if not exists user_photo_url text;
+
+create table if not exists public.heat_pose_pool (
+  id uuid primary key default gen_random_uuid(),
+  look_key text not null,
+  pose_kind text not null,
+  url text not null,
+  path text,
+  prompt text,
+  sfw boolean not null default true,
+  created_at timestamptz not null default now()
+);
+create index if not exists heat_pose_pool_key_idx
+  on public.heat_pose_pool (look_key, pose_kind, created_at);
+
+create table if not exists public.heat_companions (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  enabled boolean not null default false,
+  last_ping timestamptz,
+  next_ping timestamptz,
+  last_line text,
+  updated_at timestamptz not null default now()
+);
 ```
 
 ## RLS
@@ -220,6 +242,8 @@ alter table public.heat_voices enable row level security;
 alter table public.heat_openers enable row level security;
 alter table public.heat_compiled_prompts enable row level security;
 alter table public.heat_contacts enable row level security;
+alter table public.heat_pose_pool enable row level security;
+alter table public.heat_companions enable row level security;
 ```
 
 create policy heat_threads_own on public.heat_threads
@@ -250,6 +274,9 @@ create policy heat_names_read on public.heat_names
   for select using (true);
 
 create policy heat_contacts_own on public.heat_contacts
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy heat_companions_own on public.heat_companions
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 ```
 

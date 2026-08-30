@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { isFadeText, type HeatThread } from "@/lib/heat-check";
+import { isFadeText, wantsPicText, type HeatThread } from "@/lib/heat-check";
 import { lookupCompiledPrompt } from "@/lib/heat-prompt-cache";
 import { cacheRewardPose } from "@/lib/heat-face-cache";
 import {
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
     }
 
     let reward: { url: string } | null = null;
-    if (turn.reward_photo && !thread.reward_photo_sent) {
+    if (ctx.settings.surprise_pics && turn.reward_photo && !thread.reward_photo_sent) {
       try {
         const facePrompt = String((thread.meta as { face_prompt?: string } | null)?.face_prompt || thread.contact_name);
         reward = await generateRewardStill(user.id, threadId, facePrompt);
@@ -193,8 +193,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const userCount = prior.filter((m) => m.sender === "user").length + 1;
-    const shouldEnd = fade || turn.ended || userCount >= 8;
+    const userAskedEnd = fade || !!body.end_night;
+    const shouldEnd = userAskedEnd || (!!ctx.settings.auto_end && (turn.ended || prior.filter((m) => m.sender === "user").length + 1 >= 8));
+    const picAsk = ctx.settings.pics_on && wantsPicText(text);
     let recap = thread.recap;
     const patch: Record<string, unknown> = {
       mood: turn.mood && turn.mood !== "same" ? turn.mood : thread.mood,
@@ -233,6 +234,7 @@ export async function POST(req: NextRequest) {
         ended: shouldEnd,
       },
       recap: shouldEnd ? recap : null,
+      picAsk,
       doubleText,
     });
   } catch (err: unknown) {

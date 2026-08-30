@@ -172,6 +172,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, body: next });
   }
 
+  if (action === "credits") {
+    const { grantHeatCredits } = await import("@/lib/heat-pic");
+    const userId = String(body.userId || "");
+    const add = Number(body.add || 0);
+    if (!userId || !add) return NextResponse.json({ error: "userId/add" }, { status: 400 });
+    const extra = await grantHeatCredits(userId, add);
+    await writeAudit({ action: "heat_credits", details: `${userId} +${add} = ${extra}` });
+    return NextResponse.json({ ok: true, extra });
+  }
+
   if (action === "prewarm") {
     const n = await prewarmCompiled();
     return NextResponse.json({ ok: true, compiled: n });

@@ -34,6 +34,8 @@ export function HeatTab() {
   const [testOut, setTestOut] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactSeed, setContactSeed] = useState("");
+  const [creditUser, setCreditUser] = useState("");
+  const [creditAmt, setCreditAmt] = useState(3);
   const [promptPack, setPromptPack] = useState("system");
 
   const [modules, setModules] = useState<{ roles: any[]; heats: any[]; voices: any[]; openers: any[] }>({
@@ -152,6 +154,11 @@ export function HeatTab() {
               ["public", "Public for everyone", settings.public],
               ["peek_default", "Tip peek on by default", settings.peek_default],
               ["face_gen", "Show generate-their-face", settings.face_gen],
+              ["auto_end", "Auto-end after 8 texts (off = user ends)", settings.auto_end],
+              ["pics_on", "Paid SFW pics", settings.pics_on],
+              ["pic_cache", "Reuse pics by appearance", settings.pic_cache],
+              ["surprise_pics", "Old surprise reward pics", settings.surprise_pics],
+              ["companion_on", "Companion check-ins", settings.companion_on],
               ["ios", "iOS skin", settings.skins.ios],
               ["android", "Android skin", settings.skins.android],
             ] as const
@@ -176,20 +183,62 @@ export function HeatTab() {
         <p className="text-[12px] text-neutral-500">
           Uncheck generate-their-face to hide it on start. Upload a photo still works. Credits for faces can land later.
         </p>
-        <label className="text-sm block">
-          Reward photo threshold
-          <input
-            type="number"
-            min={6}
-            max={10}
-            value={settings.reward_threshold}
-            onChange={(e) => setSettings({ ...settings, reward_threshold: Number(e.target.value) })}
-            className={`${field} mt-1 max-w-[8rem]`}
-          />
-        </label>
+        <div className="grid sm:grid-cols-3 gap-3">
+          <label className="text-sm block">
+            Reward threshold
+            <input
+              type="number"
+              min={6}
+              max={10}
+              value={settings.reward_threshold}
+              onChange={(e) => setSettings({ ...settings, reward_threshold: Number(e.target.value) })}
+              className={`${field} mt-1`}
+            />
+          </label>
+          <label className="text-sm block">
+            Pic credit cost
+            <input
+              type="number"
+              min={1}
+              max={5}
+              value={settings.pic_cost}
+              onChange={(e) => setSettings({ ...settings, pic_cost: Number(e.target.value) })}
+              className={`${field} mt-1`}
+            />
+          </label>
+          <label className="text-sm block">
+            Pings per day
+            <input
+              type="number"
+              min={1}
+              max={6}
+              value={settings.pings_per_day}
+              onChange={(e) => setSettings({ ...settings, pings_per_day: Number(e.target.value) })}
+              className={`${field} mt-1`}
+            />
+          </label>
+        </div>
+        <p className="text-[12px] text-neutral-500">
+          Nights stay open unless the user ends them. Pics stay SFW and reuse the appearance pool. Companion check-ins show when they open Heat Check — not a phone push yet.
+        </p>
         <button type="button" disabled={busy} onClick={save} className={btn}>
           Save controls
         </button>
+        <div className="flex flex-wrap gap-2 items-end pt-2">
+          <label className="text-sm block flex-1 min-w-[12rem]">
+            Grant pic credits (user id)
+            <input className={`${field} mt-1`} value={creditUser} onChange={(e) => setCreditUser(e.target.value)} />
+          </label>
+          <input
+            type="number"
+            className={`${field} w-20`}
+            value={creditAmt}
+            onChange={(e) => setCreditAmt(Number(e.target.value))}
+          />
+          <button type="button" className={ghost} disabled={busy} onClick={() => act("credits", { userId: creditUser, add: creditAmt })}>
+            Grant
+          </button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">

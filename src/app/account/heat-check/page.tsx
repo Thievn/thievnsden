@@ -17,15 +17,18 @@ export default function HeatAccountPage() {
   const [saves, setSaves] = useState<any[]>([]);
   const [q, setQ] = useState("");
   const [msg, setMsg] = useState("");
+  const [companion, setCompanion] = useState(false);
 
   const load = async () => {
     const h = await headers();
-    const [t, s] = await Promise.all([
+    const [t, s, c] = await Promise.all([
       fetch("/api/heat-check/threads", { headers: h }).then((r) => r.json()),
       fetch(`/api/heat-check/saves?q=${encodeURIComponent(q)}`, { headers: h }).then((r) => r.json()),
+      fetch("/api/heat-check/companion", { headers: h }).then((r) => r.json()).catch(() => ({})),
     ]);
     setNights(t.nights || t.threads || []);
     setSaves(s.saves || []);
+    if (typeof c.enabled === "boolean") setCompanion(c.enabled);
   };
 
   useEffect(() => {
@@ -39,7 +42,23 @@ export default function HeatAccountPage() {
     <div className="max-w-md mx-auto px-4 py-12">
       <Link href="/account" className="text-sm text-neutral-500">← Account</Link>
       <h1 className="text-2xl font-semibold text-neutral-50 mt-4 mb-2">Heat Check</h1>
-      <p className="text-sm text-neutral-500 mb-6">Resume a night. Search the line stash. Delete the night.</p>
+      <p className="text-sm text-neutral-500 mb-6">Resume a night. Search the line stash. Keep the same person.</p>
+      <label className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-800 bg-[#111] px-4 py-3 mb-6 text-sm">
+        <span>Companion check-ins</span>
+        <input
+          type="checkbox"
+          checked={companion}
+          onChange={async (e) => {
+            const on = e.target.checked;
+            setCompanion(on);
+            await fetch("/api/heat-check/companion", {
+              method: "POST",
+              headers: { ...(await headers()), "Content-Type": "application/json" },
+              body: JSON.stringify({ enabled: on }),
+            });
+          }}
+        />
+      </label>
 
       <input
         value={q}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import {
   HEAT_APPEARANCES,
+  HEAT_EMOTES,
   HEAT_FADE_HELP,
   HEAT_JOIN,
   HEAT_LEVELS,
@@ -867,17 +868,35 @@ export function HeatCheckApp() {
         {note ? <p className="hc-quiet">{note}</p> : null}
         {plusOpen ? (
           <div className="hc-sheet">
-            <button type="button" onClick={() => { plusIntent.current = "pick"; camRef.current?.click(); }}>Camera</button>
-            <button type="button" onClick={() => { plusIntent.current = "pick"; libRef.current?.click(); }}>Photo library</button>
-            <button type="button" onClick={() => {
+            <button type="button" className="hc-sheet-row" onClick={() => { plusIntent.current = "pick"; camRef.current?.click(); }}>Camera</button>
+            <button type="button" className="hc-sheet-row" onClick={() => { plusIntent.current = "pick"; libRef.current?.click(); }}>Photo library</button>
+            <button type="button" className="hc-sheet-row" onClick={() => {
               if (pendingRef.current) applyMyFace(pendingRef.current);
               else { plusIntent.current = "mine"; libRef.current?.click(); }
             }}>Use as my face</button>
-            <button type="button" onClick={() => {
+            <button type="button" className="hc-sheet-row" onClick={() => {
               if (pendingRef.current) sendChatPhoto(pendingRef.current);
               else { plusIntent.current = "chat"; libRef.current?.click(); }
             }}>Send in chat</button>
-            <button type="button" onClick={removeMyFace}>Remove my face</button>
+            <button type="button" className="hc-sheet-row" onClick={removeMyFace}>Remove my face</button>
+            <div className="hc-emotes">
+              <p className="hc-sheet-label">Emotes</p>
+              <div className="hc-emote-grid">
+                {HEAT_EMOTES.map((emote) => (
+                  <button
+                    key={emote}
+                    type="button"
+                    className="hc-emote"
+                    onClick={() => {
+                      setDraft((d) => `${d}${emote}`);
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    {emote}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         ) : null}
         <input

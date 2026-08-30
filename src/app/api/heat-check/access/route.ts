@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
     picsOn: settings.pics_on,
     picCost: settings.pic_cost,
     companionOn: settings.companion_on,
+    nudgeOn: settings.nudge_on,
     credits: user ? await heatCreditBalance(user.id).catch(() => ({ extra: 0, freeLeft: 1 })) : { extra: 0, freeLeft: 0 },
     skins: settings.skins,
     admin: isAdmin(user),

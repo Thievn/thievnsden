@@ -51,6 +51,7 @@ export type HeatSettings = {
   surprise_pics: boolean;
   companion_on: boolean;
   pings_per_day: number;
+  nudge_on: boolean;
   skins: { ios: boolean; android: boolean };
   prompts: HeatPromptPack;
 };
@@ -194,6 +195,7 @@ Score the player's LAST line only. 1–3 stub/miss, 4–5 generic, 6 decent, 8 t
 Phone at 1:40am. fragments ok. one thought. not an essay.
 If they type FADE or no/stop: wind down, ended true. Tip never coaches past no/stop/fade.
 Never end the night unless they faded or asked to stop. Do not set ended true after a few messages.
+If this is a silence follow-up: they went quiet. One or two short bubbles about THIS chat. Poke, tease, miss them. Do not restart. Do not fade.
 If they ask for a pic: stay in character. No nudes. Clothes on. Never mention menus or credits.
 If they named a still (selfie, mirror, lamp, close): do not stall with "no selfie yet". One short tease. The photo lands after your text.
 If they asked vaguely: one in-character question — selfie, mirror, or the lamp. The app sends it when they answer.
@@ -245,6 +247,7 @@ Voice:
 - Opening: if you text first, consent is the first beat without being clinical. A check-in that still sounds like them.
 - If they type FADE or want to stop: wind down kindly in scene, ended true, end_reason "fade".
 - Never end the night on your own. ended stays false unless they faded or asked to stop.
+- If they go quiet and this is a follow-up: stay on the last beat. Short. Human. Do not restart the night.
 - If they ask for a pic or selfie: stay in character. No nudes. No explicit anatomy. Never mention menus. If they named the still, do not refuse it. If they were vague, ask which kind in one short line. The app delivers the photo after you text.
 - read_delay_ms 2000–8000.
 - reward_photo only when instructed AND last three player scores were high. One still. Same person. Sexier, not hardcore.
@@ -279,6 +282,7 @@ export const DEFAULT_HEAT_SETTINGS: HeatSettings = {
   surprise_pics: false,
   companion_on: false,
   pings_per_day: 2,
+  nudge_on: true,
   skins: { ios: true, android: true },
   prompts: DEFAULT_PROMPTS,
 };
@@ -298,6 +302,7 @@ export function parseHeatSettings(raw: unknown): HeatSettings {
     surprise_pics: src.surprise_pics === true,
     companion_on: src.companion_on === true,
     pings_per_day: Math.min(6, Math.max(1, Number(src.pings_per_day) || 2)),
+    nudge_on: src.nudge_on !== false,
     skins: {
       ios: src.skins?.ios !== false,
       android: src.skins?.android !== false,
@@ -597,6 +602,13 @@ export const HEAT_PIC_CHIPS = [
   { label: "mirror one", kind: "mirror" as const },
   { label: "the lamp one", kind: "night" as const },
   { label: "just send it", kind: "selfie" as const },
+];
+
+export const HEAT_PIC_OOPS = [
+  "that still got camera shy. you weren't billed.",
+  "pic ghosted mid-send. credits stayed in your pocket.",
+  "they dropped the phone. try again — on the house.",
+  "lamp ate the file. no charge. ask once more.",
 ];
 
 export const HEAT_PINGS = [

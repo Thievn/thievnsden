@@ -6,6 +6,8 @@ import {
   sourceHash,
   canPlayHeat,
   isFadeText,
+  wantsPicText,
+  poseKindFromAsk,
   parseHeatTurn,
   parseJsonObject,
   splitScene,
@@ -26,6 +28,8 @@ const owner = { email: "thievnsden@gmail.com", user_metadata: { username: "THIEV
 const rando = { email: "x@y.z", user_metadata: { username: "guest" } } as unknown as User;
 
 assert(isFadeText("FADE") && isFadeText(" fade "), "fade");
+assert(wantsPicText("send me a pic") && poseKindFromAsk("mirror selfie") === "mirror", "pic ask");
+assert(!parseHeatSettings({}).auto_end && parseHeatSettings({}).pics_on, "nights stay open");
 assert(!isFadeText("fade out"), "not fade phrase");
 
 const turn = parseHeatTurn({

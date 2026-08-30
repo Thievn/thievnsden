@@ -11,6 +11,7 @@ import {
   HEAT_LEVELS,
   HEAT_LOGIN,
   HEAT_LOOKS,
+  HEAT_POSE_KINDS,
   HEAT_ORIENTATIONS,
   HEAT_PRESENTATIONS,
   HEAT_PRONOUNS,
@@ -132,6 +133,12 @@ export function HeatCheckApp() {
   const [myFaceUrl, setMyFaceUrl] = useState<string | null>(null);
   const [newContact, setNewContact] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [picsOn, setPicsOn] = useState(true);
+  const [picCost, setPicCost] = useState(1);
+  const [picAsk, setPicAsk] = useState(false);
+  const [companionHouse, setCompanionHouse] = useState(false);
+  const [companionOn, setCompanionOn] = useState(false);
+  const [companionPing, setCompanionPing] = useState<{ nightId: string | null; name: string; line: string } | null>(null);
   const camRef = useRef<HTMLInputElement>(null);
   const libRef = useRef<HTMLInputElement>(null);
   const plusIntent = useRef<"mine" | "chat" | "pick">("pick");
@@ -196,6 +203,18 @@ export function HeatCheckApp() {
       setFaceGenOn(json.faceGen === true);
       if (json.faceGen !== true) setWantFace(false);
       setSkins(json.skins || { ios: true, android: true });
+      setPicsOn(json.picsOn !== false);
+      setPicCost(Number(json.picCost) || 1);
+      setCompanionHouse(json.companionOn === true);
+      if (json.companionOn) {
+        fetch("/api/heat-check/companion", { headers: await authHeaders() })
+          .then((r) => readJson(r))
+          .then((p) => {
+            if (typeof p.enabled === "boolean") setCompanionOn(p.enabled);
+            if (p.ping) setCompanionPing(p.ping);
+          })
+          .catch(() => {});
+      }
       if (Array.isArray(json.roles) && json.roles.length) {
         setRoleOpts(json.roles.map((r: { slug: string; label: string; body?: string }) => ({ id: r.slug, label: r.label, line: r.body || "" })));
       }
@@ -396,6 +415,7 @@ export function HeatCheckApp() {
       }
       const them: HeatMessage[] = data.them || [];
       if (them.length) setPendingThem(them);
+      if (data.picAsk) setPicAsk(true);
       if (data.recap) {
         setRecap(data.recap);
         window.setTimeout(() => setScreen("recap"), 1600);
@@ -518,6 +538,31 @@ export function HeatCheckApp() {
     send("FADE");
   };
 
+  const askPic = async (kind: string) => {
+    if (!thread || busy) return;
+    setPicAsk(false);
+    setPlusOpen(false);
+    setBusy(true);
+    try {
+      const res = await fetch("/api/heat-check/pic", {
+        method: "POST",
+        headers: await authHeaders(),
+        body: JSON.stringify({ threadId: thread.id, kind, ask: draft }),
+      });
+      const data = await readJson(res);
+      if (!res.ok) throw new Error(data.error || "Couldn't send that still.");
+      const them: HeatMessage[] = (data.them || []).map((m: HeatMessage & { role?: string }) => ({
+        ...m,
+        sender: m.sender || m.role || "photo",
+      }));
+      if (them.length) setPendingThem(them);
+    } catch (e: unknown) {
+      setNote(e instanceof Error ? e.message : "Couldn't send that still.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (screen === "boot") {
     return (
       <div className="hc-root min-h-[70vh] grid place-items-center">
@@ -571,6 +616,18 @@ export function HeatCheckApp() {
               <h1 className="hc-title text-4xl sm:text-5xl">Heat Check</h1>
             </div>
             <p className="mt-3 text-[#e4cfc6] text-[15px] max-w-[28ch]">{HEAT_TAGLINE}</p>
+            {companionPing ? (
+              <button
+                type="button"
+                className="mt-4 w-full text-left rounded-2xl border border-white/10 bg-black/35 px-4 py-3"
+                onClick={() => {
+                  if (companionPing.nightId) window.location.href = `/playground/heat-check?night=${companionPing.nightId}`;
+                }}
+              >
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[#c4a59a]">{companionPing.name}</p>
+                <p className="text-sm text-[#f0e6e1] mt-1">{companionPing.line}</p>
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -637,6 +694,27 @@ export function HeatCheckApp() {
               />
             </label>
             {photoName ? <p className="text-[11px] text-[#9a7f76]">On the night · {photoName}</p> : null}
+            {companionHouse ? (
+              <label className="flex items-center justify-between gap-3 text-sm">
+                <span>
+                  Companion check-ins
+                  <span className="block text-[11px] text-[#9a7f76] mt-0.5">A line when you open Heat Check. Not a phone push.</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={companionOn}
+                  onChange={async (e) => {
+                    const on = e.target.checked;
+                    setCompanionOn(on);
+                    await fetch("/api/heat-check/companion", {
+                      method: "POST",
+                      headers: await authHeaders(),
+                      body: JSON.stringify({ enabled: on }),
+                    }).catch(() => {});
+                  }}
+                />
+              </label>
+            ) : null}
           </div>
           {err ? <p className="text-sm text-rose-300">{err}</p> : null}
           <button type="button" className="hc-cta" disabled={busy} onClick={openThread}>
@@ -717,7 +795,7 @@ export function HeatCheckApp() {
                 <button type="button" onClick={() => switchSkin(skin === "ios" ? "android" : "ios")}>
                   {skin === "ios" ? "Android skin" : "iOS skin"}
                 </button>
-                <button type="button" onClick={fadeOut}>Fade</button>
+                <button type="button" onClick={fadeOut}>End night · recap</button>
                 <button type="button" onClick={() => { setMenu(false); setThread(null); setMessages([]); setNewContact(true); setScreen("start"); }}>
                   New contact
                 </button>
@@ -892,6 +970,11 @@ export function HeatCheckApp() {
               else { plusIntent.current = "chat"; libRef.current?.click(); }
             }}>Send in chat</button>
             <button type="button" className="hc-sheet-row" onClick={removeMyFace}>Remove my face</button>
+            {picsOn ? (
+              <button type="button" className="hc-sheet-row" onClick={() => { setPlusOpen(false); setPicAsk(true); }}>
+                Ask for a pic
+              </button>
+            ) : null}
             <div className="hc-emotes">
               <p className="hc-sheet-label">Emotes</p>
               <div className="hc-emote-grid">
@@ -910,6 +993,18 @@ export function HeatCheckApp() {
                 ))}
               </div>
             </div>
+          </div>
+        ) : null}
+        {picAsk && picsOn ? (
+          <div className="hc-sheet">
+            <p className="hc-sheet-label">A still</p>
+            <p className="hc-quiet">Clothes on. Same person. Costs {picCost} credit, or today&apos;s free one.</p>
+            {HEAT_POSE_KINDS.map((p) => (
+              <button key={p.id} type="button" className="hc-sheet-row" onClick={() => askPic(p.id)}>
+                {p.label}
+              </button>
+            ))}
+            <button type="button" className="hc-sheet-row" onClick={() => setPicAsk(false)}>Not now</button>
           </div>
         ) : null}
         <input

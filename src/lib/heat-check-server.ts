@@ -23,6 +23,7 @@ import {
   type HeatOrientation,
   SEED_NAME_ROWS,
   chatIdentityBrief,
+  calibrateHeatScore,
   imageFacePrompt,
   vibeForLook,
 } from "@/lib/heat-check";
@@ -184,7 +185,7 @@ export async function pickContactName(supabase: Service, userId: string, look?: 
   return pickFrom[Math.floor(Math.random() * pickFrom.length)]?.name || "Mara";
 }
 
-const FACE_BASE = `Amateur candid iPhone still of a fictional adult 26–34. One person. Not a celebrity. Not a real person. No likeness of anyone famous. SFW-sexy, tasteful, no nudity, no explicit anatomy, no pornography, museum lighting allowed. Night indoor lamp, film grain, slight motion, looking toward camera. Attractive, lived-in, expensive den energy.`;
+const FACE_BASE = `Amateur candid iPhone still of a fictional adult 26–34. One person. Not a celebrity. Not a real person. No likeness of anyone famous. Tight head-and-shoulders portrait, face centered, eyes in the upper third, square-crop friendly. SFW-sexy, tasteful, no nudity, no explicit anatomy, no pornography. Night indoor lamp, film grain, looking toward camera. Attractive, lived-in, expensive den energy.`;
 
 export async function imagineStill(prompt: string, aspect: "3:4" | "1:1" = "3:4") {
   const apiKey = process.env.XAI_API_KEY;
@@ -244,26 +245,40 @@ export async function uploadHeatBytes(opts: {
   return { path: opts.path, url: data.publicUrl };
 }
 
+export async function squareFaceBytes(bytes: Buffer | Uint8Array) {
+  const sharp = (await import("sharp")).default;
+  const img = sharp(Buffer.from(bytes));
+  const meta = await img.metadata();
+  const w = meta.width || 1024;
+  const h = meta.height || 1024;
+  const side = Math.min(w, h);
+  const left = Math.max(0, Math.round((w - side) / 2));
+  const top = Math.max(0, Math.min(h - side, Math.round((h - side) * 0.18)));
+  return img.extract({ left, top, width: side, height: side }).resize(512, 512).jpeg({ quality: 84 }).toBuffer();
+}
+
 export async function generateContactFace(
   userId: string,
   seed?: string,
-  identity?: { who?: string; look?: string; presentation?: string; appearance?: string },
+  identity?: { who?: string; look?: string; presentation?: string; appearance?: string; threadId?: string },
 ) {
   const extra = (seed || "").trim().slice(0, 180);
   const who = identity?.who || identity?.look || "woman";
   const visual = imageFacePrompt(who, identity?.presentation || "default", identity?.appearance);
   const prompt = `${FACE_BASE} ${visual} ${extra || "night indoor lamp, messy hair, lived-in room."} STRICT: clothes on or implied, no hardcore. Do not use pronouns or orientation. No celebrities. No real-person likeness. No 'look like my ex'.`;
-  const bytes = await imagineStill(prompt);
+  const raw = await imagineStill(prompt, "1:1");
+  const bytes = await squareFaceBytes(raw);
   const path = `${userId}/${Date.now().toString(36)}.jpg`;
   const up = await uploadHeatBytes({ bucket: "heat-faces", path, bytes });
   const supabase = createServiceClient();
   await supabase.from("heat_assets").insert({
     user_id: userId,
+    thread_id: identity?.threadId || null,
     kind: "face",
     bucket: "heat-faces",
     path: up.path,
     url: up.url,
-    status: "pending",
+    status: "ready",
   });
   return { ...up, prompt };
 }
@@ -356,6 +371,7 @@ You control the night. Stay human. Stay in their body. JSON only.`;
     temperature: ctx.fade ? 0.6 : 0.98,
   });
   const parsed = parseHeatTurn(raw || {});
+  parsed.score = calibrateHeatScore((raw as { score?: number } | null)?.score, ctx.userLine);
   if (!parsed.scene && !ctx.fade) {
     parsed.scene = ctx.opening ? "you still up?" : "yeah?";
   }

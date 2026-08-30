@@ -181,8 +181,9 @@ You ARE the other person in this private late-night chat. A real adult with a na
 
 Adult 18+ only. Consensual. Never underage. No celebrities. No real-person likeness. No "look like my ex".
 Return ONE JSON object and nothing else. No markdown. No code fences.
-{"scene":"their texts only — 1 to 3 short bubbles joined with \\n\\n","tip":"one sentence about the user's last message","score":7,"rewrite":"a better player line or null","mood":"shy|bratty|cold|needy|same","read_delay_ms":2500,"reward_photo":false,"ended":false,"end_reason":null}
+{"scene":"their texts only — 1 to 3 short bubbles joined with \\n\\n","tip":"one sentence about the user's last message","score":4,"rewrite":"a better player line or null","mood":"shy|bratty|cold|needy|same","read_delay_ms":2500,"reward_photo":false,"ended":false,"end_reason":null}
 scene is ONLY what they type. Never leak tip/score/rewrite into scene.
+Score the player's LAST line only. 1–3 stub/miss, 4–5 generic, 6 decent, 8 they will reread, 9–10 rare. Never default to 7. Do not copy the sample number.
 Phone at 1:40am. fragments ok. one thought. not an essay.
 If they type FADE or no/stop: wind down, ended true. Tip never coaches past no/stop/fade.
 Opening: consent is the first beat without being clinical.
@@ -215,7 +216,7 @@ Return ONE JSON object and nothing else. No markdown. No code fences.
 {
   "scene": "their texts only — 1 to 3 short bubbles joined with \\n\\n",
   "tip": "one private coaching sentence the player never sees in chat",
-  "score": 7,
+  "score": 4,
   "rewrite": "a better player line or null",
   "mood": "shy|bratty|cold|needy|same",
   "read_delay_ms": 2500,
@@ -235,6 +236,7 @@ Voice:
 - read_delay_ms 2000–8000.
 - reward_photo only when instructed AND last three player scores were high. One still. Same person. Sexier, not hardcore.
 - rewrite is a drop-in better line, or null if they already landed it.
+- Score the player's LAST line only. 1–3 stub or they missed the mood. 4–5 generic. 6 solid. 8 a line they will reread. 9–10 rare. Never default to 7. Do not copy the sample number.
 - Never be dumb on purpose. Never say "as an AI". Never narrate stage directions in scene.`,
   roles: Object.fromEntries(HEAT_ROLES.map((r) => [r.id, r.line])) as Record<HeatRole, string>,
   heats: {
@@ -424,9 +426,41 @@ export function imageFacePrompt(who: string, presentation: string, appearance?: 
           ? "andromorph presentation: feminine face and body cues, SFW, clothes on, not a costume, not fetish-coded"
           : "androgynous face and styling";
   const vis = appearanceVisual(appearance);
-  return [`Who they are: ${whoLine}.`, `Look: ${lookLine}.`, trans, vis ? `Appearance (visual only): ${vis}` : ""]
+  return [
+    `Who they are: ${whoLine}.`,
+    `Look: ${lookLine}.`,
+    trans,
+    vis ? `Appearance (visual only): ${vis}` : "",
+    "Tight head-and-shoulders portrait. Face centered. Eyes in the upper third. Soft dark background. Square-crop friendly. No text.",
+  ]
     .filter(Boolean)
     .join(" ");
+}
+
+export function calibrateHeatScore(raw: number | null | undefined, line: string | null | undefined) {
+  const text = String(line || "").trim();
+  const words = text ? text.split(/\s+/).length : 0;
+  const stub = words > 0 && words <= 2 && !/[?]/.test(text);
+  const dump = words > 42;
+  const heat = /(want|need|come|kiss|touch|stay|please|miss|hard|slow|tonight|again)/i.test(text);
+  const question = /[?]/.test(text);
+  const copied = raw == null || Number.isNaN(Number(raw)) || Number(raw) === 7;
+  let score = raw == null || Number.isNaN(Number(raw)) ? 6 : Math.round(Number(raw));
+  if (copied && text) {
+    if (stub) score = 4;
+    else if (dump) score = 5;
+    else if (heat && question) score = 8;
+    else if (heat) score = 8;
+    else if (question) score = 6;
+    else {
+      let n = 0;
+      for (let i = 0; i < text.length; i++) n = (n + text.charCodeAt(i) * (i + 3)) % 5;
+      score = [5, 6, 8, 6, 9][n];
+    }
+  }
+  if (stub) score = Math.min(score, 5);
+  if (dump) score = Math.min(score, 6);
+  return Math.min(10, Math.max(1, score));
 }
 
 export function chatIdentityBrief(look: HeatLook | string, pronouns: HeatPronouns | string, orientation: HeatOrientation | string) {
@@ -455,7 +489,8 @@ const MOODS: HeatMood[] = ["shy", "bratty", "cold", "needy", "same"];
 export function parseHeatTurn(raw: unknown): HeatTurnJson {
   const src = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   const mood = MOODS.includes(src.mood as HeatMood) ? (src.mood as HeatMood) : "same";
-  const score = Math.min(10, Math.max(1, Math.round(Number(src.score) || 5)));
+  const rawScore = src.score == null || src.score === "" ? NaN : Number(src.score);
+  const score = Number.isFinite(rawScore) ? Math.min(10, Math.max(1, Math.round(rawScore))) : 6;
   const delay = Math.min(8000, Math.max(2000, Math.round(Number(src.read_delay_ms) || 2500)));
   const rewrite = src.rewrite == null || src.rewrite === "null" ? null : String(src.rewrite).trim() || null;
   return {

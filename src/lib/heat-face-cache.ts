@@ -108,6 +108,7 @@ export async function pickHeatFace(opts: {
     };
   }
 
+  if (!rows.length) return { ...empty, mint: true };
   if (mintedToday < 1) return { ...empty, mint: true };
   return empty;
 }
@@ -127,6 +128,7 @@ export async function mintHeatContact(opts: {
       who: opts.who,
       presentation: opts.presentation,
       appearance: opts.appearance,
+      threadId: opts.threadId,
     }),
     25000,
     "Face gen timed out",

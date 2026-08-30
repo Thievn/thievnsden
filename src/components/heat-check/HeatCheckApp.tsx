@@ -191,8 +191,12 @@ export function HeatCheckApp() {
     (async () => {
       const params = new URLSearchParams(window.location.search);
       const preview = params.get("preview");
-      if (preview === "chat" || preview === "tip" || preview === "recap" || preview === "start" || preview === "soon") {
-        applyPreview(preview, { setScreen, setThread, setMessages, setTip, setRail, setRecap, setSkin, setTipsByMsg, setOpenTipId, setReceipt });
+      if (preview === "chat" || preview === "tip" || preview === "recap" || preview === "start" || preview === "soon" || preview === "send") {
+        applyPreview(preview === "send" ? "chat" : preview, { setScreen, setThread, setMessages, setTip, setRail, setRecap, setSkin, setTipsByMsg, setOpenTipId, setReceipt });
+        if (preview === "send") {
+          setSendingPic(true);
+          setPicToast(HEAT_PIC_OOPS[0]);
+        }
         return;
       }
       const nightId = params.get("night");

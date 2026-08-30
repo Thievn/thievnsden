@@ -10,7 +10,10 @@ import {
   poseKindFromAsk,
   namedPicKind,
   insistsOnPic,
+  HEAT_PIC_CHIPS,
   HEAT_PIC_OOPS,
+  heatPicBillPlan,
+  heatPicMayMint,
   parseHeatTurn,
   parseJsonObject,
   splitScene,
@@ -36,6 +39,11 @@ assert(namedPicKind("send a selfie") === "selfie" && namedPicKind("send me a pic
 assert(wantsPicText("send me one dont be shy") && insistsOnPic("dont be shy"), "insist pic");
 assert(namedPicKind("send me a selfie to prove it") === "selfie", "selfie prove");
 assert(HEAT_PIC_OOPS.length >= 3 && HEAT_PIC_OOPS.every((s) => /bill|charge|pocket|house/i.test(s)), "oops copy");
+assert(HEAT_PIC_CHIPS.every((c) => namedPicKind(c.label)), "chips name a still");
+assert(heatPicMayMint(true) && !heatPicMayMint(false), "pics switch");
+assert(heatPicBillPlan(0, 1, 0).spendExtra === 0, "empty extra still delivers");
+assert(heatPicBillPlan(3, 1, 0).spendExtra === 1, "extra bills after mint");
+assert(heatPicBillPlan(0, 1, 1).markFree, "mark free only after a still lands");
 assert(!parseHeatSettings({}).auto_end && parseHeatSettings({}).pics_on, "nights stay open");
 assert(parseHeatSettings({}).nudge_on && parseHeatSettings({ nudge_on: false }).nudge_on === false, "nudge default");
 assert(!isFadeText("fade out"), "not fade phrase");

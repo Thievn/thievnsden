@@ -190,7 +190,8 @@ const FACE_BASE = `Amateur candid iPhone still of a fictional adult 26–34. One
 export async function imagineStill(prompt: string, aspect: "3:4" | "1:1" = "3:4") {
   const apiKey = process.env.XAI_API_KEY;
   if (!apiKey) throw new Error("XAI_API_KEY missing");
-  const models = ["grok-imagine-image-2.0", "grok-imagine-image"];
+  // One model, one wait. Chaining 2.0 then v1 blew the 60s Hobby cap and wrote nothing.
+  const models = ["grok-imagine-image", "grok-imagine-image-2.0"];
   const errors: string[] = [];
   for (const model of models) {
     const payload: Record<string, unknown> = {
@@ -201,31 +202,44 @@ export async function imagineStill(prompt: string, aspect: "3:4" | "1:1" = "3:4"
       aspect_ratio: aspect,
       response_format: "b64_json",
     };
-    if (model.includes("2.0")) payload.quality = "medium";
-    const res = await fetch("https://api.x.ai/v1/images/generations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(32000),
-    });
-    const text = await res.text();
-    if (!res.ok) {
-      errors.push(`${model}: ${res.status} ${text.slice(0, 160)}`);
-      continue;
-    }
-    let data: { data?: { b64_json?: string }[] } = {};
+    if (model.includes("2.0")) payload.quality = "low";
     try {
-      data = JSON.parse(text);
-    } catch {
-      errors.push(`${model}: bad json`);
-      continue;
+      const res = await fetch("https://api.x.ai/v1/images/generations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(50000),
+      });
+      const text = await res.text();
+      if (!res.ok) {
+        errors.push(`${model}: ${res.status} ${text.slice(0, 160)}`);
+        continue;
+      }
+      let data: { data?: { b64_json?: string; url?: string }[] } = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        errors.push(`${model}: bad json`);
+        continue;
+      }
+      const b64 = data.data?.[0]?.b64_json;
+      if (b64) return Buffer.from(b64, "base64");
+      const url = data.data?.[0]?.url;
+      if (url) {
+        const img = await fetch(url, { signal: AbortSignal.timeout(15000) });
+        if (img.ok) return Buffer.from(await img.arrayBuffer());
+        errors.push(`${model}: url fetch ${img.status}`);
+        continue;
+      }
+      errors.push(`${model}: empty`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "imagine failed";
+      errors.push(`${model}: ${msg}`);
+      if (/timeout|aborted|timed out/i.test(msg)) break;
     }
-    const b64 = data.data?.[0]?.b64_json;
-    if (b64) return Buffer.from(b64, "base64");
-    errors.push(`${model}: empty`);
   }
   throw new Error(errors.join(" | ") || "image failed");
 }

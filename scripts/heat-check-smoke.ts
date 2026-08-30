@@ -1,5 +1,6 @@
 import {
   HEAT_SKINS,
+  HEAT_EMOTES,
   HEAT_ROLES,
   HEAT_TAGLINE,
   sourceHash,
@@ -53,6 +54,7 @@ assert(parsed.scene === "hey", "json fence");
 
 assert(vibeForLook("trans-woman") === "woman", "vibe");
 assert(HEAT_SKINS.find((s) => s.id === "android")?.label === "Android skin", "android skin");
+assert(HEAT_EMOTES.length >= 48 && HEAT_EMOTES.includes("😏") && HEAT_EMOTES.includes("🔥"), "emotes");
 assert(lookKey("woman", "default", "any") === "woman|feminine", "look key default");
 assert(lookKey("woman", "feminine", "east-asian") === "woman|feminine|east-asian", "look key appearance");
 assert(HEAT_ROLES.length >= 17, "roles");

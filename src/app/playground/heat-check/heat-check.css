@@ -37,16 +37,14 @@
 }
 
 @keyframes hcFlicker {
-  0%, 100% { transform: scaleY(1) scaleX(1); filter: brightness(1); }
-  18% { transform: scaleY(1.07) scaleX(0.95); filter: brightness(1.18); }
-  42% { transform: scaleY(0.93) scaleX(1.05); filter: brightness(0.88); }
-  67% { transform: scaleY(1.05) scaleX(0.97); filter: brightness(1.1); }
-  84% { transform: scaleY(0.97) scaleX(1.03); filter: brightness(0.96); }
+  0%, 100% { transform: scaleY(1); opacity: 1; }
+  50% { transform: scaleY(1.02); opacity: 0.92; }
 }
 .hc-flame {
   display: inline-flex;
   align-items: flex-end;
   justify-content: center;
+  filter: drop-shadow(0 0 8px rgba(255, 90, 40, 0.28));
 }
 .hc-flame svg {
   width: 100%;
@@ -57,11 +55,11 @@
 .hc-flame-mid,
 .hc-flame-core {
   transform-box: fill-box;
-  transform-origin: 50% 100%;
+  transform-origin: 50% 92%;
 }
-.hc-flame-outer { animation: hcFlicker 0.62s ease-in-out infinite; }
-.hc-flame-mid { animation: hcFlicker 0.44s ease-in-out infinite reverse; }
-.hc-flame-core { animation: hcFlicker 0.32s ease-in-out infinite; }
+.hc-flame-outer { animation: hcFlicker 3.6s ease-in-out infinite; }
+.hc-flame-mid { animation: hcFlicker 4.8s ease-in-out infinite reverse; }
+.hc-flame-core { animation: none; }
 
 @keyframes hcPulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 106, 61, 0.0), 0 0 18px -6px rgba(255, 106, 61, 0.55); }
@@ -342,20 +340,48 @@ html.hc-kb-lock body {
   z-index: 30;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  max-height: min(62dvh, 28rem);
+  overflow: auto;
   border-radius: 16px;
   background: rgba(12, 6, 10, 0.96);
   border: 1px solid rgba(255, 120, 90, 0.22);
   box-shadow: 0 18px 40px -16px rgba(0,0,0,0.7);
 }
-.hc-sheet button {
+.hc-sheet-row {
   text-align: left;
   padding: 0.85rem 1rem;
   font-size: 14px;
   color: #f0e6e1;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-.hc-sheet button:last-child { border-bottom: 0; }
+.hc-sheet-label {
+  font-family: var(--hc-serif);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #c4a59a;
+  padding: 0.15rem 0.2rem 0.45rem;
+}
+.hc-emotes {
+  padding: 0.7rem 0.7rem 0.85rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.hc-emote-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.15rem;
+}
+.hc-emote {
+  display: grid;
+  place-items: center;
+  min-height: 2.35rem;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  background: transparent;
+  border-radius: 8px;
+}
+.hc-emote:active { background: rgba(255, 255, 255, 0.06); }
 .hc-quiet {
   font-size: 11px;
   color: #9a7f76;

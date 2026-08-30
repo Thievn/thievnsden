@@ -151,6 +151,17 @@ export const HEAT_SKINS: HeatOpt[] = [
   { id: "android", label: "Android skin", line: "Double-checks. A little sharper." },
 ];
 
+export const HEAT_EMOTES = [
+  "😂", "😭", "😅", "🤣", "🥲", "😏", "😉", "😘",
+  "😍", "🥰", "🥺", "😳", "😩", "🥵", "😈", "🤭",
+  "🫠", "😵‍💫", "🤤", "😮", "👀", "🔥", "❤️", "💋",
+  "🫦", "👅", "💦", "🍑", "🍆", "🖤", "✨", "🫶",
+  "💯", "🌚", "🫡", "😴", "😎", "🤩", "🙄", "😒",
+  "🤨", "😌", "💀", "🤡", "👍", "🙏", "🤝", "💥",
+  "⚡", "🌙", "⭐", "🌹", "🍷", "🥂", "🛏️", "🫧",
+  "👉", "🙈", "🫣", "🫢", "😤", "😬", "🤫", "😋",
+] as const;
+
 export const HEAT_STARTERS: HeatOpt[] = [
   { id: "they", label: "They text first", line: "" },
   { id: "you", label: "You open", line: "" },

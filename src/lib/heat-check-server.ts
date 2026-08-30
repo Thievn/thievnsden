@@ -244,6 +244,58 @@ export async function imagineStill(prompt: string, aspect: "3:4" | "1:1" = "3:4"
   throw new Error(errors.join(" | ") || "image failed");
 }
 
+function stillFromImaginePayload(text: string) {
+  let data: { data?: { b64_json?: string; url?: string }[]; url?: string } = {};
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  const b64 = data.data?.[0]?.b64_json;
+  if (b64) return Buffer.from(b64, "base64");
+  const url = data.data?.[0]?.url || data.url;
+  return url || null;
+}
+
+export async function imagineStillFromRef(prompt: string, faceUrl: string, aspect: "3:4" | "1:1" = "3:4") {
+  const apiKey = process.env.XAI_API_KEY;
+  if (!apiKey) throw new Error("XAI_API_KEY missing");
+  const res = await fetch("https://api.x.ai/v1/images/edits", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "grok-imagine-image-2.0",
+      prompt,
+      aspect_ratio: aspect,
+      resolution: "1k",
+      response_format: "b64_json",
+      image: { url: faceUrl, type: "image_url" },
+    }),
+    signal: AbortSignal.timeout(50000),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`edit ${res.status} ${text.slice(0, 160)}`);
+  const got = stillFromImaginePayload(text);
+  if (got instanceof Buffer) return got;
+  if (typeof got === "string") {
+    const img = await fetch(got, { signal: AbortSignal.timeout(15000) });
+    if (img.ok) return Buffer.from(await img.arrayBuffer());
+  }
+  throw new Error("edit empty");
+}
+
+export async function phoneStillBytes(bytes: Buffer | Uint8Array) {
+  const sharp = (await import("sharp")).default;
+  return sharp(Buffer.from(bytes))
+    .rotate()
+    .resize(768, 1024, { fit: "cover", position: "centre" })
+    .jpeg({ quality: 82 })
+    .toBuffer();
+}
+
 export async function uploadHeatBytes(opts: {
   bucket: "heat-faces" | "heat-uploads" | "heat-rewards";
   path: string;

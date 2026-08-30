@@ -26,6 +26,7 @@ import {
   type HeatLevel,
   type HeatLook,
   type HeatMessage,
+  type HeatNightCard,
   type HeatOrientation,
   type HeatPresentation,
   type HeatPronouns,
@@ -147,6 +148,8 @@ export function HeatCheckApp() {
   const [companionHouse, setCompanionHouse] = useState(false);
   const [companionOn, setCompanionOn] = useState(false);
   const [companionPing, setCompanionPing] = useState<{ nightId: string | null; name: string; line: string } | null>(null);
+  const [nights, setNights] = useState<HeatNightCard[]>([]);
+  const [nightsOpen, setNightsOpen] = useState(true);
   const camRef = useRef<HTMLInputElement>(null);
   const libRef = useRef<HTMLInputElement>(null);
   const plusIntent = useRef<"mine" | "chat" | "pick">("pick");
@@ -242,28 +245,63 @@ export function HeatCheckApp() {
         setScreen("soon");
         return;
       }
-      if (nightId) {
-        const night = await fetch(`/api/heat-check/threads/${nightId}`, { headers: await authHeaders() });
-        const data = await readJson(night);
-        if (data.thread) {
-          setThread(data.thread);
-          setSkin(data.thread.skin || "ios");
-          setMyFaceUrl(data.thread.user_photo_url || null);
-          setMessages((data.messages || []).map((m: HeatMessage & { role?: string }) => ({ ...m, sender: m.sender || m.role || "them" })));
-          const map: Record<string, HeatTip> = {};
-          for (const row of data.tips || []) {
-            if (row.message_id) map[row.message_id] = row;
-          }
-          setTipsByMsg(map);
-          const lastTip = (data.tips || [])[(data.tips || []).length - 1] || null;
-          setTip(lastTip);
-          setScreen("chat");
-          return;
-        }
-      }
+      void loadNights();
+      if (nightId && (await openNight(nightId))) return;
       setScreen("start");
     })();
   }, []);
+
+  const loadNights = async () => {
+    try {
+      const res = await fetch("/api/heat-check/threads", { headers: await authHeaders() });
+      const data = await readJson(res);
+      const rows = (data.nights || []) as HeatNightCard[];
+      setNights(rows.filter((n) => n.id && n.id !== "preview"));
+    } catch {
+      setNights([]);
+    }
+  };
+
+  const openNight = async (id: string) => {
+    if (!id || id === "preview") return false;
+    setBusy(true);
+    setErr(null);
+    try {
+      await fetch(`/api/heat-check/threads/${id}`, {
+        method: "PATCH",
+        headers: await authHeaders(),
+        body: JSON.stringify({ action: "resume" }),
+      }).catch(() => {});
+      const night = await fetch(`/api/heat-check/threads/${id}`, { headers: await authHeaders() });
+      const data = await readJson(night);
+      if (!data.thread) throw new Error(data.error || "That night is gone.");
+      setThread(data.thread);
+      setSkin(data.thread.skin || "ios");
+      setMyFaceUrl(data.thread.user_photo_url || null);
+      setMessages((data.messages || []).map((m: HeatMessage & { role?: string }) => ({ ...m, sender: m.sender || m.role || "them" })));
+      const map: Record<string, HeatTip> = {};
+      for (const row of data.tips || []) {
+        if (row.message_id) map[row.message_id] = row;
+      }
+      setTipsByMsg(map);
+      const lastTip = (data.tips || [])[(data.tips || []).length - 1] || null;
+      setTip(lastTip);
+      setTipReady(!!lastTip);
+      setPendingThem([]);
+      setTyping(false);
+      setReceipt("read");
+      setRecap(null);
+      nudgeLocal.current = Number((data.thread.meta as { nudge_count?: number } | null)?.nudge_count || 0);
+      setScreen("chat");
+      window.history.replaceState(null, "", `/playground/heat-check?night=${id}`);
+      return true;
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Could not open that night.");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const openThread = async () => {
     setBusy(true);
@@ -741,7 +779,7 @@ export function HeatCheckApp() {
                 type="button"
                 className="mt-4 w-full text-left rounded-2xl border border-white/10 bg-black/35 px-4 py-3"
                 onClick={() => {
-                  if (companionPing.nightId) window.location.href = `/playground/heat-check?night=${companionPing.nightId}`;
+                  if (companionPing.nightId) void openNight(companionPing.nightId);
                 }}
               >
                 <p className="text-[11px] uppercase tracking-[0.16em] text-[#c4a59a]">{companionPing.name}</p>
@@ -750,6 +788,92 @@ export function HeatCheckApp() {
             ) : null}
           </div>
         </div>
+
+        {nights.length ? (
+          <div className="hc-nights">
+            <button type="button" className="hc-nights-head" onClick={() => setNightsOpen((v) => !v)}>
+              <span>
+                <span className="hc-kicker block">Still on the lock screen</span>
+                <span className="text-[12px] text-[#c4a59a]">Pick up a night. Same person. Same pics.</span>
+              </span>
+              <span className="text-[11px] text-[#9a7f76]">{nightsOpen ? "hide" : `${nights.length}`}</span>
+            </button>
+            {nightsOpen ? (
+              <>
+                <label className="hc-nights-pick">
+                  <select
+                    aria-label="Pick up a night"
+                    value=""
+                    disabled={busy}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      if (id) void openNight(id);
+                    }}
+                  >
+                    <option value="">Pick up a night…</option>
+                    {nights.map((n) => (
+                      <option key={n.id} value={n.id}>
+                        {n.contact_name}
+                        {n.ended ? " · faded" : ""}
+                        {n.last_line ? ` — ${n.last_line}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="hc-nights-faces" role="list">
+                  {nights.slice(0, 10).map((n) => (
+                    <button
+                      key={`face-${n.id}`}
+                      type="button"
+                      role="listitem"
+                      className={cx("hc-nights-face", n.ended && "is-faded")}
+                      disabled={busy}
+                      onClick={() => void openNight(n.id)}
+                    >
+                      {n.contact_face_url || n.last_photo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={n.contact_face_url || n.last_photo || ""} alt="" />
+                      ) : (
+                        <span>{n.contact_name.slice(0, 1)}</span>
+                      )}
+                      <em>{n.contact_name.split(" ")[0]}</em>
+                    </button>
+                  ))}
+                </div>
+                <div className="hc-nights-list">
+                  {nights.map((n) => (
+                    <button
+                      key={n.id}
+                      type="button"
+                      className="hc-nights-row"
+                      disabled={busy}
+                      onClick={() => void openNight(n.id)}
+                    >
+                      {n.contact_face_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={n.contact_face_url} alt="" className="hc-face hc-face-sm" />
+                      ) : (
+                        <span className="hc-face hc-face-sm grid place-items-center text-[10px] text-[#c4a59a]">
+                          {n.contact_name.slice(0, 1)}
+                        </span>
+                      )}
+                      <span className="min-w-0 flex-1 text-left">
+                        <span className="flex items-center gap-2">
+                          <span className="truncate text-[15px] text-[#fff4ee]">{n.contact_name}</span>
+                          {n.ended ? <span className="hc-nights-tag">faded</span> : <span className="hc-nights-tag is-hot">open</span>}
+                        </span>
+                        <span className="block truncate text-[12px] text-[#9a7f76]">{n.last_line}</span>
+                      </span>
+                      <span className="text-[11px] text-[#7a6660] shrink-0">
+                        {n.pics ? `${n.pics} pic${n.pics === 1 ? "" : "s"}` : n.last_seen_label || ""}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mt-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -873,7 +997,7 @@ export function HeatCheckApp() {
               <p className="mt-2 text-[#e8d2c8]">&ldquo;{recap.clean_quote}&rdquo;</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <button type="button" className="hc-cta" onClick={() => { setRecap(null); setThread(null); setMessages([]); setScreen("start"); }}>
+              <button type="button" className="hc-cta" onClick={() => { setRecap(null); setThread(null); setMessages([]); setScreen("start"); void loadNights(); }}>
                 Again
               </button>
               <button
@@ -902,7 +1026,7 @@ export function HeatCheckApp() {
       <div className="hc-phone hc-rim" data-skin={skin}>
         <div className="hc-grain" />
         <header className="hc-header">
-          <button type="button" className="text-[#d9c4bb] text-lg px-1" onClick={() => setScreen("start")} aria-label="Back">
+          <button type="button" className="text-[#d9c4bb] text-lg px-1" onClick={() => { setScreen("start"); void loadNights(); }} aria-label="Back">
             ‹
           </button>
           <p className="hc-brand">Heat Check</p>

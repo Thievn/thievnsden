@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Outfit } from "next/font/google";
 import "./heat-check.css";
 
@@ -22,6 +22,13 @@ export const metadata: Metadata = {
     url: "https://thievnsden.com/playground/heat-check",
   },
   robots: { index: false, follow: false },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
 };
 
 export default function HeatCheckLayout({ children }: { children: React.ReactNode }) {

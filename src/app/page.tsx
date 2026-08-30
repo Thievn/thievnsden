@@ -74,6 +74,7 @@ async function loadHome() {
     const rawArt = settingsRes.data?.playground_art as Record<string, { url?: string }> | null;
     if (rawArt && typeof rawArt === "object") {
       for (const [id, entry] of Object.entries(rawArt)) {
+        if (id === "heat-check") continue;
         if (entry?.url) playgroundArt[id] = String(entry.url);
       }
     }

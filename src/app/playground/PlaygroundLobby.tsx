@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { DenHero } from "@/components/den/DenHero";
 import { PlaygroundCardArt } from "@/components/playground/PlaygroundCardArt";
-import { PLAYGROUND_GAMES } from "@/lib/playground-games";
+import { PLAYGROUND_GAMES, playgroundStill } from "@/lib/playground-games";
 import "./playground.css";
 
 export function PlaygroundLobby({ arts }: { arts: Record<string, string> }) {
@@ -33,16 +33,16 @@ export function PlaygroundLobby({ arts }: { arts: Record<string, string> }) {
                   g.disabled ? "pg-card-disabled opacity-70" : ""
                 }`}
               >
-                <PlaygroundCardArt url={arts[g.id] || (g.id === "heat-check" ? "/heat-check/card.png" : undefined)} />
+                <PlaygroundCardArt url={playgroundStill(g.id, arts)} />
                 <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${g.accent} z-[1]`} />
                 <div className="relative z-[3]">
-                  <span className={`text-[10px] uppercase tracking-[0.18em] px-2 py-0.5 rounded-full border ${g.chip}`}>
+                  <span className={`pg-card-chip text-[10px] uppercase tracking-[0.22em] px-2 py-0.5 rounded-full border ${g.chip}`}>
                     {g.tag}
                   </span>
-                  <h2 className="mt-5 text-2xl sm:text-3xl font-semibold text-neutral-50 leading-tight drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)]">
+                  <h2 className="pg-card-title mt-5 text-[1.85rem] sm:text-[2.15rem] text-neutral-50 leading-none drop-shadow-[0_2px_14px_rgba(0,0,0,0.9)]">
                     {g.title}
                   </h2>
-                  <p className="mt-3 text-sm text-neutral-300 leading-relaxed max-w-[28ch]">{g.line}</p>
+                  <p className="pg-card-line mt-3 text-[15px] text-neutral-200/90 leading-relaxed max-w-[26ch]">{g.line}</p>
                 </div>
                 <p
                   className={`relative z-[3] mt-8 text-sm font-medium ${

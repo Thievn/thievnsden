@@ -14,14 +14,9 @@ import {
   asSkin,
   asStarter,
   asVoice,
-  fallbackHeatTurn,
-  heatMessageRow,
   pickContactName,
   requireHeatPlayer,
-  runHeatTurn,
   signedUploadUrl,
-  splitThem,
-  withTimeout,
 } from "@/lib/heat-check-server";
 
 export const runtime = "nodejs";
@@ -57,16 +52,18 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServiceClient();
     const contact_name = await pickContactName(supabase, user.id, they_look);
-
-    const facePick = await pickHeatFace({
-      userId: user.id,
-      who: they_look,
-      presentation,
-      appearance,
-      name: contact_name,
-      generate: generate_face,
-      newContact,
-    });
+    const [facePick, compiled] = await Promise.all([
+      pickHeatFace({
+        userId: user.id,
+        who: they_look,
+        presentation,
+        appearance,
+        name: contact_name,
+        generate: generate_face,
+        newContact,
+      }),
+      lookupCompiledPrompt({ role, heat, voice, opener: who_starts }),
+    ]);
 
     let contact_face_url: string | null = contactOverrideUrl;
     if (!contact_face_url && contactOverridePath) {
@@ -74,8 +71,6 @@ export async function POST(req: NextRequest) {
     }
     if (!contact_face_url) contact_face_url = facePick.face_url;
     const facePrompt = facePick.face_prompt;
-
-    const compiled = await lookupCompiledPrompt({ role, heat, voice, opener: who_starts });
 
     const { data: thread, error } = await supabase
       .from("heat_threads")
@@ -124,8 +119,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error?.message || "Could not open the night." }, { status: 500 });
     }
 
-    let messages: unknown[] = [];
-
     const faceRetry = async () => {
       if (!facePick.mint || contact_face_url) return;
       for (let i = 0; i < 2; i++) {
@@ -148,45 +141,14 @@ export async function POST(req: NextRequest) {
     };
     void faceRetry();
 
-    if (who_starts === "they") {
-      const turn = await withTimeout(
-        runHeatTurn({
-          thread,
-          history: [],
-          userLine: null,
-          opening: true,
-          fade: false,
-          doubleText: false,
-          lastScores: [],
-          settings: ctx.settings,
-          compiledSystem: compiled.compiled || undefined,
-        }),
-        28000,
-        "Opening timed out",
-      ).catch((err: unknown) => {
-        console.error("heat opening", err);
-        return fallbackHeatTurn(true);
-      });
-      const bubbles = splitThem(turn.scene);
-      const rows = bubbles.map((bodyText) =>
-        heatMessageRow({
-          thread_id: thread.id,
-          user_id: user.id,
-          sender: "them",
-          body: bodyText,
-          delivered_at: new Date().toISOString(),
-          read_at: new Date().toISOString(),
-        }),
-      );
-      const { data: inserted } = await supabase.from("heat_messages").insert(rows).select("*");
-      messages = inserted || [];
-      if (turn.mood && turn.mood !== "same") {
-        await supabase.from("heat_threads").update({ mood: turn.mood, updated_at: new Date().toISOString() }).eq("id", thread.id);
-        thread.mood = turn.mood;
-      }
-    }
-
-    return NextResponse.json({ thread, messages, tip: null, faceError: null, promptHit: compiled.hit });
+    return NextResponse.json({
+      thread,
+      messages: [],
+      opening: who_starts === "they",
+      tip: null,
+      faceError: null,
+      promptHit: compiled.hit,
+    });
   } catch (err: unknown) {
     console.error("heat start", err);
     return NextResponse.json({ error: err instanceof Error ? err.message : "Start failed" }, { status: 500 });

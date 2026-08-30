@@ -8,7 +8,7 @@ export function Footer() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <DenMark className="h-6 w-[1.15rem] shrink-0" glow />
+              <DenMark className="nav-mark-bounce h-8 w-[1.5rem] sm:h-9 sm:w-7 shrink-0" />
               <p className="text-neutral-100 font-medium tracking-tight text-sm sm:text-base">Thievn's Den</p>
             </div>
             <p className="text-xs sm:text-sm text-neutral-500">

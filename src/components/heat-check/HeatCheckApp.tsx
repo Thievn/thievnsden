@@ -144,8 +144,8 @@ export function HeatCheckApp() {
     const vv = window.visualViewport;
     if (!vv) return;
     const sync = () => {
+      document.documentElement.style.setProperty("--hc-vt", `${Math.max(0, vv.offsetTop)}px`);
       document.documentElement.style.setProperty("--hc-vv", `${vv.height}px`);
-      document.documentElement.style.setProperty("--hc-kb", `${Math.max(0, window.innerHeight - vv.height - vv.offsetTop)}px`);
     };
     sync();
     vv.addEventListener("resize", sync);
@@ -166,6 +166,12 @@ export function HeatCheckApp() {
   useEffect(() => {
     scrollEnd();
   }, [messages, typing, pendingThem, screen]);
+
+  useEffect(() => {
+    if (screen !== "chat") return;
+    document.documentElement.classList.add("hc-kb-lock");
+    return () => document.documentElement.classList.remove("hc-kb-lock");
+  }, [screen]);
 
   useEffect(() => {
     (async () => {
@@ -262,6 +268,21 @@ export function HeatCheckApp() {
       setScreen("chat");
       setReceipt("sent");
       if (data.faceError) setErr(data.faceError);
+      if (data.opening) {
+        setTyping(true);
+        const open = await fetch("/api/heat-check/turn", {
+          method: "POST",
+          headers: await authHeaders(),
+          body: JSON.stringify({ threadId: data.thread.id, opening: true }),
+        });
+        const opened = await readJson(open);
+        const first: HeatMessage[] = (opened.them || []).map((m: HeatMessage & { role?: string }) => ({
+          ...m,
+          sender: m.sender || m.role || "them",
+        }));
+        if (first.length) setPendingThem(first);
+        else setTyping(false);
+      }
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Could not open.");
     } finally {
@@ -290,7 +311,7 @@ export function HeatCheckApp() {
   }, [pendingThem, screen]);
 
   useEffect(() => {
-    if (screen !== "chat" || !thread?.id || thread.contact_face_url) return;
+    if (screen !== "chat" || !thread?.id || thread.id === "preview" || thread.contact_face_url) return;
     let n = 0;
     const tick = window.setInterval(async () => {
       n += 1;
@@ -665,7 +686,7 @@ export function HeatCheckApp() {
   }
 
   return (
-    <div className="hc-root hc-phone-wrap fixed inset-0 z-[70]">
+    <div className="hc-root hc-phone-wrap z-[70]">
       <div className="hc-phone hc-rim" data-skin={skin}>
         <div className="hc-grain" />
         <header className="hc-header">
@@ -1007,22 +1028,46 @@ function StartFrame({ children }: { children: React.ReactNode }) {
 
 function FlameMark({ className = "w-8 h-10" }: { className?: string }) {
   const raw = useId().replace(/:/g, "");
-  const gid = `hcFlame-${raw}`;
+  const outer = `hcFlameO-${raw}`;
+  const mid = `hcFlameM-${raw}`;
+  const core = `hcFlameC-${raw}`;
   return (
-    <svg viewBox="0 0 32 40" className={className} aria-hidden>
-      <defs>
-        <linearGradient id={gid} x1="8" y1="38" x2="24" y2="2">
-          <stop offset="0%" stopColor="#6d1a8a" />
-          <stop offset="45%" stopColor="#c41e5a" />
-          <stop offset="100%" stopColor="#ffb08a" />
-        </linearGradient>
-      </defs>
-      <path
-        fill={`url(#${gid})`}
-        d="M16 1.5c4.2 6.4 10 11.6 10 19.2 0 8.2-4.4 14.6-10 18.8C10.4 35.3 6 28.9 6 20.7 6 13.1 11.8 7.9 16 1.5z"
-      />
-      <path fill="#1a080c" opacity="0.35" d="M16 14c2.2 3.2 4.4 5.6 4.4 9.1 0 3.6-1.9 6.4-4.4 8.3-2.5-1.9-4.4-4.7-4.4-8.3 0-3.5 2.2-5.9 4.4-9.1z" />
-    </svg>
+    <span className={cx("hc-flame", className)} aria-hidden>
+      <svg viewBox="0 0 48 64" fill="none">
+        <defs>
+          <linearGradient id={outer} x1="24" y1="62" x2="24" y2="4">
+            <stop offset="0%" stopColor="#7a1230" />
+            <stop offset="42%" stopColor="#e23a1f" />
+            <stop offset="78%" stopColor="#ff8a2a" />
+            <stop offset="100%" stopColor="#ffd36a" />
+          </linearGradient>
+          <linearGradient id={mid} x1="24" y1="58" x2="24" y2="16">
+            <stop offset="0%" stopColor="#ff5a1a" />
+            <stop offset="60%" stopColor="#ffb040" />
+            <stop offset="100%" stopColor="#ffe28a" />
+          </linearGradient>
+          <linearGradient id={core} x1="24" y1="54" x2="24" y2="28">
+            <stop offset="0%" stopColor="#fff3c4" />
+            <stop offset="100%" stopColor="#ffe27a" />
+          </linearGradient>
+        </defs>
+        <path
+          className="hc-flame-outer"
+          fill={`url(#${outer})`}
+          d="M24 63c-12 0-19.5-10.2-19.5-22.4 0-7.2 3.2-12.6 6.4-17.2C8.4 20 9.2 15.6 13 16.8c1.6 4.8 3.6 7.6 4.2 7-2.8-10.4 1.8-18.8 7-25.8 2.2 7.2 2.4 12.6.8 17.2 4.6-7.4 11.8-10.2 14-6.8-3.6 5.6-3.8 9.6-1.8 13.2 6-2 10.4 2.6 9.6 8 4.8 5.2 7.2 11 7.2 17C53.8 53.6 39.6 63 24 63z"
+        />
+        <path
+          className="hc-flame-mid"
+          fill={`url(#${mid})`}
+          d="M24 56c-7.4 0-11.6-6.2-11.6-13.4 0-4.2 1.6-7.6 3.8-10.6-.4-2.2.8-4.2 2.4-4.4-.2 3.4 1.4 5.6 2.6 6.2.2-5.2 2.6-9.8 5-13.6.6 3.6.4 6.6-.2 8.8 2.2-3.2 5.4-4.8 6.4-3.4-1.2 2.8-1.2 4.8-.2 6.6 2.8-.4 4.8 1.8 4.6 4.4 2.6 2.8 4 6 4 9.6C40.8 49.8 33.4 56 24 56z"
+        />
+        <path
+          className="hc-flame-core"
+          fill={`url(#${core})`}
+          d="M24 50c-3.6 0-5.6-3.2-5.6-6.8 0-2.4 1-4.2 2.2-5.6.6 1.8 1.6 2.8 2.4 3 .2-2.6 1.2-4.8 2.4-6.6.2 1.8 0 3.2-.2 4.2 1.2-1.4 2.6-2 3.2-1.2-.4 1.4-.2 2.4.4 3.2 1.4 0 2.4 1.2 2.2 2.6 1.2 1.4 1.8 2.8 1.8 4.4C32.8 47.2 28.6 50 24 50z"
+        />
+      </svg>
+    </span>
   );
 }
 

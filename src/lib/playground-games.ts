@@ -101,7 +101,7 @@ export const PLAYGROUND_ART_PROMPTS: Record<PlaygroundGameId, string> = {
   "face-the-den": `${SHARED} Scene: a crimson velvet judgment booth in near-dark, unfocused vanity bulbs as rose bokeh, a chair silhouette facing away, faint smoke, analog film. Accent: blood rose.`,
   "would-you-rather": `${SHARED} Scene: empty late-night game-show floor split by two pools of light, violet left and amber right, glossy black stage, no host, no crowd. Accent: split neon.`,
   "highway-hunter": `${SHARED} Scene: wet night interstate from a low hood angle, orange sodium lamps, rain streaks, distant headlights as bokeh, empty road. Accent: sodium orange.`,
-  "heat-check": `${SHARED} Scene: late-night luxury phone face-down on black marble, ember coals, crimson-purple rim light, no readable chat, keyhole den. Accent: ember.`,
+  "heat-check": `${SHARED} Scene: intimate late-night bar booth, two adults close in warm amber light, faces turned away, phone face-down, condensation on glass. Photograph only. Absolutely no letters, words, titles, logos, circles, or graphic overlays. Accent: ember.`,
   "den-arena": `${SHARED} Scene: unused circular pit in a dark den, one cold spotlight on dust, empty ropes in shadow, waiting. Accent: cool steel.`,
 };
 
@@ -113,10 +113,18 @@ export type PlaygroundArtEntry = {
 
 export type PlaygroundArtMap = Partial<Record<PlaygroundGameId, PlaygroundArtEntry>>;
 
+export const HEAT_CHECK_STILL = "/heat-check/card.jpg";
+
+export function playgroundStill(id: string, arts: Record<string, string> | undefined) {
+  if (id === "heat-check") return HEAT_CHECK_STILL;
+  return arts?.[id];
+}
+
 export function artUrlMap(art: PlaygroundArtMap | null | undefined): Record<string, string> {
   const out: Record<string, string> = {};
   if (!art) return out;
   for (const game of PLAYGROUND_GAMES) {
+    if (game.id === "heat-check") continue;
     const url = art[game.id]?.url;
     if (url) out[game.id] = url;
   }

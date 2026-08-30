@@ -412,6 +412,66 @@ export function splitThem(scene: string) {
   return parts.length ? parts : [scene.trim()].filter(Boolean);
 }
 
+export async function writeOpeningMessages(opts: {
+  thread: HeatThread;
+  settings: HeatSettings;
+  compiledSystem?: string;
+}) {
+  const supabase = createServiceClient();
+  const { data: existing } = await supabase
+    .from("heat_messages")
+    .select("id")
+    .eq("thread_id", opts.thread.id)
+    .limit(1);
+  if (existing?.length) {
+    const { data: rows } = await supabase
+      .from("heat_messages")
+      .select("*")
+      .eq("thread_id", opts.thread.id)
+      .order("created_at", { ascending: true });
+    return { messages: rows || [], already: true as const };
+  }
+
+  const turn = await withTimeout(
+    runHeatTurn({
+      thread: opts.thread,
+      history: [],
+      userLine: null,
+      opening: true,
+      fade: false,
+      doubleText: false,
+      lastScores: [],
+      settings: opts.settings,
+      compiledSystem: opts.compiledSystem,
+    }),
+    28000,
+    "Opening timed out",
+  ).catch((err: unknown) => {
+    console.error("heat opening", err);
+    return fallbackHeatTurn(true);
+  });
+
+  const bubbles = splitThem(turn.scene);
+  const rows = bubbles.map((bodyText) =>
+    heatMessageRow({
+      thread_id: opts.thread.id,
+      user_id: opts.thread.user_id,
+      sender: "them",
+      body: bodyText,
+      delivered_at: new Date().toISOString(),
+      read_at: new Date().toISOString(),
+    }),
+  );
+  const { data: inserted } = await supabase.from("heat_messages").insert(rows).select("*");
+  if (turn.mood && turn.mood !== "same") {
+    await supabase
+      .from("heat_threads")
+      .update({ mood: turn.mood, updated_at: new Date().toISOString() })
+      .eq("id", opts.thread.id);
+  }
+  return { messages: inserted || [], already: false as const };
+}
+
 export const VALID_ROLE = new Set(HEAT_ROLES.map((r) => r.id));
 export const VALID_HEAT = new Set(["tease", "filthy", "nasty"]);
 export const VALID_VOICE = new Set(["shy", "mean", "needy", "funny", "dry"]);

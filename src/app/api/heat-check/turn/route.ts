@@ -13,6 +13,7 @@ import {
   heatMessageRow,
   splitThem,
   withTimeout,
+  writeOpeningMessages,
 } from "@/lib/heat-check-server";
 
 export const runtime = "nodejs";
@@ -28,9 +29,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const threadId = String(body.threadId || "");
     const text = String(body.text || "").trim();
+    const opening = !!body.opening;
     const chatImageUrl = typeof body.imageUrl === "string" ? body.imageUrl : null;
     const chatImagePath = typeof body.imagePath === "string" ? body.imagePath : null;
-    if (!threadId || (!text && !chatImageUrl && !chatImagePath)) {
+    if (!threadId || (!text && !chatImageUrl && !chatImagePath && !opening)) {
       return NextResponse.json({ error: "Need a line." }, { status: 400 });
     }
 
@@ -43,6 +45,27 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
     if (!thread) return NextResponse.json({ error: "Night gone." }, { status: 404 });
     if (thread.ended) return NextResponse.json({ error: "This one already faded." }, { status: 409 });
+
+    if (opening) {
+      const compiled = await lookupCompiledPrompt({
+        role: String(thread.role),
+        heat: String(thread.heat),
+        voice: String(thread.voice),
+        opener: String(thread.opener || thread.who_starts || "they"),
+      });
+      const opened = await writeOpeningMessages({
+        thread: thread as HeatThread,
+        settings: ctx.settings,
+        compiledSystem: compiled.compiled || undefined,
+      });
+      return NextResponse.json({
+        them: opened.messages,
+        opening: true,
+        tip: null,
+        userMessage: null,
+        recap: null,
+      });
+    }
 
     const { data: history } = await supabase
       .from("heat_messages")

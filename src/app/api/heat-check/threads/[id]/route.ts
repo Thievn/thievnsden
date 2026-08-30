@@ -95,6 +95,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     patch.user_photo_path = null;
     patch.user_photo_url = null;
   }
+  if (body.action === "resume") {
+    patch.ended = false;
+    patch.status = "active";
+    patch.end_reason = null;
+  }
   if (Object.keys(patch).length) {
     patch.updated_at = new Date().toISOString();
     const { data, error } = await supabase

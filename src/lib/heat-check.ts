@@ -718,6 +718,28 @@ export const HEAT_PIC_OOPS = [
   "lamp ate the file. no charge. ask once more.",
 ];
 
+export function heatNightLastLine(body?: string | null, hasPhoto?: boolean) {
+  const t = String(body || "").replace(/\s+/g, " ").trim();
+  if (t) return t.slice(0, 80);
+  if (hasPhoto) return "sent a pic";
+  return "no texts yet";
+}
+
+export type HeatNightCard = {
+  id: string;
+  contact_name: string;
+  contact_face_url: string | null;
+  role: string;
+  heat: string;
+  voice: string;
+  ended: boolean;
+  last_seen_label: string | null;
+  updated_at: string;
+  last_line: string;
+  last_photo: string | null;
+  pics: number;
+};
+
 export const HEAT_PINGS = [
   "was thinking about you",
   "you eat yet",

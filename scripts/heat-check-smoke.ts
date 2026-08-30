@@ -27,6 +27,7 @@ import {
   lookKey,
   vibeForLook,
   calibrateHeatScore,
+  heatNightLastLine,
 } from "../src/lib/heat-check";
 import { HEAT_CHECK_STILL, playgroundStill } from "../src/lib/playground-games";
 import type { User } from "@supabase/supabase-js";
@@ -106,6 +107,9 @@ assert(lookKey("woman", "default", "any") === "woman|feminine", "look key defaul
 assert(lookKey("woman", "feminine", "east-asian") === "woman|feminine|east-asian", "look key appearance");
 assert(HEAT_ROLES.length >= 17, "roles");
 assert(HEAT_TAGLINE.includes("twice"), "tagline");
+assert(heatNightLastLine("you still up?") === "you still up?", "night last line");
+assert(heatNightLastLine("", true) === "sent a pic", "night last pic");
+assert(heatNightLastLine(null, false) === "no texts yet", "night empty");
 assert(calibrateHeatScore(7, "ok") !== 7, "no copied 7");
 assert(calibrateHeatScore(8, "stay tonight?") === 8, "keep a real 8");
 assert(calibrateHeatScore(7, "k") <= 5, "stub score");

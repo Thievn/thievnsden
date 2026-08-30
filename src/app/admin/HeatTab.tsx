@@ -219,7 +219,7 @@ export function HeatTab() {
           </label>
         </div>
         <p className="text-[12px] text-neutral-500">
-          Nights stay open unless the user ends them. Pics stay SFW and reuse the appearance pool. Companion check-ins show when they open Heat Check — not a phone push yet.
+          Nights stay open unless the user ends them. Pics stay SFW and reuse the appearance pool. Companion check-ins show when they open Heat Check — not a phone push. The ping cron runs once a day on Hobby.
         </p>
         <button type="button" disabled={busy} onClick={save} className={btn}>
           Save controls

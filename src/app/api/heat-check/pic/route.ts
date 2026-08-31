@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { HEAT_POSE_KINDS, heatPicMayMint, poseKindFromAsk, type HeatPoseKind } from "@/lib/heat-check";
+import { HEAT_POSE_KINDS, heatPicMayMint, heatPicSkipCache, poseKindFromAsk, type HeatPoseKind } from "@/lib/heat-check";
 import { requireHeatPlayer } from "@/lib/heat-check-server";
 import { deliverHeatPic, heatCreditBalance, spendHeatCredit } from "@/lib/heat-pic";
 
@@ -44,7 +44,9 @@ export async function POST(req: NextRequest) {
       .filter(Boolean)
       .slice(-6);
 
-    const fast = await deliverHeatPic({
+    const fast = heatPicSkipCache(ask)
+      ? null
+      : await deliverHeatPic({
       userId: user.id,
       threadId,
       kind,

@@ -5,12 +5,18 @@ import { normalizePost } from "@/lib/x-posts";
 import {
   describeXRecipe,
   EMOTE_PACKS,
+  findXLane,
   findXPick,
+  parseXTrio,
   SIGNOFFS,
+  sprinkleEmotes,
+  THIEVN_X_VOICE,
+  X_CUTS,
   X_LENGTHS,
   X_PREMIUM_CAP,
   xThoughtHits,
   type XRecipe,
+  type XVoiceCut,
 } from "@/lib/x-thoughts";
 
 export const runtime = "nodejs";
@@ -24,6 +30,7 @@ const TWEAKS: Record<string, string> = {
   softer: "Rewrite softer and more tender. Still honest. Keep the idea.",
   funnier: "Rewrite funnier. Keep the idea. Add a real laugh, not a wink.",
   filthier: "Rewrite filthier and more specific. Adult. Keep the idea.",
+  emotes: "Keep the words. Add at most two earned emotes. No circus.",
 };
 
 function stripJunk(text: string) {
@@ -42,13 +49,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const recipe: XRecipe = {
       topic: String(body.topic || ""),
-      outlook: String(body.outlook || "honest"),
+      lane: String(body.lane || ""),
+      outlook: String(body.outlook || "cynical"),
       heat: String(body.heat || "sharp"),
-      form: String(body.form || "essay"),
-      length: String(body.length || "medium"),
+      form: String(body.form || "punchline"),
+      length: String(body.length || "x"),
       addressee: String(body.addressee || "nobody"),
-      pack: String(body.pack || "dry"),
-      signoff: String(body.signoff || "bio"),
+      pack: String(body.pack || "quiet"),
+      signoff: String(body.signoff || "none"),
       seed: String(body.seed || "").trim(),
     };
     const source = String(body.source || "").trim();
@@ -57,13 +65,16 @@ export async function POST(req: NextRequest) {
     const currentId = String(body.id || body.draft_id || "").trim();
 
     const topic = TOPICS.find((t) => t.id === recipe.topic);
-    const outlook = findXPick(OUTLOOKS, recipe.outlook, 0);
+    const lane = findXLane(recipe.lane);
+    const outlook = findXPick(OUTLOOKS, recipe.outlook, 3);
     const heat = findXPick(HEATS, recipe.heat, 2);
-    const form = findXPick(FORMS, recipe.form, 0);
+    const form = findXPick(FORMS, recipe.form, 6);
     const who = findXPick(ADDRESSEES, recipe.addressee, 0);
     const pack = findXPick(EMOTE_PACKS, recipe.pack, 0);
-    const sign = findXPick(SIGNOFFS, recipe.signoff, 0);
-    const length = findXPick(X_LENGTHS, recipe.length, 1);
+    const sign = findXPick(SIGNOFFS, recipe.signoff, 3);
+    const length = findXPick(X_LENGTHS, recipe.length, 0);
+    const trio = body.trio !== false && tweak === "fresh";
+    const forcePick = String(body.force_pick || "").trim() as XVoiceCut | "";
 
     const apiKey = process.env.XAI_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "XAI_API_KEY missing" }, { status: 500 });
@@ -86,31 +97,38 @@ export async function POST(req: NextRequest) {
       .map((line, i) => `${i + 1}. ${line}`)
       .join("\n");
 
-    const system = `You write posts for the X account @Thievn / Thievn's Den. X Premium — long posts allowed.
-Voice: human, adult-ok, not a brand intern. No hashtags. No URLs. No http. No thievnsden. No @mentions unless in the seed. Never use 👇.
-Aim for about ${length.target} characters before the sign-off. Hard max ${X_PREMIUM_CAP}.
-Short = tight lines. Medium = a few beats. Long/Premium = real thought with short paragraphs and blank lines.
+    const system = `${THIEVN_X_VOICE}
+
+You write for the X account @Thievn / Thievn's Den.
+No hashtags. No URLs. No http. No thievnsden. No @mentions unless they are in the user's box.
+Aim for about ${length.target} characters per post before any sign-off. Hard max ${X_PREMIUM_CAP}.
+X-ready / medium = 400–900 characters. Short = tighter. Long/Premium = still short paragraphs, blank lines, no lecture.
 Form: ${form.label}. ${form.desc || ""}
 Address: ${who.label}. ${who.desc || ""}
-Emotes: at most 2 from ${pack.emotes || "(none)"}.
-Outlook: ${outlook.label}. ${outlook.guide || ""}
-Heat: ${heat.label}.
-Funny, filthy, tender, and unhinged are all allowed when they match the outlook. Stay specific.
-Do not write "link in bio" yourself. Return plain text only.
+Emotes: ${pack.emotes ? `0–2 from ${pack.emotes}. Only if they earn it.` : "none unless the user asked."}
+Outlook mixer: ${outlook.label}. ${outlook.guide || ""}
+Heat mixer: ${heat.label}.
+Do not write "link in bio" yourself.
 ${prior ? `Already written — do not repeat these ideas, titles, or beats:\n${prior}` : ""}`;
 
     let user = "";
-    if (tweak !== "fresh" && existing) {
+    if (tweak === "emotes" && existing) {
+      user = `Keep the post. Add at most 2 earned emotes from ${pack.emotes || "💀 🔥"}. Do not circus it. Return the post only.`;
+    } else if (tweak !== "fresh" && existing) {
       user = `${TWEAKS[tweak] || TWEAKS.fresh}\nMixer: ${describeXRecipe(recipe)}\n\n${existing}`;
     } else {
       user = [
-        topic ? `Topic: ${topic.label}` : "Invent a real human topic that is not on the already-written list.",
-        recipe.seed ? `Extra direction: ${recipe.seed}` : "",
+        recipe.seed ? `User box — write about this, in the voice:\n${recipe.seed}` : "",
+        topic ? `Optional site-thought hook: ${topic.label}` : "",
+        `Hunt: ${lane.hunt}`,
         source ? `Essay to cut down into an X post:\n${source.slice(0, 2500)}` : "",
-        TWEAKS.fresh,
+        trio
+          ? `Return ONLY JSON: {"dry":"...","mean":"...","unhinged":"...","pick":"dry|mean|unhinged"}
+Three complete, paste-ready posts. Different angles. All smart. One may be filthy. pick = the strongest.`
+          : TWEAKS.fresh,
       ]
         .filter(Boolean)
-        .join("\n");
+        .join("\n\n");
     }
 
     const run = async (extra: string) => {
@@ -127,7 +145,7 @@ ${prior ? `Already written — do not repeat these ideas, titles, or beats:\n${p
             { role: "user", content: extra ? `${user}\n\n${extra}` : user },
           ],
           temperature: tweak === "fresh" ? 1.05 : 0.85,
-          max_tokens: length.tokens,
+          max_tokens: trio ? Math.min(2200, length.tokens * 3) : length.tokens,
         }),
       });
       const text = await response.text();
@@ -136,13 +154,39 @@ ${prior ? `Already written — do not repeat these ideas, titles, or beats:\n${p
       return String(data.choices?.[0]?.message?.content || "").trim();
     };
 
-    let post = applySignoff(await run(""), sign.line);
+    const finish = (text: string) => {
+      let post = applySignoff(text, sign.line);
+      if (tweak === "emotes" || (pack.emotes && !trio && /[\u{1F300}-\u{1FAFF}]/u.test(pack.emotes))) {
+        post = sprinkleEmotes(post, pack.emotes);
+      }
+      if (post.length > X_PREMIUM_CAP) post = post.slice(0, X_PREMIUM_CAP - 1).trimEnd();
+      return post;
+    };
+
+    let options: { dry: string; mean: string; unhinged: string; pick: XVoiceCut } | null = null;
+    let post = "";
+    if (trio) {
+      const raw = await run("");
+      options = parseXTrio(raw);
+      if (!options.dry || !options.mean || !options.unhinged) {
+        const retry = parseXTrio(await run("JSON only. dry, mean, unhinged, pick. Three full posts."));
+        if (retry.dry && retry.mean && retry.unhinged) options = retry;
+      }
+      options = {
+        dry: finish(options.dry),
+        mean: finish(options.mean),
+        unhinged: finish(options.unhinged),
+        pick: forcePick && X_CUTS.some((c) => c.id === forcePick) ? forcePick : options.pick,
+      };
+      post = options[options.pick];
+    } else {
+      post = finish(await run(""));
+    }
     let hits = xThoughtHits(post, storedPosts, storedThoughts, currentId);
-    if (hits[0] && hits[0].score >= 0.58 && tweak === "fresh") {
-      post = applySignoff(await run("Too close to something already stored. New angle, new specific scene."), sign.line);
+    if (hits[0] && hits[0].score >= 0.58 && tweak === "fresh" && !trio) {
+      post = finish(await run("Too close to something already stored. New angle, new specific scene."));
       hits = xThoughtHits(post, storedPosts, storedThoughts, currentId);
     }
-    if (post.length > X_PREMIUM_CAP) post = post.slice(0, X_PREMIUM_CAP - 1).trimEnd();
 
     const row = {
       body: post,
@@ -158,6 +202,9 @@ ${prior ? `Already written — do not repeat these ideas, titles, or beats:\n${p
     const updateExisting = Boolean(currentId && current && !current.posted_at);
 
     let saved: { id: string } | null = null;
+    if (!post.trim()) {
+      return NextResponse.json({ error: "Grok came back empty. Try again." }, { status: 502 });
+    }
     if (updateExisting) {
       const { data, error } = await supabase
         .from("x_posts")
@@ -175,6 +222,8 @@ ${prior ? `Already written — do not repeat these ideas, titles, or beats:\n${p
 
     return NextResponse.json({
       post,
+      options,
+      pick: options?.pick || null,
       chars: post.length,
       draft_id: saved?.id || currentId || null,
       id: saved?.id || currentId || null,

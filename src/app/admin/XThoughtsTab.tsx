@@ -15,9 +15,12 @@ import {
   EMOTE_PACKS,
   SIGNOFFS,
   surpriseXRecipe,
+  X_CUTS,
+  X_LANES,
   X_LENGTHS,
   X_PREMIUM_CAP,
   type XRecipe,
+  type XVoiceCut,
 } from "@/lib/x-thoughts";
 import { readJson } from "@/lib/read-json";
 
@@ -115,8 +118,10 @@ function Chips({
 }
 
 export function XThoughtsTab() {
-  const [pane, setPane] = useState<"drop" | "thoughts">("drop");
+  const [pane, setPane] = useState<"drop" | "thoughts">("thoughts");
   const [recipe, setRecipe] = useState<XRecipe>(emptyXRecipe);
+  const [options, setOptions] = useState<{ dry: string; mean: string; unhinged: string; pick: XVoiceCut } | null>(null);
+  const [pickedCut, setPickedCut] = useState<XVoiceCut>("mean");
   const [fromSlug, setFromSlug] = useState("");
   const [rows, setRows] = useState<any[]>([]);
   const [post, setPost] = useState("");
@@ -189,6 +194,7 @@ export function XThoughtsTab() {
     setHits([]);
     setPostedUrl("");
     setFromSlug("");
+    setOptions(null);
     setMsg("Fresh page");
   };
 
@@ -213,9 +219,16 @@ export function XThoughtsTab() {
       if (!res.ok) throw new Error(data.error || "Draft failed");
       const next = data.post || "";
       setPost(next);
+      if (data.options?.dry) {
+        setOptions(data.options);
+        setPickedCut(data.options.pick || "mean");
+        setPost(data.options[data.options.pick || "mean"] || next);
+      } else if (tweak === "fresh") {
+        setOptions(null);
+      }
       setId(data.draft_id || data.id || "");
       setHits(data.hits || []);
-      setMsg(tweak === "fresh" ? `Saved to your log · ${data.mix || ""}` : "Rewritten and saved");
+      setMsg(tweak === "fresh" ? `Three cuts · ${data.mix || ""}` : "Rewritten and saved");
       await loadLedger();
     } catch (err: any) {
       setMsg(err.message);
@@ -326,13 +339,14 @@ export function XThoughtsTab() {
     const stored = row.recipe || {};
     const next: XRecipe = {
       topic: stored.topic || "",
-      outlook: stored.outlook || "honest",
+      lane: stored.lane || "",
+      outlook: stored.outlook || "cynical",
       heat: stored.heat || "sharp",
-      form: stored.form || "essay",
-      length: stored.length || "medium",
+      form: stored.form || "punchline",
+      length: stored.length || "x",
       addressee: stored.addressee || "nobody",
-      pack: stored.pack || "dry",
-      signoff: stored.signoff || "bio",
+      pack: stored.pack || "quiet",
+      signoff: stored.signoff || "none",
       seed: stored.seed || "",
     };
     setRecipe(next);
@@ -397,7 +411,7 @@ export function XThoughtsTab() {
           <div>
             <p className="text-sm text-neutral-100 font-medium">X thought studio</p>
             <p className="text-xs text-neutral-500 mt-1">
-              Pick a vibe or surprise yourself. Every draft lands in your private X log so the next one cannot copy it.
+              Type what you want, or pick a lane Grok can hunt. You get dry, mean, and unhinged — copy and paste straight to X.
             </p>
             <p className="text-[11px] text-sky-200/70 mt-2">{mix}</p>
           </div>
@@ -411,7 +425,25 @@ export function XThoughtsTab() {
           </div>
         </div>
 
-        <Chips label="Vibe" hint="Nice through unhinged. All of it is allowed." options={OUTLOOKS} value={recipe.outlook} onChange={(next) => setField("outlook", next)} variant="card" />
+        <label className="block space-y-1">
+          <span className="text-[11px] uppercase tracking-[0.22em] text-sky-200/70">Your box</span>
+          <textarea
+            value={recipe.seed}
+            onChange={(e) => setField("seed", e.target.value)}
+            rows={4}
+            className={field + " text-[15px] leading-relaxed"}
+            placeholder="What do you want to say — a night, a person-type, a current-event feeling, a sentence you cannot stop thinking. Leave empty and pick a lane."
+          />
+        </label>
+        <Chips
+          label="Hunt"
+          hint="General lanes. Not essay titles. Grok finds the pattern people are actually in."
+          options={X_LANES.map((lane) => ({ id: lane.id, label: lane.label, emoji: lane.emoji, desc: lane.desc }))}
+          value={recipe.lane}
+          onChange={(next) => setField("lane", next)}
+          variant="card"
+        />
+        <Chips label="Vibe" hint="Mixer on top of the three cuts. Optional." options={OUTLOOKS} value={recipe.outlook} onChange={(next) => setField("outlook", next)} variant="card" />
         <Chips label="Heat" options={HEATS} value={recipe.heat} onChange={(next) => setField("heat", next)} variant="heat" />
         <Chips label="Shape" options={FORMS} value={recipe.form} onChange={(next) => setField("form", next)} variant="card" />
         <Chips label="Length" options={X_LENGTHS} value={recipe.length} onChange={(next) => setField("length", next)} />
@@ -428,24 +460,61 @@ export function XThoughtsTab() {
             ))}
           </select>
         </label>
-        <textarea
-          value={recipe.seed}
-          onChange={(e) => setField("seed", e.target.value)}
-          rows={2}
-          className={field}
-          placeholder="Optional extra direction — a name, a night, a sentence you cannot stop thinking"
-        />
         <button
           type="button"
           onClick={() => run("fresh")}
           disabled={locked}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-rose-400 text-black font-semibold disabled:opacity-50"
         >
-          {busy === "draft" ? "Writing…" : "Draft post"}
+          {busy === "draft" ? "Writing three cuts…" : "Write 3 for X"}
         </button>
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
+        {options ? (
+          <div className="grid grid-cols-1 gap-3">
+            {X_CUTS.map((cut) => {
+              const body = options[cut.id];
+              const on = pickedCut === cut.id;
+              return (
+                <button
+                  key={cut.id}
+                  type="button"
+                  onClick={() => {
+                    setPickedCut(cut.id);
+                    setPost(body);
+                    void checkDupes(body);
+                  }}
+                  className={cx(
+                    "text-left rounded-2xl border p-4 space-y-2",
+                    on ? "border-sky-400/60 bg-sky-950/30" : "border-neutral-800 bg-black/30",
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-sky-200/80">
+                      {cut.emoji} {cut.label}
+                      {options.pick === cut.id ? " · strongest" : ""}
+                    </p>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className="text-[11px] text-neutral-300 underline-offset-2 hover:underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void navigator.clipboard.writeText(body);
+                        setMsg(`Copied ${cut.label}`);
+                      }}
+                    >
+                      Copy
+                    </span>
+                  </div>
+                  <p className="text-sm text-neutral-100 whitespace-pre-wrap leading-relaxed">{body}</p>
+                </button>
+              );
+            })}
+            <p className="text-[12px] text-neutral-500">Tap a cut to edit it below. Copy pastes it ready for X.</p>
+          </div>
+        ) : null}
         <textarea
           value={post}
           onChange={(e) => setPost(e.target.value)}
@@ -465,6 +534,7 @@ export function XThoughtsTab() {
           <button type="button" className={tweak} disabled={locked || !post} onClick={() => run("meaner")}>Meaner</button>
           <button type="button" className={tweak} disabled={locked || !post} onClick={() => run("shorter")}>Shorter</button>
           <button type="button" className={tweak} disabled={locked || !post} onClick={() => run("longer")}>Longer</button>
+          <button type="button" className={tweak} disabled={locked || !post} onClick={() => run("emotes")}>Add emotes</button>
         </div>
         <div className="space-y-2">
           <p className="text-[11px] uppercase tracking-[0.22em] text-sky-200/70">Pic direction</p>

@@ -351,7 +351,7 @@ export async function generateContactFace(
 }
 
 export async function generateRewardStill(userId: string, threadId: string, facePrompt: string) {
-  const prompt = `${FACE_BASE} SAME PERSON as previously described: ${facePrompt.slice(0, 280)} Now a sexier pose, still SFW, clothes thinner or more undone, looking at the camera like they just sent this. STRICT: no hardcore, no explicit anatomy.`;
+  const prompt = `${FACE_BASE} SAME PERSON as previously described: ${facePrompt.slice(0, 280)} Now a sexier pose. Lingerie or a thin robe is fine. No nudity. Looking at the camera like they just sent this. STRICT: no hardcore, no explicit anatomy.`;
   const bytes = await imagineStill(prompt);
   const path = `${userId}/${threadId}/${Date.now().toString(36)}.jpg`;
   const up = await uploadHeatBytes({ bucket: "heat-rewards", path, bytes });

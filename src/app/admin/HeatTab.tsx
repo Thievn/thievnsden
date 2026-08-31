@@ -155,7 +155,7 @@ export function HeatTab() {
               ["peek_default", "Tip peek on by default", settings.peek_default],
               ["face_gen", "Show generate-their-face", settings.face_gen],
               ["auto_end", "Auto-end after 8 texts (off = user ends)", settings.auto_end],
-              ["pics_on", "Paid SFW pics", settings.pics_on],
+              ["pics_on", "Paid pics (covered)", settings.pics_on],
               ["pic_cache", "Reuse pics by appearance", settings.pic_cache],
               ["surprise_pics", "Old surprise reward pics", settings.surprise_pics],
               ["companion_on", "Companion check-ins", settings.companion_on],
@@ -220,7 +220,7 @@ export function HeatTab() {
           </label>
         </div>
         <p className="text-[12px] text-neutral-500">
-          Nights stay open unless the user ends them. Pics stay SFW and reuse the appearance pool. Companion check-ins show when they open Heat Check — not a phone push. The ping cron runs once a day on Hobby.
+          Nights stay open unless the user ends them. Pics stay covered — lingerie and bikini are allowed, nudes get remapped. Companion check-ins show when they open Heat Check — not a phone push. The ping cron runs once a day on Hobby.
         </p>
         <button type="button" disabled={busy} onClick={save} className={btn}>
           Save controls

@@ -23,6 +23,8 @@ import {
   parseJsonObject,
   splitScene,
   parseHeatSettings,
+  parseHeatPicAsk,
+  heatPicSkipCache,
   DEFAULT_HEAT_SETTINGS,
   lookKey,
   vibeForLook,
@@ -30,6 +32,7 @@ import {
   heatNightLastLine,
 } from "../src/lib/heat-check";
 import { HEAT_CHECK_STILL, playgroundStill } from "../src/lib/playground-games";
+import { parseXTrio, sprinkleEmotes } from "../src/lib/x-thoughts";
 import type { User } from "@supabase/supabase-js";
 
 function assert(cond: unknown, msg: string) {
@@ -51,6 +54,13 @@ assert(heatPicBillPlan(0, 1, 0).spendExtra === 0, "empty extra still delivers");
 assert(heatPicBillPlan(3, 1, 0).spendExtra === 1, "extra bills after mint");
 assert(heatPicBillPlan(0, 1, 1).markFree, "mark free only after a still lands");
 assert(namedPicKind("send a kitchen pic") === "kitchen" && namedPicKind("couch selfie") === "couch", "scene kinds");
+assert(wantsPicText("send me a pose in a bikini on a bed"), "bikini pose ask");
+assert(namedPicKind("bikini on the bed") === "bikini" && namedPicKind("lingerie") === "lingerie", "sexy named stills");
+const bikiniAsk = parseHeatPicAsk("send a pic of you in a bikini on the bed");
+assert(bikiniAsk.kind === "bikini" && /bikini/i.test(bikiniAsk.outfit) && /bed/i.test(bikiniAsk.setting), "parse bikini bed");
+const nudeAsk = parseHeatPicAsk("send nudes");
+assert(nudeAsk.rewroteNude && /lingerie/i.test(nudeAsk.outfit + nudeAsk.ask), "nudes remap");
+assert(heatPicSkipCache("bikini on the bed") && !heatPicSkipCache(""), "skip cache on specific ask");
 const lock = imageIdentityLock("woman", "feminine", "mena");
 assert(/SAME fictional adult/.test(lock) && !/Tight head-and-shoulders/.test(lock), "identity lock");
 const picPrompt = buildHeatPicPrompt({
@@ -120,5 +130,10 @@ const h1 = sourceHash(["a", "b"]);
 const h2 = sourceHash(["a", "b"]);
 const h3 = sourceHash(["a", "c"]);
 assert(h1 === h2 && h1 !== h3, "combo hash");
+
+const trio = parseXTrio('{"dry":"ice line","mean":"cut line","unhinged":"filthy smart line","pick":"mean"}');
+assert(trio.dry === "ice line" && trio.pick === "mean", "x trio json");
+assert(sprinkleEmotes("just the cut.", "💀 🔥").includes("💀"), "x emote sprinkle");
+assert(!sprinkleEmotes("already 💀 here", "🔥").includes("🔥"), "x emote skip if present");
 
 console.log("heat-check smoke ok");

@@ -22,7 +22,7 @@ import { cacheRewardPose } from "@/lib/heat-face-cache";
 export { heatPicBillPlan, heatPicMayMint };
 
 const SFW =
-  "STRICT SFW. Clothes on. No nudity. No explicit anatomy. No pornography. Face visible. Same fictional adult. Soft lamp. Not a celebrity. No text.";
+  "Sexy allowed. Lingerie and bikini allowed. STRICT: no nudity, no explicit anatomy, no pornography. Face visible. Same fictional adult. Soft lamp. Not a celebrity. No text.";
 
 export async function canSpendHeatCredit(_userId: string, _cost: number) {
   return true;

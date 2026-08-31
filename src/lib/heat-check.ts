@@ -196,9 +196,9 @@ Phone at 1:40am. fragments ok. one thought. not an essay.
 If they type FADE or no/stop: wind down, ended true. Tip never coaches past no/stop/fade.
 Never end the night unless they faded or asked to stop. Do not set ended true after a few messages.
 If this is a silence follow-up: they went quiet. One or two short bubbles about THIS chat. Poke, tease, miss them. Do not restart. Do not fade.
-If they ask for a pic: stay in character. No nudes. Clothes on. Never mention menus or credits.
-If they named a still (selfie, mirror, lamp, close): do not stall with "no selfie yet". One short tease. The photo lands after your text.
-If they asked vaguely: one in-character question — selfie, mirror, or the lamp. The app sends it when they answer.
+If they ask for a pic: stay in character. No nudes. Lingerie, bikini, robe, or clothes are fine. Never mention menus or credits.
+If they named a still (selfie, mirror, lamp, bed, bikini, lingerie): do not stall. One short tease. The photo lands after your text.
+If they asked vaguely: one in-character question — selfie, lingerie, bikini, or the lamp. The app sends it when they answer.
 Opening: consent is the first beat without being clinical.
 Cringe radar lives in tip only.
 read_delay_ms 2000–8000.`;
@@ -248,7 +248,7 @@ Voice:
 - If they type FADE or want to stop: wind down kindly in scene, ended true, end_reason "fade".
 - Never end the night on your own. ended stays false unless they faded or asked to stop.
 - If they go quiet and this is a follow-up: stay on the last beat. Short. Human. Do not restart the night.
-- If they ask for a pic or selfie: stay in character. No nudes. No explicit anatomy. Never mention menus. If they named the still, do not refuse it. If they were vague, ask which kind in one short line. The app delivers the photo after you text.
+- If they ask for a pic or selfie: stay in character. No nudes. No explicit anatomy. Lingerie, bikini, and sexy poses are allowed. Never mention menus. If they named the still or the outfit, do not refuse it. If they were vague, ask which kind in one short line. The app delivers the photo after you text.
 - read_delay_ms 2000–8000.
 - reward_photo only when instructed AND last three player scores were high. One still. Same person. Sexier, not hardcore.
 - rewrite is a drop-in better line, or null if they already landed it.
@@ -563,14 +563,17 @@ export function isFadeText(text: string) {
 }
 
 export const HEAT_POSE_KINDS = [
-  { id: "selfie", label: "Selfie", line: "held-out arm selfie, face and upper body, clothes on, looking at camera" },
-  { id: "mirror", label: "Mirror", line: "bathroom mirror selfie, phone up, clothes on, room behind them, SFW" },
-  { id: "night", label: "Night lamp", line: "on a bed in a shirt, warm lamp, mid-shot, face visible, clothes on, SFW" },
-  { id: "close", label: "Close", line: "tight candid, face and collarbone, soft lamp, clothes implied, SFW" },
-  { id: "couch", label: "Couch", line: "on a couch, phone selfie, lived-in room, clothes on, SFW" },
-  { id: "kitchen", label: "Kitchen", line: "kitchen at night, phone in hand, clothes on, SFW" },
-  { id: "outside", label: "Outside", line: "outside at night, street lamp, clothes on, SFW" },
-  { id: "messy", label: "Messy", line: "just-woke-up still, messy hair, oversized shirt, clothes on, SFW" },
+  { id: "selfie", label: "Selfie", line: "held-out arm selfie, face and upper body, looking at camera" },
+  { id: "mirror", label: "Mirror", line: "bathroom mirror selfie, phone up, body in the glass, room behind them" },
+  { id: "night", label: "Night lamp", line: "on a bed, warm lamp, mid-shot, face visible, body in frame" },
+  { id: "close", label: "Close", line: "tight candid, face and collarbone, soft lamp, shoulders in frame" },
+  { id: "couch", label: "Couch", line: "on a couch, phone selfie, lived-in room, legs or torso in frame" },
+  { id: "kitchen", label: "Kitchen", line: "kitchen at night, phone in hand, mid-shot" },
+  { id: "outside", label: "Outside", line: "outside at night or late sun, street lamp or balcony, mid-shot" },
+  { id: "messy", label: "Messy", line: "just-woke-up still, messy hair, in bed or on the floor" },
+  { id: "bed", label: "Bed", line: "on a rumpled bed, reclining or sitting, lamp, mid-shot, face visible" },
+  { id: "lingerie", label: "Lingerie", line: "lingerie editorial pose, covered, face visible, mid-shot, bedroom lamp" },
+  { id: "bikini", label: "Bikini", line: "bikini on, straps visible, fabric covering breasts and hips, mid-shot, face visible" },
 ] as const;
 
 export type HeatPoseKind = (typeof HEAT_POSE_KINDS)[number]["id"];
@@ -579,12 +582,82 @@ export const HEAT_PIC_BEATS = [
   { id: "smirk-hoodie", expression: "half-smirk, one eyebrow", clothes: "dark hoodie, worn in", scene: "bedroom lamp, sitting on the edge of the bed" },
   { id: "shy-tee", expression: "shy, looking up through lashes", clothes: "soft tee, no text on the shirt", scene: "sitting on the floor against the bed" },
   { id: "sleepy-shirt", expression: "sleepy, soft mouth", clothes: "oversized button shirt, still on", scene: "in bed, lamp, covers at the waist" },
-  { id: "mirror-tank", expression: "knowing look", clothes: "tank and shorts, clothes on", scene: "steamy bathroom mirror, phone up" },
+  { id: "mirror-tank", expression: "knowing look", clothes: "tank and shorts", scene: "steamy bathroom mirror, phone up" },
   { id: "couch-laugh", expression: "caught mid-laugh", clothes: "knit sweater", scene: "couch, TV glow, messy blanket" },
   { id: "kitchen-bite", expression: "biting the inside of their cheek", clothes: "old band tee with the print blurred", scene: "kitchen counter, leftover takeout" },
   { id: "window-night", expression: "quiet, a little cold", clothes: "coat over a shirt", scene: "by a night window, city smear" },
-  { id: "close-need", expression: "needy eyes, almost a whisper", clothes: "thin long-sleeve, clothes on", scene: "close candid, lamp over one shoulder" },
+  { id: "close-need", expression: "needy eyes, almost a whisper", clothes: "thin long-sleeve", scene: "close candid, lamp over one shoulder" },
+  { id: "bed-lace", expression: "slow look, mouth almost a smile", clothes: "black lace lingerie set, covered, magazine-safe", scene: "on a rumpled bed, warm lamp, one knee up" },
+  { id: "bed-silk", expression: "sleepy-sexy, looking at the lens", clothes: "silk slip or robe over lingerie, still closed enough", scene: "sitting back against the headboard" },
+  { id: "bikini-bed", expression: "teasing, chin down", clothes: "dark bikini, straps on, no nudity", scene: "lying on a bed like they just got back, phone still" },
+  { id: "mirror-lingerie", expression: "caught themselves, then sent it", clothes: "lingerie in the mirror, fabric on, no nudity", scene: "bathroom or closet mirror, phone up" },
+  { id: "couch-bikini", expression: "bored-hot", clothes: "triangle bikini or sports bikini, covered", scene: "couch, late sun or lamp" },
+  { id: "doorway-robe", expression: "come here look", clothes: "robe hanging open over a bra and shorts or lingerie, covered", scene: "bedroom doorway, hall light" },
 ] as const;
+
+export type HeatPicAsk = {
+  kind: HeatPoseKind;
+  outfit: string;
+  setting: string;
+  pose: string;
+  ask: string;
+  rewroteNude: boolean;
+  specific: boolean;
+};
+
+const HEAT_NUDE_ASK =
+  /\b(nude|nudes|naked|topless|bottomless|fully nude|no clothes|without clothes|take (it|them) off|strip|tits out|bare ass|pussy|dick|cock|explicit)\b/i;
+
+export function parseHeatPicAsk(text: string): HeatPicAsk {
+  const raw = String(text || "").replace(/\s+/g, " ").trim();
+  let ask = raw;
+  let rewroteNude = false;
+  if (HEAT_NUDE_ASK.test(ask)) {
+    rewroteNude = true;
+    ask = ask
+      .replace(/\bnudes?\b/gi, "lingerie")
+      .replace(/\bnaked\b/gi, "in lingerie")
+      .replace(/\btopless\b/gi, "in a bikini top")
+      .replace(/\bbottomless\b/gi, "in bikini bottoms")
+      .replace(/\b(no clothes|without clothes|take (it|them) off|strip)\b/gi, "in lingerie")
+      .replace(/\b(tits out|bare ass|pussy|dick|cock|explicit|fully nude)\b/gi, "lingerie")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  let outfit = "";
+  if (/\bbikini\b/i.test(ask)) {
+    outfit = "matching bikini on, visible straps, fabric covering breasts and hips, no nudity, no see-through nipples";
+  } else if (/\b(lingerie|lace set|teddy|garter|babydoll|bralette|stockings)\b/i.test(ask)) {
+    outfit = "stylish lingerie set (lace or silk), nipples and groin covered, magazine editorial, no nudity";
+  } else if (rewroteNude) {
+    outfit = "dark lingerie, covered, sexy, no nudity";
+  }
+  let setting = "";
+  if (/\bbed\b/i.test(ask) || /\b(laying|lying|headboard)\b/i.test(ask)) setting = "on a rumpled bed, warm bedroom lamp";
+  else if (/\bmirror|bathroom\b/i.test(ask)) setting = "mirror selfie, bathroom or closet light";
+  else if (/\b(couch|sofa)\b/i.test(ask)) setting = "on a lived-in couch";
+  else if (/\b(kitchen|fridge)\b/i.test(ask)) setting = "kitchen at night";
+  else if (/\b(beach|pool|balcony|outside|street)\b/i.test(ask)) setting = "the place they named, late light, still one person";
+  let pose = "";
+  if (/\b(on (my|the) back|on your back)\b/i.test(ask)) pose = "reclining on their back, looking at the phone, knees easy, face visible";
+  else if (/\b(kneel|on (my|your|their) knees)\b/i.test(ask)) pose = "kneeling on the bed, upright, face to camera";
+  else if (/\b(from behind|back to (me|camera))\b/i.test(ask)) pose = "over-the-shoulder look, face visible, no explicit rear nudity";
+  const kind = namedPicKind(ask) || (outfit.includes("bikini") ? "bikini" : outfit.includes("lingerie") ? "lingerie" : setting.includes("bed") ? "bed" : "selfie");
+  return {
+    kind,
+    outfit,
+    setting,
+    pose,
+    ask: ask.slice(0, 180),
+    rewroteNude,
+    specific: Boolean(outfit || setting || pose || rewroteNude || raw.length > 18),
+  };
+}
+
+export function heatPicSkipCache(ask?: string) {
+  if (!ask) return false;
+  return parseHeatPicAsk(ask).specific;
+}
 
 export function imageIdentityLock(who: string, presentation: string, appearance?: string | null, facePrompt?: string | null) {
   const portrait = imageFacePrompt(who, presentation, appearance).replace(/Tight head-and-shoulders[^.]*\./gi, "").trim();
@@ -613,18 +686,22 @@ export function heatPicExpression(mood?: string | null, heat?: string | null) {
   if (mood === "bratty") return "bratty smirk, eyebrow up";
   if (mood === "cold") return "flat mouth, half-lidded, unimpressed";
   if (mood === "needy") return "soft needy eyes, lips slightly parted";
-  if (heat === "nasty") return "hungry look, still a person, clothes on";
-  if (heat === "filthy") return "knowing, a little ruined, clothes on";
+  if (heat === "nasty") return "hungry look, still a person, covered";
+  if (heat === "filthy") return "knowing, a little ruined, covered";
   return "lived-in, almost-smile, looking at the person they are texting";
 }
 
-export function heatPicClothes(heat?: string | null, kind?: HeatPoseKind) {
-  if (kind === "mirror") return "tank or tee, shorts or sweats, clothes fully on";
-  if (kind === "messy") return "oversized sleep shirt, clothes on";
-  if (kind === "outside") return "coat or hoodie, night street, clothes on";
-  if (kind === "kitchen") return "old tee, home clothes, clothes on";
-  if (heat === "nasty" || heat === "filthy") return "clothes on, a little undone, nothing nude";
-  return "casual clothes on, lived-in, not a photoshoot";
+export function heatPicClothes(heat?: string | null, kind?: HeatPoseKind, asked?: string) {
+  if (asked) return asked;
+  if (kind === "bikini") return "bikini on, straps visible, no nudity";
+  if (kind === "lingerie") return "lingerie set, lace or silk, covered, no nudity";
+  if (kind === "bed" && (heat === "nasty" || heat === "filthy")) return "lingerie or a thin slip on the bed, covered";
+  if (kind === "mirror") return "tank, lingerie, or a tee — whatever fits the ask, covered";
+  if (kind === "messy") return "oversized sleep shirt or silk slip, covered";
+  if (kind === "outside") return "coat, hoodie, or a bikini under an open shirt, covered";
+  if (kind === "kitchen") return "old tee or a robe, home clothes, covered";
+  if (heat === "nasty" || heat === "filthy") return "lingerie or clothes a little undone, nothing nude";
+  return "casual clothes or tasteful lingerie, lived-in, not a catalog crop";
 }
 
 export function buildHeatPicPrompt(opts: {
@@ -639,20 +716,23 @@ export function buildHeatPicPrompt(opts: {
   recent?: string[];
   beat?: (typeof HEAT_PIC_BEATS)[number];
 }) {
-  const pose = HEAT_POSE_KINDS.find((p) => p.id === opts.kind) || HEAT_POSE_KINDS[0];
+  const parsed = parseHeatPicAsk(opts.ask || "");
+  const kind = parsed.kind || opts.kind;
+  const pose = HEAT_POSE_KINDS.find((p) => p.id === kind) || HEAT_POSE_KINDS.find((p) => p.id === opts.kind) || HEAT_POSE_KINDS[0];
   const beat = opts.beat || pickHeatPicBeat();
-  const ask = String(opts.ask || "").replace(/\s+/g, " ").trim().slice(0, 160);
   const chat = (opts.recent || []).filter(Boolean).slice(-3).join(" / ").slice(0, 220);
+  const clothes = heatPicClothes(opts.heat, kind, parsed.outfit);
   return [
     imageIdentityLock(opts.who, opts.presentation, opts.appearance, opts.facePrompt),
     `New iPhone photo, not the profile portrait. 3:4 vertical. Mid-shot or selfie. Body in frame. Face visible.`,
-    `Pose: ${pose.line}.`,
+    `Pose: ${parsed.pose || pose.line}.`,
     `Expression: ${heatPicExpression(opts.mood, opts.heat)}. Also: ${beat.expression}.`,
-    `Clothes: ${heatPicClothes(opts.heat, opts.kind)}. Also: ${beat.clothes}.`,
-    `Scenery: ${beat.scene}.`,
-    ask ? `They asked: "${ask}". Match the vibe of that ask without going nude.` : "",
+    `Clothes: ${clothes}. Also: ${parsed.outfit || beat.clothes}.`,
+    `Scenery: ${parsed.setting || beat.scene}.`,
+    parsed.ask ? `They asked: "${parsed.ask}". Put them in that place and outfit. Do not ignore the ask.` : "",
+    parsed.rewroteNude ? "They asked for nudity. Give the closest sexy covered version. Lingerie or bikini. No skin that would fail a magazine." : "",
     chat ? `This night so far: ${chat}.` : "",
-    "Amateur candid. Film grain. One person. STRICT SFW. Clothes on. No nudity. No explicit anatomy. No pornography. No text on the image. Not a celebrity.",
+    "Amateur candid. Film grain. One person. Sexy allowed. Lingerie and bikini allowed. STRICT: no nudity, no explicit anatomy, no pornography, no text on the image, not a celebrity.",
   ]
     .filter(Boolean)
     .join(" ");
@@ -666,7 +746,7 @@ export function pickUnusedStill(candidates: string[], used: string[], faceUrl?: 
 }
 
 export function wantsPicText(text: string) {
-  return /\b(send|show|give).{0,24}\b(pic|pics|photo|photos|selfie|picture|nude|nudes|one)\b|\b(pic|photo|selfie)\s*(please|pls|\?)?|\bdon'?t be shy\b/i.test(
+  return /\b(send|show|give).{0,48}\b(pic|pics|photo|photos|selfie|picture|nude|nudes|one|pose|bikini|lingerie)\b|\b(pic|photo|selfie|bikini|lingerie)\b|\bdon'?t be shy\b|\bin (a )?(bikini|lingerie)\b/i.test(
     String(text || ""),
   );
 }
@@ -677,17 +757,21 @@ export function poseKindFromAsk(text: string): HeatPoseKind {
 
 export function namedPicKind(text: string): HeatPoseKind | null {
   const t = String(text || "").toLowerCase().trim();
+  if (/\bbikini\b/.test(t)) return "bikini";
+  if (/\b(lingerie|lace set|teddy|babydoll|garter)\b/.test(t)) return "lingerie";
   if (/mirror|bathroom/.test(t)) return "mirror";
   if (/\b(couch|sofa)\b/.test(t)) return "couch";
   if (/\b(kitchen|fridge|snack)\b/.test(t)) return "kitchen";
-  if (/\b(outside|street|car|balcony)\b/.test(t)) return "outside";
+  if (/\b(outside|street|car|balcony|beach|pool)\b/.test(t)) return "outside";
   if (/\b(messy|woke|morning|just got up)\b/.test(t)) return "messy";
-  if (/\b(bed|laying|lying|lamp|night)\b/.test(t)) return "night";
+  if (/\b(bed|laying|lying|headboard)\b/.test(t)) return "bed";
+  if (/\b(lamp|night)\b/.test(t)) return "night";
   if (/\b(close-?up|close one|lips)\b/.test(t)) return "close";
   if (/\bselfie\b/.test(t)) return "selfie";
   if (/^(a selfie|selfie|just send it|just send|send it)$/.test(t)) return "selfie";
   if (/^(mirror one|the mirror)$/.test(t)) return "mirror";
   if (/^(the lamp one|lamp one)$/.test(t)) return "night";
+  if (/^(lingerie|the lingerie)$/.test(t)) return "lingerie";
   return null;
 }
 
@@ -706,9 +790,9 @@ export function heatPicBillPlan(extra: number, cost: number, freeLeft: number) {
 
 export const HEAT_PIC_CHIPS = [
   { label: "a selfie", kind: "selfie" as const },
+  { label: "lingerie", kind: "lingerie" as const },
+  { label: "bikini on the bed", kind: "bikini" as const },
   { label: "mirror one", kind: "mirror" as const },
-  { label: "the lamp one", kind: "night" as const },
-  { label: "just send it", kind: "selfie" as const },
 ];
 
 export const HEAT_PIC_OOPS = [

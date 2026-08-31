@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { insistsOnPic, isFadeText, namedPicKind, wantsPicText, type HeatThread } from "@/lib/heat-check";
+import { heatPicSkipCache, insistsOnPic, isFadeText, namedPicKind, wantsPicText, type HeatThread } from "@/lib/heat-check";
 import { lookupCompiledPrompt } from "@/lib/heat-prompt-cache";
 import { cacheRewardPose } from "@/lib/heat-face-cache";
 import {
@@ -269,7 +269,9 @@ export async function POST(req: NextRequest) {
           .map((m) => String((m as { image_url?: string | null }).image_url || ""))
           .filter(Boolean);
         const recent = [...prior.map((m) => String(m.body || "")), text].filter(Boolean).slice(-6);
-        const fast = await deliverHeatPic({
+        const fast = heatPicSkipCache(text)
+          ? null
+          : await deliverHeatPic({
           userId: user.id,
           threadId,
           kind: sendPic,

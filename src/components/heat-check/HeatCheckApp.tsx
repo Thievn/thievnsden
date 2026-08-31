@@ -299,6 +299,10 @@ export function HeatCheckApp() {
 
   const openNight = async (id: string) => {
     if (!id || id === "preview") return false;
+    if (id.startsWith("preview-")) {
+      applyPreview("chat", { setScreen, setThread, setMessages, setTip, setRail, setRecap, setSkin, setTipsByMsg, setOpenTipId, setReceipt });
+      return true;
+    }
     setBusy(true);
     setErr(null);
     try {

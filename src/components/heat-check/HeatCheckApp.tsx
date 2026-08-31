@@ -149,7 +149,7 @@ export function HeatCheckApp() {
   const [companionOn, setCompanionOn] = useState(false);
   const [companionPing, setCompanionPing] = useState<{ nightId: string | null; name: string; line: string } | null>(null);
   const [nights, setNights] = useState<HeatNightCard[]>([]);
-  const [nightsOpen, setNightsOpen] = useState(true);
+  const [pickedNight, setPickedNight] = useState("");
   const camRef = useRef<HTMLInputElement>(null);
   const libRef = useRef<HTMLInputElement>(null);
   const plusIntent = useRef<"mine" | "chat" | "pick">("pick");
@@ -205,6 +205,7 @@ export function HeatCheckApp() {
       const preview = params.get("preview");
       if (preview === "chat" || preview === "tip" || preview === "recap" || preview === "start" || preview === "soon" || preview === "send") {
         applyPreview(preview === "send" ? "chat" : preview, { setScreen, setThread, setMessages, setTip, setRail, setRecap, setSkin, setTipsByMsg, setOpenTipId, setReceipt });
+        if (preview === "start") setNights(PREVIEW_NIGHTS);
         if (preview === "send") {
           setSendingPic(true);
           setPicToast(HEAT_PIC_OOPS[0]);
@@ -259,6 +260,40 @@ export function HeatCheckApp() {
       setNights(rows.filter((n) => n.id && n.id !== "preview"));
     } catch {
       setNights([]);
+    }
+  };
+
+  const deleteNight = async (id: string) => {
+    if (!id || id === "preview") return;
+    const night = nights.find((n) => n.id === id);
+    const name = night?.contact_name || (thread?.id === id ? thread.contact_name : "this night");
+    const pics = night?.pics || (thread?.id === id ? messages.filter((m) => m.image_url).length : 0);
+    const picBit = pics ? ` and ${pics} pic${pics === 1 ? "" : "s"}` : " and its pics";
+    if (!window.confirm(`Delete ${name}${picBit}? This cannot be undone.`)) return;
+    if (id.startsWith("preview")) {
+      setNights((rows) => rows.filter((n) => n.id !== id));
+      setPickedNight("");
+      return;
+    }
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/heat-check/threads/${id}`, { method: "DELETE", headers: await authHeaders() });
+      const data = await readJson(res);
+      if (!res.ok) throw new Error(data.error || "Could not delete that night.");
+      setNights((rows) => rows.filter((n) => n.id !== id));
+      setPickedNight("");
+      if (thread?.id === id) {
+        setThread(null);
+        setMessages([]);
+        setMenu(false);
+        setScreen("start");
+        window.history.replaceState(null, "", "/playground/heat-check");
+      }
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Could not delete that night.");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -762,6 +797,7 @@ export function HeatCheckApp() {
   }
 
   if (screen === "start") {
+    const picked = nights.find((n) => n.id === pickedNight) || null;
     return (
       <Shell>
         <div className="hc-start-hero relative overflow-hidden rounded-[2rem] hc-rim">
@@ -789,93 +825,65 @@ export function HeatCheckApp() {
           </div>
         </div>
 
-        {nights.length ? (
-          <div className="hc-nights">
-            <button type="button" className="hc-nights-head" onClick={() => setNightsOpen((v) => !v)}>
-              <span>
-                <span className="hc-kicker block">Still on the lock screen</span>
-                <span className="text-[12px] text-[#c4a59a]">Pick up a night. Same person. Same pics.</span>
-              </span>
-              <span className="text-[11px] text-[#9a7f76]">{nightsOpen ? "hide" : `${nights.length}`}</span>
-            </button>
-            {nightsOpen ? (
-              <>
-                <label className="hc-nights-pick">
-                  <select
-                    aria-label="Pick up a night"
-                    value=""
-                    disabled={busy}
-                    onChange={(e) => {
-                      const id = e.target.value;
-                      if (id) void openNight(id);
-                    }}
-                  >
-                    <option value="">Pick up a night…</option>
-                    {nights.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        {n.contact_name}
-                        {n.ended ? " · faded" : ""}
-                        {n.last_line ? ` — ${n.last_line}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="hc-nights-faces" role="list">
-                  {nights.slice(0, 10).map((n) => (
-                    <button
-                      key={`face-${n.id}`}
-                      type="button"
-                      role="listitem"
-                      className={cx("hc-nights-face", n.ended && "is-faded")}
-                      disabled={busy}
-                      onClick={() => void openNight(n.id)}
-                    >
-                      {n.contact_face_url || n.last_photo ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={n.contact_face_url || n.last_photo || ""} alt="" />
-                      ) : (
-                        <span>{n.contact_name.slice(0, 1)}</span>
-                      )}
-                      <em>{n.contact_name.split(" ")[0]}</em>
-                    </button>
-                  ))}
-                </div>
-                <div className="hc-nights-list">
-                  {nights.map((n) => (
-                    <button
-                      key={n.id}
-                      type="button"
-                      className="hc-nights-row"
-                      disabled={busy}
-                      onClick={() => void openNight(n.id)}
-                    >
-                      {n.contact_face_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={n.contact_face_url} alt="" className="hc-face hc-face-sm" />
-                      ) : (
-                        <span className="hc-face hc-face-sm grid place-items-center text-[10px] text-[#c4a59a]">
-                          {n.contact_name.slice(0, 1)}
-                        </span>
-                      )}
-                      <span className="min-w-0 flex-1 text-left">
-                        <span className="flex items-center gap-2">
-                          <span className="truncate text-[15px] text-[#fff4ee]">{n.contact_name}</span>
-                          {n.ended ? <span className="hc-nights-tag">faded</span> : <span className="hc-nights-tag is-hot">open</span>}
-                        </span>
-                        <span className="block truncate text-[12px] text-[#9a7f76]">{n.last_line}</span>
-                      </span>
-                      <span className="text-[11px] text-[#7a6660] shrink-0">
-                        {n.pics ? `${n.pics} pic${n.pics === 1 ? "" : "s"}` : n.last_seen_label || ""}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            ) : null}
-          </div>
-        ) : null}
-
         <div className="mt-6 space-y-4">
+          {nights.length ? (
+            <div className="hc-saved">
+              <label className="block">
+                <span className="hc-kicker mb-2 block">Saved night</span>
+                <select
+                  className="hc-select"
+                  aria-label="Saved night"
+                  value={pickedNight}
+                  disabled={busy}
+                  onChange={(e) => {
+                    setErr(null);
+                    setPickedNight(e.target.value);
+                  }}
+                >
+                  <option value="">Start a new night</option>
+                  {nights.map((n) => (
+                    <option key={n.id} value={n.id}>
+                      {n.contact_name}
+                      {n.ended ? " · faded" : ""}
+                      {n.pics ? ` · ${n.pics} pic${n.pics === 1 ? "" : "s"}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {picked ? (
+                <div className="hc-saved-card">
+                  {picked.contact_face_url || picked.last_photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={picked.contact_face_url || picked.last_photo || ""} alt="" className="hc-face hc-face-sm" />
+                  ) : (
+                    <span className="hc-face hc-face-sm grid place-items-center text-[10px] text-[#c4a59a]">
+                      {picked.contact_name.slice(0, 1)}
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] text-[#fff4ee]">{picked.contact_name}</p>
+                    <p className="truncate text-[12px] text-[#9a7f76]">{picked.last_line}</p>
+                  </div>
+                </div>
+              ) : null}
+              {picked ? (
+                <div className="hc-saved-actions">
+                  {err ? <p className="text-sm text-rose-300">{err}</p> : null}
+                  <button type="button" className="hc-cta" disabled={busy} onClick={() => void openNight(picked.id)}>
+                    Continue night
+                  </button>
+                  <button type="button" className="hc-ghost" disabled={busy} onClick={() => void deleteNight(picked.id)}>
+                    Delete night + pics
+                  </button>
+                </div>
+              ) : (
+                <p className="text-[12px] text-[#9a7f76]">Or set who they are and open a new night.</p>
+              )}
+            </div>
+          ) : null}
+
+          {picked ? null : (
+          <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <SelectField label="Who they are" value={look} onChange={(v) => {
               const next = v as HeatLook;
@@ -965,6 +973,8 @@ export function HeatCheckApp() {
             {busy ? "Opening…" : "Open night"}
           </button>
           <p className="text-[12px] leading-relaxed text-[#8a7670] px-1">{HEAT_FADE_HELP}</p>
+          </>
+          )}
         </div>
       </Shell>
     );
@@ -997,7 +1007,7 @@ export function HeatCheckApp() {
               <p className="mt-2 text-[#e8d2c8]">&ldquo;{recap.clean_quote}&rdquo;</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <button type="button" className="hc-cta" onClick={() => { setRecap(null); setThread(null); setMessages([]); setScreen("start"); void loadNights(); }}>
+              <button type="button" className="hc-cta" onClick={() => { setRecap(null); setThread(null); setMessages([]); setPickedNight(""); setScreen("start"); void loadNights(); }}>
                 Again
               </button>
               <button
@@ -1026,7 +1036,7 @@ export function HeatCheckApp() {
       <div className="hc-phone hc-rim" data-skin={skin}>
         <div className="hc-grain" />
         <header className="hc-header">
-          <button type="button" className="text-[#d9c4bb] text-lg px-1" onClick={() => { setScreen("start"); void loadNights(); }} aria-label="Back">
+          <button type="button" className="text-[#d9c4bb] text-lg px-1" onClick={() => { setPickedNight(thread?.id || ""); setScreen("start"); void loadNights(); }} aria-label="Back">
             ‹
           </button>
           <p className="hc-brand">Heat Check</p>
@@ -1041,9 +1051,14 @@ export function HeatCheckApp() {
                 </button>
                 <button type="button" onClick={fadeOut}>End night · recap</button>
                 <button type="button" onClick={() => { setMenu(false); setPicsOpen(true); }}>Pics</button>
-                <button type="button" onClick={() => { setMenu(false); setThread(null); setMessages([]); setNewContact(true); setScreen("start"); }}>
+                <button type="button" onClick={() => { setMenu(false); setThread(null); setMessages([]); setNewContact(true); setPickedNight(""); setScreen("start"); }}>
                   New contact
                 </button>
+                {thread?.id && thread.id !== "preview" ? (
+                  <button type="button" onClick={() => { setMenu(false); void deleteNight(thread.id); }}>
+                    Delete night + pics
+                  </button>
+                ) : null}
               </div>
             )}
           </div>
@@ -1354,6 +1369,37 @@ export function HeatCheckApp() {
 function wait(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
+
+const PREVIEW_NIGHTS: HeatNightCard[] = [
+  {
+    id: "preview-maya",
+    contact_name: "Maya",
+    contact_face_url: null,
+    role: "hookup",
+    heat: "filthy",
+    voice: "mean",
+    ended: false,
+    last_seen_label: "just now",
+    updated_at: new Date().toISOString(),
+    last_line: "you went quiet on me",
+    last_photo: "/heat-check/card.jpg",
+    pics: 3,
+  },
+  {
+    id: "preview-jordan",
+    contact_name: "Jordan",
+    contact_face_url: null,
+    role: "ex",
+    heat: "warm",
+    voice: "soft",
+    ended: true,
+    last_seen_label: "last night",
+    updated_at: new Date().toISOString(),
+    last_line: "sent a pic",
+    last_photo: null,
+    pics: 1,
+  },
+];
 
 function applyPreview(
   kind: string,

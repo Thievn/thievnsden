@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { userFromRequest } from "@/lib/auth-request";
 
+function heatStorageFromUrl(url?: string | null) {
+  const m = String(url || "").match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+?)(?:\?|$)/);
+  if (!m) return null;
+  return { bucket: decodeURIComponent(m[1]), path: decodeURIComponent(m[2]) };
+}
+
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const user = await userFromRequest(req);
   if (!user) return NextResponse.json({ error: "Log in." }, { status: 401 });
@@ -41,15 +47,29 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
   if (!thread) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   const { data: assets } = await supabase.from("heat_assets").select("bucket, path").eq("thread_id", id);
-  for (const a of assets || []) {
-    if (a.bucket && a.path) await supabase.storage.from(a.bucket).remove([a.path]);
+  const { data: pics } = await supabase.from("heat_messages").select("image_url").eq("thread_id", id).not("image_url", "is", null);
+  const files = new Map<string, Set<string>>();
+  const addFile = (bucket: string | null | undefined, path: string | null | undefined) => {
+    if (!bucket || !path) return;
+    const set = files.get(bucket) || new Set<string>();
+    set.add(path);
+    files.set(bucket, set);
+  };
+  for (const a of assets || []) addFile(a.bucket, a.path);
+  for (const row of pics || []) {
+    const parsed = heatStorageFromUrl(row.image_url);
+    if (parsed && parsed.bucket !== "heat-faces") addFile(parsed.bucket, parsed.path);
   }
   if (thread.user_photo_path) {
-    await supabase.storage.from("heat-uploads").remove([thread.user_photo_path]);
-    await supabase.storage.from("heat-faces").remove([thread.user_photo_path]);
+    addFile("heat-uploads", thread.user_photo_path);
+    addFile("heat-faces", thread.user_photo_path);
+  }
+  for (const [bucket, paths] of files) {
+    await supabase.storage.from(bucket).remove([...paths]);
   }
   await supabase.from("heat_assets").delete().eq("thread_id", id);
   await supabase.from("heat_tips").delete().eq("thread_id", id);
+  await supabase.from("heat_saves").delete().eq("thread_id", id);
   await supabase.from("heat_messages").delete().eq("thread_id", id);
   await supabase.from("heat_threads").delete().eq("id", id).eq("user_id", user.id);
   return NextResponse.json({ ok: true });

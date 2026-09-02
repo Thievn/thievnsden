@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 import { PLAYGROUND_GAMES, type PlaygroundGameId } from "@/lib/playground-games";
 
 type ArtMap = Record<string, { url?: string; updated_at?: string }>;
+type GrabRow = { id: string; username: string; score: number; created_at: string };
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
+}
 
 export function PlaygroundArtTab() {
   const [art, setArt] = useState<ArtMap>({});
@@ -11,6 +19,8 @@ export function PlaygroundArtTab() {
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [grabLive, setGrabLive] = useState(true);
+  const [grabRows, setGrabRows] = useState<GrabRow[]>([]);
 
   const load = async () => {
     const res = await fetch("/api/admin/playground-art");
@@ -18,8 +28,17 @@ export function PlaygroundArtTab() {
     setArt(data.art || {});
   };
 
+  const loadGrab = async () => {
+    const res = await fetch("/api/admin/night-grab", { headers: await authHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    setGrabLive(data.live !== false);
+    setGrabRows(data.rows || []);
+  };
+
   useEffect(() => {
     load();
+    loadGrab();
   }, []);
 
   const shoot = async (id?: PlaygroundGameId) => {
@@ -104,6 +123,49 @@ export function PlaygroundArtTab() {
             </div>
           );
         })}
+      </div>
+
+      <div className="rounded-2xl border border-neutral-800 bg-[#111] p-5 space-y-3">
+        <p className="text-[11px] uppercase tracking-[0.18em] text-teal-300/80">Night Grab</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={async () => {
+              const res = await fetch("/api/admin/night-grab", {
+                method: "POST",
+                headers: await authHeaders(),
+                body: JSON.stringify({ live: !grabLive }),
+              });
+              const data = await res.json();
+              if (res.ok) setGrabLive(data.live !== false);
+            }}
+            className="px-3 py-1.5 rounded-lg text-xs border border-teal-800/50 text-teal-100"
+          >
+            {grabLive ? "Live" : "Dark"}
+          </button>
+        </div>
+        <div className="space-y-1 max-h-56 overflow-y-auto">
+          {grabRows.map((r) => (
+            <div key={r.id} className="flex items-center justify-between gap-2 text-xs text-neutral-400">
+              <span className="truncate">{r.username} · {r.score}</span>
+              <button
+                type="button"
+                onClick={async () => {
+                  const res = await fetch("/api/admin/night-grab", {
+                    method: "POST",
+                    headers: await authHeaders(),
+                    body: JSON.stringify({ deleteId: r.id }),
+                  });
+                  const data = await res.json();
+                  if (res.ok) setGrabRows(data.rows || []);
+                }}
+                className="text-[10px] text-neutral-500 border border-neutral-800 rounded px-2 py-0.5"
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

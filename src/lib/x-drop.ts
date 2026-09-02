@@ -28,6 +28,13 @@ export const DROP_FEATURES = [
     section: "Highway Hunter",
   },
   {
+    id: "nightgrab",
+    label: "Night Grab",
+    line: "Sixty seconds. Grab the bag.",
+    path: "/playground/night-grab",
+    section: "Night Grab",
+  },
+  {
     id: "den",
     label: "The Den",
     line: "Mature themes. Dark humor. Enter.",
@@ -39,5 +46,5 @@ export const DROP_FEATURES = [
 export type DropFeatureId = (typeof DROP_FEATURES)[number]["id"];
 
 export function dropFeature(id: string) {
-  return DROP_FEATURES.find((f) => f.id === id) || DROP_FEATURES[4];
+  return DROP_FEATURES.find((f) => f.id === id) || DROP_FEATURES.find((f) => f.id === "den")!;
 }

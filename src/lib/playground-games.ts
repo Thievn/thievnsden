@@ -2,6 +2,7 @@ export type PlaygroundGameId =
   | "face-the-den"
   | "would-you-rather"
   | "highway-hunter"
+  | "night-grab"
   | "heat-check"
   | "den-arena";
 
@@ -65,6 +66,20 @@ export const PLAYGROUND_GAMES: PlaygroundGame[] = [
     homeEnter: "Take the on-ramp →",
   },
   {
+    id: "night-grab",
+    href: "/playground/night-grab",
+    title: "Night Grab",
+    tag: "Live",
+    line: "Sixty seconds. Grab the bag. Don’t get clocked.",
+    homeLine: "Sixty seconds. Grab the bag. Don’t get clocked.",
+    accent: "from-teal-500/16 via-emerald-900/10 to-transparent",
+    chip: "border-teal-400/45 text-teal-100",
+    homeBorder: "border-teal-900/40",
+    homeKicker: "text-teal-300/85",
+    homeCta: "text-teal-300",
+    homeEnter: "Take the bag →",
+  },
+  {
     id: "heat-check",
     href: "/playground/heat-check",
     title: "Heat Check",
@@ -101,6 +116,7 @@ export const PLAYGROUND_ART_PROMPTS: Record<PlaygroundGameId, string> = {
   "face-the-den": `${SHARED} Scene: a crimson velvet judgment booth in near-dark, unfocused vanity bulbs as rose bokeh, a chair silhouette facing away, faint smoke, analog film. Accent: blood rose.`,
   "would-you-rather": `${SHARED} Scene: empty late-night game-show floor split by two pools of light, violet left and amber right, glossy black stage, no host, no crowd. Accent: split neon.`,
   "highway-hunter": `${SHARED} Scene: wet night interstate from a low hood angle, orange sodium lamps, rain streaks, distant headlights as bokeh, empty road. Accent: sodium orange.`,
+  "night-grab": `${SHARED} Scene: dark office at night from a high angle, empty desks, one teal EXIT glow down a hall, no people, dust in a flashlight beam, film grain. Accent: teal mint.`,
   "heat-check": `${SHARED} Scene: intimate late-night bar booth, two adults close in warm amber light, faces turned away, phone face-down, condensation on glass. Photograph only. Absolutely no letters, words, titles, logos, circles, or graphic overlays. Accent: ember.`,
   "den-arena": `${SHARED} Scene: unused circular pit in a dark den, one cold spotlight on dust, empty ropes in shadow, waiting. Accent: cool steel.`,
 };

@@ -227,15 +227,25 @@ export function NightGrab() {
       const ex = def.extract.x - ox;
       const ey = def.extract.y - oy;
       ctx.save();
-      ctx.shadowColor = "rgba(45,212,191,0.7)";
-      ctx.shadowBlur = 16;
-      ctx.fillStyle = "#2dd4bf";
-      ctx.fillRect(ex - 10, ey - 16, 20, 32);
+      ctx.shadowColor = "rgba(45,212,191,0.85)";
+      ctx.shadowBlur = 22 + Math.sin(ts / 180) * 8;
+      ctx.fillStyle = "#5eead4";
+      ctx.fillRect(ex - 12, ey - 18, 24, 36);
       ctx.restore();
       ctx.fillStyle = "#042f2e";
-      ctx.font = "8px sans-serif";
+      ctx.font = "800 9px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("OUT", ex, ey + 3);
+
+      if (run.bag.length) {
+        const ang = Math.atan2(def.extract.y - run.y, def.extract.x - run.x);
+        const px = w / 2 + Math.cos(ang) * Math.min(w, h) * 0.38;
+        const py = h / 2 + Math.sin(ang) * Math.min(w, h) * 0.32;
+        ctx.fillStyle = "rgba(45,212,191,0.7)";
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       if (def.powerBox && !run.powerUsed) {
         ctx.fillStyle = "#64748b";

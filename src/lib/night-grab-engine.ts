@@ -234,46 +234,8 @@ function grabRadius(run: NightRun) {
   return run.loadout === "fast-hands" ? 34 : 22;
 }
 
-function interact(run: NightRun) {
+function tryPickup(run: NightRun) {
   const r = grabRadius(run);
-  if (run.dropped && dist(run.x, run.y, run.dropped.x, run.dropped.y) < r + 8) {
-    run.bag = [...run.bag, ...run.dropped.items];
-    run.bagPeak = Math.max(run.bagPeak, run.bag.length);
-    run.dropped = null;
-    run.events.push("grab");
-    return;
-  }
-  if (run.floor.powerBox && !run.powerUsed && dist(run.x, run.y, run.floor.powerBox.x, run.floor.powerBox.y) < r + 4) {
-    run.powerUsed = true;
-    run.camerasDead = POWER_BOX_SECONDS;
-    run.events.push("grab");
-    return;
-  }
-  if (run.floor.vent && run.crawl <= 0 && dist(run.x, run.y, run.floor.vent.x, run.floor.vent.y) < r + 6) {
-    run.crawl = VENT_SECONDS;
-    run.crawlTo = { ...run.floor.vent.to };
-    run.t = Math.max(0, run.t - 1);
-    return;
-  }
-  const extract = run.floor.extract;
-  if (dist(run.x, run.y, extract.x, extract.y) < r + 10) {
-    if (run.bag.length) {
-      const val = bagValue(run.bag);
-      if (run.bag.includes("phone")) run.deadPhoneExtracted = true;
-      run.extractedValue += val;
-      run.extractedTimes += 1;
-      if (run.firstExtractElapsed === null) run.firstExtractElapsed = RUN_SECONDS - run.t;
-      run.bag = [];
-      run.flash = 0.28;
-      bumpCombo(run);
-      run.events.push("extract");
-      return;
-    }
-    if (run.extractedTimes >= 1) {
-      run.ended = true;
-      return;
-    }
-  }
   for (const item of run.loot) {
     if (item.taken) continue;
     if (item.locked && !run.unlocked) continue;
@@ -302,6 +264,36 @@ function interact(run: NightRun) {
     }
     bumpCombo(run);
     return;
+  }
+}
+
+function interact(run: NightRun) {
+  const r = grabRadius(run);
+  if (run.dropped && dist(run.x, run.y, run.dropped.x, run.dropped.y) < r + 8) {
+    run.bag = [...run.bag, ...run.dropped.items];
+    run.bagPeak = Math.max(run.bagPeak, run.bag.length);
+    run.dropped = null;
+    run.events.push("grab");
+    return;
+  }
+  tryPickup(run);
+  if (run.floor.powerBox && !run.powerUsed && dist(run.x, run.y, run.floor.powerBox.x, run.floor.powerBox.y) < r + 4) {
+    run.powerUsed = true;
+    run.camerasDead = POWER_BOX_SECONDS;
+    run.events.push("grab");
+    return;
+  }
+  if (run.floor.vent && run.crawl <= 0 && dist(run.x, run.y, run.floor.vent.x, run.floor.vent.y) < r + 6) {
+    run.crawl = VENT_SECONDS;
+    run.crawlTo = { ...run.floor.vent.to };
+    run.t = Math.max(0, run.t - 1);
+    return;
+  }
+  const extract = run.floor.extract;
+  if (dist(run.x, run.y, extract.x, extract.y) < r + 16) {
+    if (run.extractedTimes >= 1 && run.bag.length === 0) {
+      run.ended = true;
+    }
   }
 }
 
@@ -339,7 +331,7 @@ export function stepRun(run: NightRun, dt: number, input: Input): NightRun {
       run.crawlTo = null;
     }
   } else if (run.stun <= 0) {
-    let speed = 102;
+    let speed = 124;
     if (input.sneak) speed *= run.loadout === "long-lungs" ? 0.78 : 0.52;
     const taxAt = run.loadout === "deep-pockets" ? DEEP_POCKETS_AT : BAG_SLOW_AT;
     if (run.bag.length >= taxAt) speed *= 0.86;
@@ -360,7 +352,7 @@ export function stepRun(run: NightRun, dt: number, input: Input): NightRun {
     run.smokeUsed = true;
     run.smoke = SMOKE_SECONDS;
   }
-  if (run.bag.length && dist(run.x, run.y, run.floor.extract.x, run.floor.extract.y) < grabRadius(run) + 10) {
+  if (run.bag.length && dist(run.x, run.y, run.floor.extract.x, run.floor.extract.y) < grabRadius(run) + 16) {
     const val = bagValue(run.bag);
     if (run.bag.includes("phone")) run.deadPhoneExtracted = true;
     run.extractedValue += val;
@@ -371,6 +363,7 @@ export function stepRun(run: NightRun, dt: number, input: Input): NightRun {
     bumpCombo(run);
     run.events.push("extract");
   }
+  if (run.stun <= 0 && run.crawl <= 0 && !input.dump) tryPickup(run);
   if (input.grab && run.stun <= 0 && run.crawl <= 0) interact(run);
 
   const tile = tileAt(run.floor, run.x, run.y);

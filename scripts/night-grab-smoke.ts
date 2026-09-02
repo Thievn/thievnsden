@@ -42,6 +42,11 @@ for (const id of FLOOR_ORDER) {
   assert(f.vent, `${id} vent`);
   assert(f.extract && f.spawn, `${id} spawn extract`);
   assert(f.tiles.some((row) => row.includes("noise")), `${id} noise`);
+  for (const item of f.loot) {
+    const tx = Math.floor(item.x / TILE);
+    const ty = Math.floor(item.y / TILE);
+    assert(f.tiles[ty][tx] !== "wall", `${id} loot ${item.id} in wall`);
+  }
   assert(TILE === 32, "tile");
 }
 
@@ -112,5 +117,16 @@ assert(smoke.smoke > 1 && smoke.smokeUsed, "smoke puff");
 const sc = scorecard(run);
 assert(sc.total === finalScore(run.extractedValue, run.comboPeak, run.t, run.extractedTimes).total, "scorecard");
 assert(sc.roast.length > 8, "roast");
+
+const bot = createRun("offices", "fast-hands");
+const cash = bot.loot.find((l) => l.kind === "cash")!;
+for (let i = 0; i < 400 && !bot.ended; i++) {
+  const target = bot.bag.length ? bot.floor.extract : cash;
+  const ax = target.x - bot.x;
+  const ay = target.y - bot.y;
+  const m = Math.hypot(ax, ay) || 1;
+  stepRun(bot, 0.05, { ax: ax / m, ay: ay / m, sneak: true, grab: i % 12 === 0, dump: false, smoke: false });
+}
+assert(bot.extractedTimes >= 1 && bot.extractedValue > 0, "bot banks on offices");
 
 console.log("night-grab smoke ok");

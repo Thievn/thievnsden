@@ -196,6 +196,9 @@ Three complete, paste-ready posts. Different angles. All smart. One may be filth
       post_id: null as string | null,
       url: null as string | null,
       recipe,
+      status: "draft",
+      approved: false,
+      post_type: String(body.post_type || "thought").slice(0, 16),
     };
 
     const current = currentId ? storedPosts.find((item) => item.id === currentId) : null;
@@ -208,7 +211,7 @@ Three complete, paste-ready posts. Different angles. All smart. One may be filth
     if (updateExisting) {
       const { data, error } = await supabase
         .from("x_posts")
-        .update({ body: row.body, body_norm: row.body_norm, recipe })
+        .update({ body: row.body, body_norm: row.body_norm, recipe, status: "draft" })
         .eq("id", currentId)
         .select("id")
         .maybeSingle();

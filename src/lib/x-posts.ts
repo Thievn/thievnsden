@@ -9,6 +9,11 @@ export type XPostRow = {
   metrics: Record<string, number>;
   recipe?: Record<string, unknown> | null;
   created_at: string;
+  media_urls?: string[] | null;
+  zernio_post_id?: string | null;
+  scheduled_for?: string | null;
+  status?: string;
+  approved?: boolean;
 };
 
 export type DupHit = {

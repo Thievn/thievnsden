@@ -190,9 +190,16 @@ export function directorMessages(input: {
   topic?: string;
   guide?: string;
   art: XThoughtArt;
-  aspect: "16:9" | "9:16";
+  aspect: string;
 }) {
-  const shape = input.aspect === "9:16" ? "tall 9:16 phone frame" : "wide 16:9 landscape";
+  const shape =
+    input.aspect === "9:16"
+      ? "tall 9:16 phone frame"
+      : input.aspect === "1:1"
+        ? "square 1:1 frame"
+        : input.aspect === "4:5"
+          ? "tall 4:5 portrait frame"
+          : "wide 16:9 landscape";
   const guide = input.guide?.trim();
   const system = `You are an art director for X images. You write ONE original picture prompt that illustrates a specific post.
 Return a single image-generation prompt, 70 to 110 words, one paragraph, no quotes, no markdown.
@@ -224,11 +231,18 @@ Adult-ok, not pornographic. No logos, no readable text, no UI, no watermarks.`;
 export function assembleXThoughtImagePrompt(input: {
   scene: string;
   art: XThoughtArt;
-  aspect: "16:9" | "9:16";
+  aspect: string;
   gist: string;
   guide?: string;
 }) {
-  const shape = input.aspect === "9:16" ? "tall 9:16 phone portrait" : "wide 16:9 landscape";
+  const shape =
+    input.aspect === "9:16"
+      ? "tall 9:16 phone portrait"
+      : input.aspect === "1:1"
+        ? "square 1:1"
+        : input.aspect === "4:5"
+          ? "tall 4:5 portrait"
+          : "wide 16:9 landscape";
   const scene = input.scene.replace(/\s+/g, " ").trim();
   const guide = input.guide?.trim();
   return [
@@ -264,7 +278,7 @@ export async function inventXThoughtScene(input: {
   topic?: string;
   guide?: string;
   art: XThoughtArt;
-  aspect: "16:9" | "9:16";
+  aspect: string;
   apiKey: string;
 }): Promise<string | null> {
   const { system, user } = directorMessages(input);

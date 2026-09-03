@@ -10,6 +10,7 @@ import {
   thoughtGist,
   guidedArt,
 } from "@/lib/x-thought-image";
+import { STUDIO_ASPECTS, STUDIO_LOOKS, type StudioAspect } from "@/lib/x-studio";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -25,14 +26,20 @@ export async function POST(req: NextRequest) {
     const post = String(body.post || body.seed || "").trim();
     const seed = String(body.seed || "").trim();
     const guide = String(body.guide || body.pic || body.prompt || "").trim();
-    const aspect: "16:9" | "9:16" = body.aspect === "9:16" ? "9:16" : "16:9";
+    const aspectRaw = String(body.aspect || "16:9");
+    const aspect = (STUDIO_ASPECTS.includes(aspectRaw as StudioAspect) ? aspectRaw : "16:9") as StudioAspect;
+    const lookId = String(body.look || body.style || "");
     if (!post && !topic && !seed && !guide) return jsonError("Draft or pic direction first", 400);
 
     const apiKey = process.env.XAI_API_KEY;
     if (!apiKey) return jsonError("XAI_API_KEY missing");
 
     const gist = thoughtGist(post, seed) || topic?.label || guide || "a human thought";
-    const art = guidedArt(rollXThoughtArt(), guide);
+    const look = STUDIO_LOOKS.find((l) => l.id === lookId);
+    let art = guidedArt(rollXThoughtArt(), guide);
+    if (look) {
+      art = { ...art, style: { id: look.id, label: look.label, line: look.line } };
+    }
     const brief = { gist, topic: topic?.label, guide, art, aspect };
     const scene = (await inventXThoughtScene({ ...brief, apiKey }).catch(() => null)) || localScene(brief);
     const prompt = assembleXThoughtImagePrompt({ scene, art, aspect, gist, guide });

@@ -39,24 +39,28 @@ export async function loadCadence() {
 }
 
 export async function studioStatus(row: CadenceRow) {
-  const envKey = Boolean(process.env.ZERNIO_API_KEY);
+  const envKey = Boolean((process.env.ZERNIO_API_KEY || "").trim());
   const key = zernioKeyFrom(row);
-  const accountId = zernioAccountFrom(row);
+  const preferred = zernioAccountFrom(row);
   let handle = "";
-  let ready: "ready" | "missing key" | "missing account" = !key ? "missing key" : !accountId ? "missing account" : "ready";
+  let accountId = preferred;
+  let ready: "ready" | "missing key" | "missing account" | "key rejected" | "zernio down" = !key
+    ? "missing key"
+    : "missing account";
   if (key) {
     try {
       const accounts = await zernioAccounts(key);
-      const tw = twitterAccount(accounts, accountId);
+      const tw = twitterAccount(accounts, preferred);
       if (tw) {
         handle = tw.username || tw.handle || "";
-        if (!accountId) ready = "missing account";
-        else ready = "ready";
-      } else if (key) {
-        ready = accountId ? "missing account" : "missing account";
+        accountId = tw.id || preferred;
+        ready = "ready";
+      } else {
+        ready = "missing account";
       }
-    } catch {
-      if (!key) ready = "missing key";
+    } catch (err) {
+      const status = (err as Error & { status?: number }).status;
+      ready = status === 401 || status === 403 ? "key rejected" : "zernio down";
     }
   }
   return {

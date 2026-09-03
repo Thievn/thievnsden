@@ -91,10 +91,20 @@ export async function zernioPublish(input: ZernioPublishInput): Promise<ZernioPu
   };
 }
 
+function normHandle(value: string) {
+  return value.replace(/^@/, "").trim().toLowerCase();
+}
+
 export function twitterAccount(accounts: ZernioAccount[], preferredId?: string) {
-  if (preferredId) {
-    const hit = accounts.find((a) => a.id === preferredId);
-    if (hit) return hit;
+  const want = (preferredId || "").trim();
+  if (want) {
+    const byId = accounts.find((a) => a.id === want);
+    if (byId) return byId;
+    const handle = normHandle(want);
+    const byHandle = accounts.find(
+      (a) => normHandle(a.username || "") === handle || normHandle(a.handle || "") === handle
+    );
+    if (byHandle) return byHandle;
   }
   return accounts.find((a) => a.platform === "twitter" || a.platform === "x") || accounts[0] || null;
 }

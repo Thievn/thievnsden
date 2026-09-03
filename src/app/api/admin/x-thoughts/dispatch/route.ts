@@ -77,8 +77,8 @@ export async function POST(req: NextRequest) {
 
   const { data: thoughts } = await supabase.from("den_thoughts").select("id, title, excerpt").limit(40);
   const key = zernioKeyFrom(row);
-  const accountId = zernioAccountFrom(row);
   const z = await studioStatus(row);
+  const accountId = z.account_id || zernioAccountFrom(row);
   const logs: string[] = [];
   let ran = 0;
 

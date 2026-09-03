@@ -10,6 +10,7 @@ import {
   zernioScheduleStamp,
 } from "../src/lib/x-studio";
 import { parseXTrio, sprinkleEmotes } from "../src/lib/x-thoughts";
+import { twitterAccount } from "../src/lib/zernio";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) throw new Error(msg);
@@ -33,5 +34,14 @@ assert(up.length === 4, "upcoming " + up.length);
 const trio = parseXTrio('{"dry":"ice","mean":"cut","unhinged":"filth","pick":"mean"}');
 assert(trio.pick === "mean", "trio intact");
 assert(sprinkleEmotes("line", "💀").includes("💀"), "emotes intact");
+const tw = twitterAccount(
+  [
+    { id: "acc1", platform: "twitter", username: "@Thievn", handle: "Thievn" },
+    { id: "acc2", platform: "instagram", username: "other" },
+  ],
+  "Thievn"
+);
+assert(tw?.id === "acc1", "match handle");
+assert(twitterAccount([{ id: "only", platform: "twitter", username: "Thievn" }])?.id === "only", "fallback twitter");
 
 console.log("x-studio smoke ok");

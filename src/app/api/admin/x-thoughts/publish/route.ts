@@ -31,9 +31,21 @@ export async function POST(req: NextRequest) {
   const { supabase, row, cadence } = await loadCadence();
   const status = await studioStatus(row);
   const key = zernioKeyFrom(row);
-  const accountId = zernioAccountFrom(row);
-  if (!key || !accountId) {
-    return NextResponse.json({ error: status.ready === "missing key" ? "Connect first." : "Pick the X account." }, { status: 400 });
+  const accountId = status.account_id || zernioAccountFrom(row);
+  if (!key) {
+    return NextResponse.json(
+      { error: "Add ZERNIO_API_KEY on Vercel Production, then Redeploy. X_BEARER_TOKEN is only the read sync." },
+      { status: 400 }
+    );
+  }
+  if (!accountId || status.ready !== "ready") {
+    const why =
+      status.ready === "key rejected"
+        ? "Zernio rejected the key."
+        : status.ready === "zernio down"
+          ? "Zernio did not answer."
+          : "Connect the X account in Zernio, or paste the account id.";
+    return NextResponse.json({ error: why }, { status: 400 });
   }
 
   let draft: any = null;

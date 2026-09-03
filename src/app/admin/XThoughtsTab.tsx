@@ -186,7 +186,14 @@ export function XThoughtsTab() {
   const [handle, setHandle] = useState("Thievn");
   const [queueAt, setQueueAt] = useState("");
   const [cadence, setCadence] = useState<Cadence>(defaultCadence());
-  const [zernio, setZernio] = useState<{ ready: string; handle: string; has_key: boolean; key_hint: string; account_id: string } | null>(null);
+  const [zernio, setZernio] = useState<{
+    ready: string;
+    handle: string;
+    has_key: boolean;
+    key_from_env?: boolean;
+    key_hint: string;
+    account_id: string;
+  } | null>(null);
   const [spendCap, setSpendCap] = useState<number | "">("");
   const [keyDraft, setKeyDraft] = useState("");
   const [accountDraft, setAccountDraft] = useState("");
@@ -220,7 +227,19 @@ export function XThoughtsTab() {
       .then((d) => setRows(d.rows || []))
       .catch(() => {});
     loadLedger().catch(() => {});
-    loadStudio().catch(() => {});
+    let alive = true;
+    const boot = async () => {
+      await supabase.auth.getSession();
+      if (alive) await loadStudio();
+    };
+    void boot();
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      if (alive) void loadStudio();
+    });
+    return () => {
+      alive = false;
+      data.subscription.unsubscribe();
+    };
   }, []);
 
   const shown = ledger.filter((row) => {
@@ -543,7 +562,7 @@ export function XThoughtsTab() {
   const field = "w-full px-3 py-2 rounded-lg bg-[#0a0a0a] border border-neutral-800 text-sm";
   const tweak = "px-3 py-2 rounded-lg border border-neutral-700 text-xs disabled:opacity-40";
   const zLabel = zernio?.handle ? `@${zernio.handle}` : handle;
-  const zState = zernio?.ready || "missing key";
+  const zState = zernio?.ready || "checking";
 
   const upcoming = useMemo(() => upcomingSlots(cadence), [cadence]);
 
@@ -906,11 +925,17 @@ export function XThoughtsTab() {
 
           <div className="rounded-2xl border border-neutral-800 bg-[#111] p-4 space-y-3">
             <p className="text-sm text-neutral-100">Send layer</p>
+            <p className="text-[11px] text-neutral-500">
+              Production needs <span className="text-neutral-300">ZERNIO_API_KEY</span>
+              {zernio?.key_from_env ? " (this deploy has it)" : " (this deploy does not see it yet)"}
+              . Account id can be the Zernio id or @Thievn. <span className="text-neutral-300">X_BEARER_TOKEN</span> is only for Sync.
+              After adding env on Vercel, Redeploy Production.
+            </p>
             <input
               value={keyDraft}
               onChange={(e) => setKeyDraft(e.target.value)}
               className={field}
-              placeholder={zernio?.key_hint ? `Key ${zernio.key_hint}` : "API key"}
+              placeholder={zernio?.key_hint ? `Key ${zernio.key_hint}` : "Paste Zernio key if not using env"}
               type="password"
               autoComplete="off"
             />
@@ -918,7 +943,7 @@ export function XThoughtsTab() {
               value={accountDraft}
               onChange={(e) => setAccountDraft(e.target.value)}
               className={field}
-              placeholder="X account id"
+              placeholder="ZERNIO_X_ACCOUNT_ID or @Thievn"
             />
             <input
               value={spendCap}

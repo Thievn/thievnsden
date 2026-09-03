@@ -84,6 +84,38 @@ export async function POST(req: NextRequest) {
     const currentId = String(body.id || "").trim();
     const text = String(body.body || "").trim();
     const rawUrl = String(body.url || "").trim();
+
+    if (action === "save") {
+      if (!currentId) return NextResponse.json({ error: "No draft." }, { status: 400 });
+      const patch: Record<string, unknown> = {};
+      if (text) {
+        patch.body = text;
+        patch.body_norm = normalizePost(text);
+      }
+      if (Array.isArray(body.media_urls)) patch.media_urls = body.media_urls;
+      if (typeof body.aspect === "string") patch.aspect = body.aspect;
+      if (typeof body.post_type === "string") patch.post_type = body.post_type;
+      if (typeof body.approved === "boolean") patch.approved = body.approved;
+      if (typeof body.status === "string") patch.status = body.status;
+      if (body.scheduled_for === null || typeof body.scheduled_for === "string") patch.scheduled_for = body.scheduled_for;
+      const { data, error } = await supabase.from("x_posts").update(patch).eq("id", currentId).select("*").maybeSingle();
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ row: data });
+    }
+
+    if (action === "skip") {
+      const skipId = String(body.id || "").trim();
+      if (!skipId) return NextResponse.json({ error: "No row." }, { status: 400 });
+      const { data, error } = await supabase
+        .from("x_posts")
+        .update({ status: "skipped", fail_reason: "skipped" })
+        .eq("id", skipId)
+        .select("*")
+        .maybeSingle();
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ row: data });
+    }
+
     const postId = parseStatusId(rawUrl) || parseStatusId(text);
     if (!text && !postId && !currentId) {
       return NextResponse.json({ error: "Paste the post text or an X status link." }, { status: 400 });

@@ -155,7 +155,10 @@ export async function GET(req: NextRequest) {
         desk = buildDesk({ ...tables, now });
       }
     } catch (error) {
-      console.error(publicDeskError(error));
+      const detail = error instanceof Error && "detail" in error
+        ? String((error as { detail?: unknown }).detail ?? "").slice(0, 180)
+        : "";
+      console.error("vault desk", error instanceof Error ? error.message : "error", detail);
       deskError = publicDeskError(error);
     }
   }

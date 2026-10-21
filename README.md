@@ -26,14 +26,14 @@ No password is stored in the repo. The existing Supabase project behind the prev
 
 ### Environment variables
 
-Set these in Vercel for **Production** before the private door will open there. All three are server-only. Do not prefix them with `NEXT_PUBLIC_`.
+The public page loads with no secrets. The private door stays shut until these three are set. All of them are server-only. Do not prefix them with `NEXT_PUBLIC_`.
 
-| Name | Purpose |
-| --- | --- |
-| `DEN_OWNER_EMAIL` | The one account. Matched without case sensitivity. |
-| `DEN_OWNER_PASSWORD` | Passphrase, at least 10 characters. Keep it long and unique. |
-| `SESSION_SECRET` | HMAC key for the session cookie, at least 32 characters. `openssl rand -base64 48` |
+| Name | Secret | Purpose |
+| --- | --- | --- |
+| `DEN_OWNER_EMAIL` | No | The one account. Matched without case sensitivity. |
+| `DEN_OWNER_PASSWORD` | Yes | The passphrase itself, at least 10 characters. Not a hash. |
+| `SESSION_SECRET` | Yes | HMAC key for the session cookie, at least 32 characters. `openssl rand -base64 48` |
 
-Preview and production are separate. A preview deployment will not open the door until the same three names exist on the Preview environment. If any of them is missing or too short, sign-in fails closed and the public page still loads.
+Set them for **Production** before that door will open. Preview is a separate environment, so a preview deployment needs the same three names on Preview or sign-in fails closed.
 
-Mark the password and session secret as sensitive in Vercel.
+`XAI_API_KEY` is already set on this Vercel project for production and preview. This foundation does not read it. If a later server route uses it, keep it server-only and never copy it into a `NEXT_PUBLIC_` variable.

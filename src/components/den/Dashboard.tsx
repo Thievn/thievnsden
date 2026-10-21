@@ -60,12 +60,15 @@ export function Dashboard({ ownerName }: { ownerName: string | null }) {
         <p className="welcome">
           Welcome back{ownerName ? <>, <span className="signed-name">{ownerName}</span></> : null}
         </p>
-        <a className="attic-pin" href="/attic" aria-label="Den's Attic">
+        <div className="den-pins">
+          <a className="desk-pin" href="/desk">Desks</a>
+          <a className="attic-pin" href="/attic" aria-label="Den's Attic">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
             <path d="M4 20h16M7 20V10.5L12 6l5 4.5V20" fill="none" stroke="currentColor" strokeWidth="1.4" />
             <path d="M10.5 20v-4h3v4" fill="none" stroke="currentColor" strokeWidth="1.4" />
           </svg>
-        </a>
+          </a>
+        </div>
       </header>
 
       <nav className="den-nav" aria-label="Sections">

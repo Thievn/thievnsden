@@ -56,5 +56,7 @@ test("the public page does not mention the desk", () => {
   for (const file of files) {
     const text = readFileSync(new URL(file, import.meta.url), "utf8");
     assert.equal(banned.test(text), false, file);
+    assert.equal(text.includes("/desk"), false, file);
+    assert.equal(/binance|coinbase/i.test(text), false, file);
   }
 });

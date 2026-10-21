@@ -74,6 +74,18 @@ export function shortDay(day: string): string {
   return `${Number(month)}/${Number(date)}`;
 }
 
+export function deskWhen(iso: string): string {
+  const date = new Date(iso);
+  if (!Number.isFinite(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export function nyClock(iso: string): string {
   return new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",

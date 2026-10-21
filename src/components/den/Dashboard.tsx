@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { VaultDesk } from "./VaultDesk";
 
 const ROOMS = [
   {
@@ -82,7 +83,7 @@ export function Dashboard() {
         </form>
       </nav>
 
-      <div className="den-stage">
+      <div className={room === "vault" ? "den-stage is-desk" : "den-stage"}>
         {ROOMS.map((item) => (
           <section
             key={item.id}
@@ -90,12 +91,15 @@ export function Dashboard() {
             role="tabpanel"
             aria-labelledby={`tab-${item.id}`}
             hidden={room !== item.id}
-            className="room"
+            className={item.id === "vault" ? "vault-hold" : "room"}
           >
-            <p className="eyebrow">{item.kicker}</p>
-            <h1>{item.label}</h1>
-            <p>{item.body}</p>
-            {item.id === "vault" ? <div className="sealed-mark" aria-hidden="true" /> : null}
+            {item.id === "vault" ? <VaultDesk /> : (
+              <>
+                <p className="eyebrow">{item.kicker}</p>
+                <h1>{item.label}</h1>
+                <p>{item.body}</p>
+              </>
+            )}
             {item.id === "ledger" ? (
               <div className="ruled" aria-hidden="true">
                 <span />

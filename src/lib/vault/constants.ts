@@ -1,0 +1,10 @@
+export const TICKET_USD = 25;
+export const MAX_OPEN = 4;
+export const ROOM_USD = MAX_OPEN * TICKET_USD;
+export const DAILY_LOSS_HALT_USD = 50;
+export const DEFAULT_MAX_TRANSFER_SOL = 2;
+export const TRANSFER_FEE_LAMPORTS = 5_000;
+export const CONFIRM_WORD = "CONFIRM";
+export const SOL_MINT = "So11111111111111111111111111111111111111112";
+export const EXAMPLE_SOL_USD = 148.2;
+export const HISTORY_LIMIT = 120;

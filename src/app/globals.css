@@ -672,25 +672,49 @@ button, input { font: inherit; color: inherit; }
 
 .den-top {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
   padding: calc(1.3rem + env(safe-area-inset-top)) 1.25rem 0.2rem;
 }
 
+.den-pins {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.desk-pin {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 162, 76, 0.45);
+  color: #f2e6c9;
+  text-decoration: none;
+  font-size: 0.92rem;
+}
+
+.desk-pin:active { background: rgba(212, 162, 76, 0.16); }
+
 .attic-pin {
   flex: none;
-  width: 28px;
-  height: 28px;
-  margin-top: 0.35rem;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
-  color: rgba(242, 230, 201, 0.28);
+  color: rgba(242, 230, 201, 0.72);
   text-decoration: none;
 }
 
 .attic-pin:hover,
-.attic-pin:focus-visible { color: rgba(242, 230, 201, 0.55); }
+.attic-pin:focus-visible,
+.desk-pin:hover,
+.desk-pin:focus-visible { color: #f2e6c9; border-color: #d4a24c; }
 
 .den-greeting,
 .signed-name,

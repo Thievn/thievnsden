@@ -26,6 +26,8 @@ import {
 } from "@/lib/vault/supabase";
 import type { BalanceSample, DeskSource, DeskView, VaultPayload, WalletSnapshot } from "@/lib/vault/types";
 import { fetchSolPrice, fetchWallet, tradingWalletAddress } from "@/lib/vault/wallet";
+import { isDeskId } from "@/lib/desks/ids";
+import { loadDesks, removeDeskWallet, saveDeskSettings, saveDeskWallet } from "@/lib/desks/remote";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -94,9 +96,31 @@ function payload(input: {
   };
 }
 
+function deskJson(status: number, body: Record<string, unknown>) {
+  return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
+}
+
 export async function GET(req: NextRequest) {
   if (!(await hasOwnerSession())) {
     return NextResponse.json({ ok: false, error: LOCKED }, { status: 401 });
+  }
+
+  const view = req.nextUrl.searchParams.get("view");
+  if (view === "desks" || view === "desk") {
+    if (view === "desk" && !isDeskId(req.nextUrl.searchParams.get("id") ?? "")) {
+      return deskJson(404, { ok: false, error: "That desk isn't here." });
+    }
+    const bundle = await loadDesks();
+    if (view === "desks") {
+      return deskJson(200, { ok: true, source: bundle.source, error: bundle.error, cards: bundle.cards });
+    }
+    const id = req.nextUrl.searchParams.get("id") ?? "";
+    return deskJson(200, {
+      ok: true,
+      source: bundle.source,
+      error: bundle.error,
+      desk: isDeskId(id) ? bundle.details[id] : null,
+    });
   }
 
   const preview = previewFeatures();
@@ -196,6 +220,18 @@ export async function POST(req: NextRequest) {
   }
   if (!body || typeof body.action !== "string") {
     return NextResponse.json({ ok: false, error: "Nothing to update." }, { status: 400 });
+  }
+  if (body.action === "desk-settings") {
+    const result = await saveDeskSettings(body.deskId, body.settings);
+    return deskJson(result.status, result.body);
+  }
+  if (body.action === "desk-wallet") {
+    const result = await saveDeskWallet(body);
+    return deskJson(result.status, result.body);
+  }
+  if (body.action === "desk-wallet-remove") {
+    const result = await removeDeskWallet(body);
+    return deskJson(result.status, result.body);
   }
   if (body.action === "acknowledge") return acknowledge(body);
   if (body.action === "push-state") return pushState(body);

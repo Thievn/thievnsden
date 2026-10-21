@@ -54,7 +54,12 @@ async function rest(path: string, init?: RequestInit): Promise<unknown> {
         ...(init?.headers ?? {}),
       },
     });
-    if (!response.ok) throw new Error(`BOOK_${response.status}`);
+    if (!response.ok) {
+      const detail = (await response.text()).slice(0, 240);
+      const error = new Error(`BOOK_${response.status}`) as Error & { detail?: string };
+      error.detail = detail;
+      throw error;
+    }
     if (response.status === 204) return null;
     return await response.json();
   } finally {
@@ -66,14 +71,24 @@ function asRows(value: unknown): Record<string, unknown>[] {
   return Array.isArray(value) ? value.filter((row) => row && typeof row === "object") as Record<string, unknown>[] : [];
 }
 
+const SOLANA = "desk_id=eq.solana";
+
+export async function serviceRest(path: string, init?: RequestInit): Promise<unknown> {
+  return rest(path, init);
+}
+
+export function recordRows(value: unknown): Record<string, unknown>[] {
+  return asRows(value);
+}
+
 export async function loadDesk(): Promise<DeskTables> {
   const [checks, positions, trades, alerts, reports, runs] = await Promise.all([
-    rest("desk_checks?select=id,time,mint,symbol,stage,verdict,confidence,reason&order=time.desc&limit=800"),
-    rest("desk_positions?select=mint,symbol,entry,qty0,qty,peak,liq0,opened,steps&order=opened.desc&limit=50"),
-    rest("desk_trades?select=id,time,mint,symbol,action,usd,pnl,reason&order=time.desc&limit=300"),
-    rest("desk_alerts?select=id,created_at,source,kind,mint,symbol,text,acknowledged&order=created_at.desc&limit=100"),
-    rest("desk_reports?select=day,mode,body,created_at&order=day.desc&limit=60"),
-    rest("desk_runs?select=id,ran_at,kind,status,counts,error&order=ran_at.desc&limit=40"),
+    rest(`desk_checks?select=id,time,mint,symbol,stage,verdict,confidence,reason&${SOLANA}&order=time.desc&limit=800`),
+    rest(`desk_positions?select=mint,symbol,entry,qty0,qty,peak,liq0,opened,steps&${SOLANA}&order=opened.desc&limit=50`),
+    rest(`desk_trades?select=id,time,mint,symbol,action,usd,pnl,reason&${SOLANA}&order=time.desc&limit=300`),
+    rest(`desk_alerts?select=id,created_at,source,kind,mint,symbol,text,acknowledged&${SOLANA}&order=created_at.desc&limit=100`),
+    rest(`desk_reports?select=day,mode,body,created_at&${SOLANA}&order=day.desc&limit=60`),
+    rest(`desk_runs?select=id,ran_at,kind,status,counts,error&${SOLANA}&order=ran_at.desc&limit=40`),
   ]);
 
   return {

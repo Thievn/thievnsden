@@ -9,6 +9,20 @@ const MAX_AGE_SECONDS = 60 * 60 * 24 * 14;
 
 type Payload = { v: 1; sub: "owner"; exp: number };
 
+/** Runtime read. A dynamic key is not inlined at build time. */
+function readEnv(name: string): string {
+  const raw = process.env[name];
+  if (typeof raw !== "string") return "";
+  let value = raw.replace(/^\uFEFF/, "").trim();
+  if (value.length >= 2) {
+    const quote = value[0];
+    if ((quote === '"' || quote === "'") && value.endsWith(quote)) {
+      value = value.slice(1, -1).trim();
+    }
+  }
+  return value;
+}
+
 function sessionSecret(): string | null {
   const secret = process.env.SESSION_SECRET?.trim() ?? "";
   if (secret.length < 32) return null;
@@ -16,14 +30,14 @@ function sessionSecret(): string | null {
 }
 
 export function authConfigured(): boolean {
-  const email = process.env.DEN_OWNER_EMAIL?.trim() ?? "";
-  const password = process.env.DEN_OWNER_PASSWORD ?? "";
+  const email = readEnv("DEN_OWNER_EMAIL");
+  const password = readEnv("DEN_OWNER_PASSWORD");
   return email.length > 3 && email.includes("@") && password.length >= 10 && sessionSecret() !== null;
 }
 
 /** Display name for the signed-in owner. Original casing. Null when unset or unusable. */
 export function ownerUsername(): string | null {
-  const name = process.env.DEN_OWNER_USERNAME?.trim() ?? "";
+  const name = readEnv("DEN_OWNER_USERNAME");
   if (name.length < 2 || name.length > 40) return null;
   if (/[\s@]/.test(name)) return null;
   return name;
@@ -36,11 +50,12 @@ function digest(value: string): Buffer {
 export function credentialsMatch(identifier: string, password: string): boolean {
   if (!authConfigured()) return false;
   const given = digest(identifier.trim().toLowerCase());
-  const expectedEmail = (process.env.DEN_OWNER_EMAIL ?? "").trim().toLowerCase();
+  const expectedEmail = readEnv("DEN_OWNER_EMAIL").toLowerCase();
   const emailOk = timingSafeEqual(given, digest(expectedEmail));
   const username = ownerUsername();
   const usernameOk = username ? timingSafeEqual(given, digest(username.toLowerCase())) : false;
-  const passwordOk = timingSafeEqual(digest(password), digest(process.env.DEN_OWNER_PASSWORD ?? ""));
+  const typed = password.replace(/^\uFEFF/, "").trim();
+  const passwordOk = timingSafeEqual(digest(typed), digest(readEnv("DEN_OWNER_PASSWORD")));
   return (emailOk || usernameOk) && passwordOk;
 }
 

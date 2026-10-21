@@ -45,6 +45,31 @@ test("accepts only the configured owner", () => {
   assert.equal(credentialsMatch("keeper@thievnsden.com", "correct-horse-battery"), true);
 });
 
+test("a correct plaintext password works for Thievn, thievn, and the email", () => {
+  saveEnv();
+  process.env.DEN_OWNER_EMAIL = "thievnsden@gmail.com";
+  process.env.DEN_OWNER_USERNAME = "Thievn";
+  process.env.DEN_OWNER_PASSWORD = "plain-pass1";
+  process.env.SESSION_SECRET = "s".repeat(40);
+  assert.equal("plain-pass1".length, 11);
+  assert.equal(authConfigured(), true);
+  assert.equal(credentialsMatch("Thievn", "plain-pass1"), true);
+  assert.equal(credentialsMatch("thievn", "plain-pass1"), true);
+  assert.equal(credentialsMatch("THIEVN", "plain-pass1"), true);
+  assert.equal(credentialsMatch("thievnsden@gmail.com", "plain-pass1"), true);
+  assert.equal(credentialsMatch("THIEVNSDEN@GMAIL.COM", "plain-pass1"), true);
+  assert.equal(credentialsMatch("Thievn", "Plain-pass1"), false);
+  assert.equal(credentialsMatch("someone@else.com", "plain-pass1"), false);
+
+  process.env.DEN_OWNER_EMAIL = '"thievnsden@gmail.com"\n';
+  process.env.DEN_OWNER_USERNAME = "  'Thievn'  ";
+  process.env.DEN_OWNER_PASSWORD = '"plain-pass1"\n';
+  assert.equal(ownerUsername(), "Thievn");
+  assert.equal(credentialsMatch("Thievn", " plain-pass1 "), true);
+  assert.equal(credentialsMatch("thievn", "plain-pass1"), true);
+  assert.equal(credentialsMatch("thievnsden@gmail.com", "plain-pass1"), true);
+});
+
 test("fails closed when secrets are missing or short", () => {
   saveEnv();
   configure();

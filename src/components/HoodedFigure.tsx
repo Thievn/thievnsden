@@ -2,7 +2,7 @@ export function HoodedFigure() {
   return (
     <div className="figure" aria-hidden="true">
       <svg viewBox="0 0 420 760" role="img">
-        <title>A hooded silhouette in candlelight</title>
+        <title>Illustration</title>
         <defs>
           <linearGradient id="cloak" x1="0.15" y1="0" x2="0.85" y2="1">
             <stop offset="0%" stopColor="#4a5368" />

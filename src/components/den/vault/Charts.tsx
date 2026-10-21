@@ -48,10 +48,10 @@ function Tip({
 export function DailyBars({ rows }: { rows: { day: string; usd: number }[] }) {
   const reduced = useReducedMotion();
   if (!rows.some((row) => row.usd !== 0)) {
-    return <p className="quiet">No daily result yet.</p>;
+    return <p className="quiet">No results yet.</p>;
   }
   return (
-    <Frame label="Daily result for the last two weeks">
+    <Frame label="Daily result, last two weeks">
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={rows} margin={{ top: 12, right: 4, left: 0, bottom: 0 }}>
           <XAxis dataKey="day" tickFormatter={shortDay} tick={{ fill: "#F2E6C9", fontSize: 11 }} axisLine={false} tickLine={false} interval={1} />
@@ -71,13 +71,13 @@ export function DailyBars({ rows }: { rows: { day: string; usd: number }[] }) {
 
 export function EquityArea({ rows }: { rows: { time: string; usd: number }[] }) {
   const reduced = useReducedMotion();
-  if (rows.length < 2) return <p className="quiet">The equity line starts after two closes.</p>;
+  if (rows.length < 2) return <p className="quiet">Equity shows up after two closes.</p>;
   const data = rows.map((row) => ({
     ...row,
     label: new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", month: "numeric", day: "numeric" }).format(new Date(row.time)),
   }));
   return (
-    <Frame label="Equity curve">
+    <Frame label="Equity">
       <ResponsiveContainer width="100%" height={230}>
         <AreaChart data={data} margin={{ top: 12, right: 8, left: 0, bottom: 0 }}>
           <defs>
@@ -104,9 +104,9 @@ export function FunnelBars({
   rows: { name: string; value: number }[];
 }) {
   const reduced = useReducedMotion();
-  if (!rows.some((row) => row.value > 0)) return <p className="quiet">No checks yet.</p>;
+  if (!rows.some((row) => row.value > 0)) return <p className="quiet">No checks yet</p>;
   return (
-    <Frame label="How many checks passed each gate">
+    <Frame label="Checks by stage">
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={rows} layout="vertical" margin={{ top: 8, right: 12, left: 8, bottom: 0 }}>
           <XAxis type="number" hide />
@@ -138,9 +138,9 @@ export function WinDonut({
     { name: "Losses", value: losses, fill: "#C46B76" },
     { name: "Flat", value: flat, fill: "#3E4A5C" },
   ].filter((slice) => slice.value > 0);
-  if (data.length === 0) return <p className="quiet">No closed trades yet.</p>;
+  if (data.length === 0) return <p className="quiet">No closed trades yet</p>;
   return (
-    <Frame label="Win rate of closed trades">
+    <Frame label="Win rate">
       <div className="donut-wrap">
         <ResponsiveContainer width="100%" height={210}>
           <PieChart>
@@ -160,9 +160,9 @@ export function WinDonut({
 
 export function BalanceArea({ rows }: { rows: { label: string; usd: number }[] }) {
   const reduced = useReducedMotion();
-  if (rows.length < 2) return <p className="quiet">The line starts once this phone has seen the balance twice.</p>;
+  if (rows.length < 2) return <p className="quiet">Check back after one more visit.</p>;
   return (
-    <Frame label="Balance over time">
+    <Frame label="Balance">
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={rows} margin={{ top: 12, right: 8, left: 0, bottom: 0 }}>
           <defs>

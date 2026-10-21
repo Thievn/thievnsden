@@ -23,7 +23,7 @@ import { fetchSolPrice, fetchWallet, tradingWalletAddress } from "@/lib/vault/wa
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const LOCKED = "The lock does not turn.";
+const LOCKED = "Sign in to continue.";
 
 function sameOrigin(req: NextRequest) {
   const origin = req.headers.get("origin");
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
       desk = exampleDesk(now);
       balanceSample = exampleBalance(now);
     } else {
-      deskError = "The vault is not connected.";
+      deskError = "Vault isn't connected.";
     }
   } else {
     connected = true;
@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
     try {
       wallet = await fetchWallet(walletAddress, cluster);
     } catch (error) {
-      walletError = error instanceof Error ? error.message : "The chain did not answer.";
+      walletError = error instanceof Error ? error.message : "Couldn't reach the network.";
     }
   }
 
@@ -181,19 +181,19 @@ export async function POST(req: NextRequest) {
   }
   const body = await req.json().catch(() => null) as { action?: unknown; id?: unknown } | null;
   if (body?.action !== "acknowledge" || typeof body.id !== "string") {
-    return NextResponse.json({ ok: false, error: "Nothing to mark." }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Nothing to update." }, { status: 400 });
   }
   if (body.id.startsWith("ex-")) {
-    return NextResponse.json({ ok: false, error: "Sample alerts stay on this screen." }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Sample alerts can't be saved." }, { status: 400 });
   }
   try {
     await acknowledgeAlert(body.id);
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     if (message === "BAD_ID") {
-      return NextResponse.json({ ok: false, error: "Nothing to mark." }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Nothing to update." }, { status: 400 });
     }
-    return NextResponse.json({ ok: false, error: "The mark did not take." }, { status: 502 });
+    return NextResponse.json({ ok: false, error: "Couldn't save that." }, { status: 502 });
   }
   return NextResponse.json({ ok: true });
 }

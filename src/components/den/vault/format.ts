@@ -82,7 +82,15 @@ export function nyClock(iso: string): string {
   }).format(new Date(iso));
 }
 
+const KINDS: Record<string, string> = {
+  APPROVAL_NEEDED: "Needs a look",
+  SELL_NOW: "Sell now",
+  PAPER_BUY: "Paper buy",
+  FEED_DOWN: "Feed down",
+  PAPER_SOLD: "Paper sell",
+};
+
 export function kindLabel(kind: string | null): string {
   if (!kind) return "Note";
-  return kind.replaceAll("_", " ");
+  return KINDS[kind] ?? kind.replaceAll("_", " ").toLowerCase();
 }

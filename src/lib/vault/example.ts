@@ -48,14 +48,14 @@ export function exampleDesk(now = new Date()): DeskView {
     check("ex-c4", day(0, 9, 18), "CINDER", MINTS.cinder, "facts", "SKIP", "top10_heavy"),
     check("ex-c5", day(0, 9, 24), "ASH", MINTS.ash, "pool", "SKIP", "thin_pool"),
     check("ex-c6", day(0, 9, 31), "KEY", MINTS.key, "pool", "SKIP", "too_fresh"),
-    check("ex-c7", day(0, 9, 40), "WAX", MINTS.wax, "grok", "BUY", "clean enough to paper", 0.74),
+    check("ex-c7", day(0, 9, 40), "WAX", MINTS.wax, "grok", "BUY", "passed", 0.74),
     check("ex-c8", day(0, 10, 2), "EMBER", MINTS.ember, "grok", "SKIP", "low confidence", 0.31),
     check("ex-c9", day(-1, 11, 5), "HOOD", MINTS.hood, "limits", "SKIP", "cooldown"),
     check("ex-c10", day(-1, 11, 11), "CINDER", MINTS.cinder, "facts", "SKIP", "lp_unlocked"),
     check("ex-c11", day(-1, 11, 20), "ASH", MINTS.ash, "facts", "SKIP", "danger:freeze"),
     check("ex-c12", day(-1, 12, 4), "KEY", MINTS.key, "pool", "SKIP", "ticket_too_big"),
-    check("ex-c13", day(-1, 12, 18), "HOOD", MINTS.hood, "grok", "BUY", "second look held", 0.66),
-    check("ex-c14", day(-1, 13, 2), "WAX", MINTS.wax, "grok", "SKIP", "grok failed"),
+    check("ex-c13", day(-1, 12, 18), "HOOD", MINTS.hood, "grok", "BUY", "looks fine", 0.66),
+    check("ex-c14", day(-1, 13, 2), "WAX", MINTS.wax, "grok", "SKIP", "check failed"),
     check("ex-c15", day(-2, 10, 8), "EMBER", MINTS.ember, "limits", "SKIP", "halted_daily_loss"),
     check("ex-c16", day(-2, 10, 16), "ASH", MINTS.ash, "facts", "SKIP", "dev_holds"),
     check("ex-c17", day(-2, 10, 28), "CINDER", MINTS.cinder, "pool", "SKIP", "nobody_can_sell"),
@@ -70,7 +70,7 @@ export function exampleDesk(now = new Date()): DeskView {
     check("ex-c26", day(-4, 10, 40), "HOOD", MINTS.hood, "grok", "SKIP", "low confidence", 0.28),
     check("ex-c27", day(-5, 14, 12), "EMBER", MINTS.ember, "limits", "SKIP", "cooldown"),
     check("ex-c28", day(-5, 14, 30), "ASH", MINTS.ash, "pool", "SKIP", "thin_pool"),
-    check("ex-c29", day(-5, 15, 5), "CINDER", MINTS.cinder, "grok", "BUY", "paper ticket", 0.71),
+    check("ex-c29", day(-5, 15, 5), "CINDER", MINTS.cinder, "grok", "BUY", "paper buy", 0.71),
   ];
 
   const positions: PositionRow[] = [
@@ -110,16 +110,16 @@ export function exampleDesk(now = new Date()): DeskView {
   ): TradeRow => ({ id, time, mint, symbol, action, usd, pnl, reason });
 
   const trades: TradeRow[] = [
-    trade("ex-t1", day(0, 9, 42), "WAX", MINTS.wax, "open", 25, 0, "paper open"),
+    trade("ex-t1", day(0, 9, 42), "WAX", MINTS.wax, "open", 25, 0, "opened"),
     trade("ex-t2", day(0, 14, 10), "HOOD", MINTS.hood, "partial", 12.5, 4.2, "step 2"),
-    trade("ex-t3", day(-1, 12, 20), "HOOD", MINTS.hood, "open", 25, 0, "paper open"),
-    trade("ex-t4", day(-1, 18, 5), "CINDER", MINTS.cinder, "close", 25, -6.4, "pool faded"),
+    trade("ex-t3", day(-1, 12, 20), "HOOD", MINTS.hood, "open", 25, 0, "opened"),
+    trade("ex-t4", day(-1, 18, 5), "CINDER", MINTS.cinder, "close", 25, -6.4, "liquidity drop"),
     trade("ex-t5", day(-2, 11, 30), "ASH", MINTS.ash, "close", 25, 11.8, "target"),
-    trade("ex-t6", day(-2, 16, 12), "KEY", MINTS.key, "close", 25, -3.1, "time stop"),
+    trade("ex-t6", day(-2, 16, 12), "KEY", MINTS.key, "close", 25, -3.1, "time limit"),
     trade("ex-t7", day(-3, 13, 4), "EMBER", MINTS.ember, "close", 25, 8.6, "target"),
     trade("ex-t8", day(-4, 15, 40), "WAX", MINTS.wax, "close", 25, -9.5, "stop"),
     trade("ex-t9", day(-5, 12, 15), "HOOD", MINTS.hood, "close", 25, 6.4, "target"),
-    trade("ex-t10", day(-6, 17, 5), "CINDER", MINTS.cinder, "close", 25, 2.2, "flat exit"),
+    trade("ex-t10", day(-6, 17, 5), "CINDER", MINTS.cinder, "close", 25, 2.2, "flat"),
     trade("ex-t11", day(-8, 11, 45), "ASH", MINTS.ash, "close", 25, -4.8, "stop"),
     trade("ex-t12", day(-10, 16, 20), "KEY", MINTS.key, "close", 25, 7.1, "target"),
     trade("ex-t13", day(-12, 10, 10), "EMBER", MINTS.ember, "close", 25, 3.4, "target"),
@@ -133,7 +133,7 @@ export function exampleDesk(now = new Date()): DeskView {
       kind: "APPROVAL_NEEDED",
       mint: MINTS.wax,
       symbol: "WAX",
-      text: "WAX cleared the filter. Still paper until you answer.",
+      text: "WAX passed the checks. Waiting on you.",
       acknowledged: false,
     },
     {
@@ -143,7 +143,7 @@ export function exampleDesk(now = new Date()): DeskView {
       kind: "SELL_NOW",
       mint: MINTS.hood,
       symbol: "HOOD",
-      text: "HOOD pool is thinning. The watch wants it sold.",
+      text: "HOOD liquidity is dropping. Worth a look.",
       acknowledged: false,
     },
     {
@@ -163,7 +163,7 @@ export function exampleDesk(now = new Date()): DeskView {
       kind: "FEED_DOWN",
       mint: null,
       symbol: null,
-      text: "The watch missed a cycle. It came back on the next run.",
+      text: "Feed missed a cycle, then came back.",
       acknowledged: true,
     },
     {
@@ -173,7 +173,7 @@ export function exampleDesk(now = new Date()): DeskView {
       kind: "PAPER_SOLD",
       mint: MINTS.cinder,
       symbol: "CINDER",
-      text: "Paper sold CINDER.",
+      text: "Paper sell filled for CINDER.",
       acknowledged: true,
     },
   ];
@@ -183,8 +183,8 @@ export function exampleDesk(now = new Date()): DeskView {
     mode: "PAPER" as const,
     body:
       offset === 0
-        ? "Paper day. One new name was bought on the page and one older name was trimmed. No coin moved."
-        : "Paper day. The book took the tickets it was allowed and left the rest on the table.",
+        ? "Paper mode. One buy, one trim. No funds moved."
+        : "Paper mode. Buys stayed inside the daily limit.",
     createdAt: day(offset, 21, 5),
   }));
 
@@ -192,7 +192,7 @@ export function exampleDesk(now = new Date()): DeskView {
     { id: "ex-r1", ranAt: day(0, 14, 20), kind: "watch", status: "ok", counts: { open: 2, alerts: 1 }, error: null },
     { id: "ex-r2", ranAt: day(0, 9, 50), kind: "scan", status: "ok", counts: { checked: 8, bought: 1, alerts: 1 }, error: null },
     { id: "ex-r3", ranAt: day(-1, 21, 10), kind: "report", status: "ok", counts: { reports: 1 }, error: null },
-    { id: "ex-r4", ranAt: day(-1, 8, 10), kind: "watch", status: "error", counts: null, error: "feed timeout" },
+    { id: "ex-r4", ranAt: day(-1, 8, 10), kind: "watch", status: "error", counts: null, error: "feed timed out" },
     { id: "ex-r5", ranAt: day(-1, 11, 40), kind: "scan", status: "ok", counts: { checked: 7, bought: 1 }, error: null },
     { id: "ex-r6", ranAt: day(-2, 11, 5), kind: "scan", status: "ok", counts: { checked: 6, bought: 0 }, error: null },
   ];

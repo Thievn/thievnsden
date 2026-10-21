@@ -20,16 +20,16 @@ export function publicClusterRpc(cluster: Cluster): string {
 }
 
 export function lamportsFromSol(sol: number): number {
-  if (!Number.isFinite(sol) || sol <= 0) throw new Error("Amount must be greater than zero.");
+  if (!Number.isFinite(sol) || sol <= 0) throw new Error("Enter an amount above zero.");
   const lamports = Math.round(sol * LAMPORTS_PER_SOL);
-  if (!Number.isSafeInteger(lamports) || lamports < 1) throw new Error("Amount is too small.");
-  if (lamports > 1_000_000 * LAMPORTS_PER_SOL) throw new Error("Amount is too large.");
+  if (!Number.isSafeInteger(lamports) || lamports < 1) throw new Error("That amount is too small.");
+  if (lamports > 1_000_000 * LAMPORTS_PER_SOL) throw new Error("That amount is too large.");
   return lamports;
 }
 
 export function solFromUsd(usd: number, priceUsd: number): number {
-  if (!Number.isFinite(usd) || usd <= 0) throw new Error("Amount must be greater than zero.");
-  if (!Number.isFinite(priceUsd) || priceUsd <= 0) throw new Error("No SOL price yet.");
+  if (!Number.isFinite(usd) || usd <= 0) throw new Error("Enter an amount above zero.");
+  if (!Number.isFinite(priceUsd) || priceUsd <= 0) throw new Error("No dollar price yet");
   return usd / priceUsd;
 }
 
@@ -60,7 +60,7 @@ export async function createTransferTransaction(args: {
   lamports: number;
 }): Promise<Transaction> {
   if (!Number.isSafeInteger(args.lamports) || args.lamports < 1) {
-    throw new Error("Amount is too small.");
+    throw new Error("That amount is too small.");
   }
   const latest = await args.connection.getLatestBlockhash("confirmed");
   return new Transaction({

@@ -1,11 +1,11 @@
 export default function NotFound() {
   return (
     <main className="lost">
-      <p className="eyebrow">No such room</p>
-      <h1>This passage ends.</h1>
-      <p>The door you tried is not on this side of the wall.</p>
+      <p className="eyebrow">404</p>
+      <h1>Page not found</h1>
+      <p>This page isn&apos;t here.</p>
       <a className="turn turn-link" href="/">
-        Return to the door
+        Back home
       </a>
     </main>
   );

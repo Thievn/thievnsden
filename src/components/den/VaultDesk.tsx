@@ -55,14 +55,14 @@ export function VaultDesk() {
       });
       const body = await response.json() as VaultPayload | { ok: false; error?: string };
       if (!response.ok || !("source" in body)) {
-        setError("error" in body && body.error ? body.error : "The vault did not answer.");
+        setError("error" in body && body.error ? body.error : "Couldn't load that. Try again.");
         return;
       }
       setData(body);
       setError(null);
       if (!body.allowDevnet && cluster !== "mainnet-beta") setCluster("mainnet-beta");
     } catch {
-      setError("The vault did not answer.");
+      setError("Couldn't load that. Try again.");
     } finally {
       setLoading(false);
       setNow(Date.now());
@@ -102,13 +102,13 @@ export function VaultDesk() {
         body: JSON.stringify({ action: "acknowledge", id }),
       });
       if (!response.ok) {
-        setError("The mark did not take.");
+        setError("Couldn't save that.");
         return;
       }
       setAcked((current) => ({ ...current, [id]: true }));
       void load(true);
     } catch {
-      setError("The mark did not take.");
+      setError("Couldn't save that.");
     } finally {
       setPending(null);
     }
@@ -120,15 +120,14 @@ export function VaultDesk() {
   return (
     <div className={`vault-room ${reduced ? "is-still" : ""}`} data-vault>
       <header className="vault-head">
-        <p className="eyebrow">The desk</p>
         <div className="row-between">
-          <h1>The Vault</h1>
+          <h1>Vault</h1>
           {data?.overview.mode ? (
             <span className={data.overview.mode === "LIVE" ? "mode mode-live" : "mode mode-paper"}>{data.overview.mode}</span>
           ) : null}
         </div>
         {data?.source === "example" ? (
-          <p className="example-banner">Preview sample. These desk rows were drawn for the preview and are not in the book.</p>
+          <p className="example-banner">Sample data. Nothing here is saved.</p>
         ) : null}
         {data?.deskError ? <p className="desk-error" role="alert">{data.deskError}</p> : null}
         {error ? <p className="desk-error" role="alert">{error}</p> : null}
@@ -168,12 +167,12 @@ export function VaultDesk() {
           <WalletPanel data={data} cluster={cluster} onCluster={setCluster} onRefresh={() => void load(true)} />
         ) : null}
         {data?.deskError && screen !== "wallet" ? (
-          <p className="empty glass">The book is not on the table, so these figures stay hidden.</p>
+          <p className="empty glass">Nothing to show yet.</p>
         ) : null}
       </div>
 
       <p className="fresh">
-        {data ? `Updated ${ago(data.refreshedAt, now)} · ${data.cluster === "devnet" ? "Devnet" : "Mainnet"}` : "Opening the book"}
+        {data ? `Updated ${ago(data.refreshedAt, now)} · ${data.cluster === "devnet" ? "Devnet" : "Mainnet"}` : "Loading…"}
         <button type="button" className="text-btn" onClick={() => void load(true)}>Refresh</button>
       </p>
     </div>

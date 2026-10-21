@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { hasOwnerSession } from "@/lib/guard";
 
 export const metadata: Metadata = {
-  title: "Inside",
+  title: "Den",
   robots: { index: false, follow: false },
 };
 

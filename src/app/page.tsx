@@ -22,7 +22,7 @@ export default function HomePage() {
   return (
     <>
       <a className="skip" href="#the-den">
-        Skip to the den
+        Skip to content
       </a>
       <header className="hero">
         <div className="atmosphere" aria-hidden="true">
@@ -46,7 +46,7 @@ export default function HomePage() {
           ))}
         </div>
 
-        <nav className="topnav" aria-label="Den">
+        <nav className="topnav" aria-label="Site">
           <a className="brand-mini" href="#top">
             Thievn&apos;s Den
           </a>
@@ -55,22 +55,20 @@ export default function HomePage() {
               <a href="#the-den">Den</a>
             </li>
             <li>
-              <a href="#the-code">Code</a>
+              <a href="#notes">Notes</a>
             </li>
             <li>
-              <a href="#the-vault">Vault</a>
+              <a href="#the-vault">Sign in</a>
             </li>
           </ul>
         </nav>
 
         <div className="hero-layout" id="top">
           <div className="hero-copy">
-            <p className="eyebrow">After the street lamps go out</p>
             <Seal />
-            <p className="lede">A low room, a small fire, and a door that was never on the map.</p>
-            <p className="aside">You were not invited. You arrived anyway.</p>
-            <a className="descend" href="#the-den">
-              Descend
+            <p className="lede">A quiet little corner.</p>
+            <a className="descend" href="#the-vault">
+              Sign in
             </a>
           </div>
           <HoodedFigure />

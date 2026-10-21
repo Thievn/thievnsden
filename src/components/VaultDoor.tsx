@@ -40,8 +40,8 @@ export function VaultDoor() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("lock") !== "1") return;
-    if (params.get("err") === "1") setError("The lock does not turn.");
-    if (params.get("err") === "unset") setError("The lock is not set.");
+    if (params.get("err") === "1") setError("Hmm, wrong name or password");
+    if (params.get("err") === "unset") setError("Sign-in isn't set up yet.");
     openLock();
     const url = new URL(window.location.href);
     url.search = "lock=1";
@@ -62,13 +62,13 @@ export function VaultDoor() {
       });
       const data = (await response.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
       if (!response.ok || !data?.ok) {
-        setError(data?.error || "The lock does not turn.");
+        setError(data?.error || "Hmm, wrong name or password");
         setPending(false);
         return;
       }
       window.location.assign("/den");
     } catch {
-      setError("The corridor went dark. Try again.");
+      setError("Couldn't reach the server. Try again.");
       setPending(false);
     }
   }
@@ -76,9 +76,9 @@ export function VaultDoor() {
   return (
     <section className="vault-section" id="the-vault">
       <div className="vault-copy">
-        <p className="eyebrow">One door remains</p>
-        <h2>The Vault</h2>
-        <p className="prose-lead">Beyond this, the house keeps its own counsel.</p>
+        <p className="eyebrow">Access</p>
+        <h2>Sign in</h2>
+        <p className="prose-lead">Name or email, then your password.</p>
       </div>
 
       <div className="door-wrap">
@@ -132,7 +132,7 @@ export function VaultDoor() {
           </svg>
         </button>
       </div>
-      <p className="whisper">If you were given a way in, you already know where to put it.</p>
+      <p className="whisper">Tap the keyhole to sign in.</p>
 
       <dialog
         ref={dialogRef}
@@ -147,9 +147,7 @@ export function VaultDoor() {
           <button className="lock-close" type="button" onClick={() => dialogRef.current?.close()}>
             Close
           </button>
-          <p className="eyebrow">Known to the lock</p>
-          <h2 id={titleId}>The lock</h2>
-          <p className="lock-note">There is no other key.</p>
+          <h2 id={titleId}>Sign in</h2>
           <form method="post" action="/api/auth" onSubmit={onSubmit}>
             <label htmlFor={emailId}>Name or email</label>
             <input
@@ -164,7 +162,7 @@ export function VaultDoor() {
               spellCheck={false}
               disabled={pending}
             />
-            <label htmlFor={passwordId}>Passphrase</label>
+            <label htmlFor={passwordId}>Password</label>
             <input
               id={passwordId}
               name="password"
@@ -179,7 +177,7 @@ export function VaultDoor() {
               </p>
             ) : null}
             <button className="turn" type="submit" disabled={pending} aria-busy={pending}>
-              {pending ? "Turning…" : "Turn the lock"}
+              {pending ? "Signing in…" : "Sign in"}
             </button>
           </form>
         </div>

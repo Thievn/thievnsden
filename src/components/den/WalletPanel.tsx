@@ -175,19 +175,19 @@ function WalletBody({
     setPhase("review");
     setFee(TRANSFER_FEE_LAMPORTS);
     if (solAmount === null) {
-      setError(unit === "USD" && !data.solPriceUsd ? "No dollar price yet." : "Enter an amount greater than zero.");
+      setError(unit === "USD" && !data.solPriceUsd ? "No dollar price yet" : "Enter an amount above zero.");
       return;
     }
     if (!destination) {
-      setError(flow === "topup" ? "The trading address is not set." : "Enter a real Solana address.");
+      setError(flow === "topup" ? "No vault address yet." : "That doesn't look like a Solana address.");
       return;
     }
     if (publicKey && sameAddress(publicKey.toBase58(), destination)) {
-      setError("That destination is the wallet you connected.");
+      setError("That's the wallet you just connected.");
       return;
     }
     if (flow === "withdraw" && data.walletAddress && sameAddress(destination, data.walletAddress) && publicKey && sameAddress(publicKey.toBase58(), data.walletAddress)) {
-      setError("That is already the trading wallet.");
+      setError("That's already the vault address.");
       return;
     }
     if (remember && flow === "withdraw") {
@@ -235,9 +235,9 @@ function WalletBody({
     } catch (err) {
       setPhase("review");
       const text = (err instanceof Error ? err.message : "").replace(/https?:\/\/\S+/g, "").slice(0, 180);
-      if (/reject|cancel|denied|closed/i.test(text)) setError("The wallet app did not approve it.");
-      else if (/insufficient/i.test(text)) setError("That wallet does not hold enough SOL for the amount and the fee.");
-      else setError("The transfer did not leave the wallet app.");
+      if (/reject|cancel|denied|closed/i.test(text)) setError("Your wallet didn't approve it.");
+      else if (/insufficient/i.test(text)) setError("Not enough SOL for the amount and the fee.");
+      else setError("That didn't go through.");
     }
   }
 
@@ -247,7 +247,7 @@ function WalletBody({
 
   return (
     <div className="stack">
-      <p className="safety">This site never asks for a private key or a seed phrase. It never signs. Your wallet app approves every transfer.</p>
+      <p className="safety">Your keys stay in your wallet app. This site never signs.</p>
 
       <section className="glass pad">
         <div className="row-between">
@@ -256,15 +256,15 @@ function WalletBody({
         </div>
         {!data.walletConfigured || !wallet ? (
           <div className="empty-copy">
-            <p>Add the public address in <code>DEN_WALLET_ADDRESS</code>. Only the address. Never a key.</p>
+            <p>Set <code>DEN_WALLET_ADDRESS</code> to the public address. Not a key.</p>
             {data.walletError ? <p className="pnl-down">{data.walletError}</p> : null}
           </div>
         ) : (
           <>
             <p className="hero-sol"><CountUp value={wallet.sol} format={(value) => solText(value)} /> <span>SOL</span></p>
-            <p className="hero-usd">{wallet.totalUsd === null ? "Dollar value unavailable" : <CountUp value={wallet.totalUsd} format={(value) => plainMoney(value)} />}</p>
-            {low ? <p className="warn">Under the ${data.roomUsd} room the desk wants. That is {data.maxOpen} open tickets at ${data.ticketUsd}.</p> : null}
-            {wallet.pricesPartial ? <p className="quiet">Some prices did not come back, so the total may be short.</p> : null}
+            <p className="hero-usd">{wallet.totalUsd === null ? "No dollar value yet" : <CountUp value={wallet.totalUsd} format={(value) => plainMoney(value)} />}</p>
+            {low ? <p className="warn">Under the ${data.roomUsd} working balance. That&apos;s {data.maxOpen} positions at ${data.ticketUsd}.</p> : null}
+            {wallet.pricesPartial ? <p className="quiet">Some prices didn&apos;t load, so the total might be low.</p> : null}
             <ul className="token-list">
               <li>
                 <span>SOL</span>
@@ -281,12 +281,12 @@ function WalletBody({
             </ul>
           </>
         )}
-        <h3>{data.walletAddress ? "On this phone" : "Sample curve"}</h3>
+        <h3>{data.walletAddress ? "On this device" : "Sample"}</h3>
         <BalanceArea rows={sample} />
         <p className="quiet">
           {data.walletAddress
-            ? "Recorded in this browser when you open the vault. Not stored on the server."
-            : "Preview sample, so the chart has a shape. It is not a real wallet."}
+            ? "Saved in this browser only."
+            : "Sample chart. Not a real wallet."}
         </p>
       </section>
 
@@ -296,18 +296,18 @@ function WalletBody({
           <>
             <p className="full-address">{data.walletAddress}</p>
             <CopyButton value={data.walletAddress} />
-            {qr ? <img className="qr" src={qr} alt="QR code for the trading wallet address" /> : <div className="skel skel-qr" />}
+            {qr ? <img className="qr" src={qr} alt="QR code for the vault address" /> : <div className="skel skel-qr" />}
             <ol className="steps">
               <li>Buy SOL on an exchange.</li>
               <li>Send it to this address.</li>
-              <li>Send a small test first.</li>
+              <li>Try a small amount first.</li>
             </ol>
             <p className="link-row">
               <a href="https://www.coinbase.com/price/solana" target="_blank" rel="noopener noreferrer">Coinbase</a>
               <a href="https://www.kraken.com/prices/solana" target="_blank" rel="noopener noreferrer">Kraken</a>
             </p>
           </>
-        ) : <p>The address appears here once it is set on the server.</p>}
+        ) : <p>No address yet.</p>}
       </section>
 
       <section className="glass pad">
@@ -324,13 +324,13 @@ function WalletBody({
             </label>
           ) : null}
         </div>
-        <p className="quiet">Connect your own wallet app. This page only builds the transfer.</p>
+        <p className="quiet">Connect a wallet. You approve each transfer.</p>
         <div className="wallet-picks">
           {WALLETS.map((item) => (
             <button key={item.name} className="wallet-pick" type="button" onClick={() => choose(item.name)}>
               <span className="mark">{item.mark}</span>
               <span>{item.name}</span>
-              <span className="quiet">{detected(item.name) ? "Ready" : "App"}</span>
+              <span className="quiet">{detected(item.name) ? "Installed" : "Get app"}</span>
             </button>
           ))}
         </div>
@@ -344,9 +344,9 @@ function WalletBody({
             Connected {shortAddress(publicKey.toBase58())}
             <button type="button" className="text-btn" onClick={() => disconnect().catch(() => undefined)}>Disconnect</button>
           </p>
-        ) : <p className="quiet">{connecting ? "Waiting for the wallet app." : "Nothing connected yet."}</p>}
+        ) : <p className="quiet">{connecting ? "Waiting for your wallet." : "Not connected yet."}</p>}
         {flow === "withdraw" && connected && publicKey && data.walletAddress && !sameAddress(publicKey.toBase58(), data.walletAddress) ? (
-          <p className="warn">This is not the trading wallet. A withdraw sends from the wallet you connected.</p>
+          <p className="warn">This isn&apos;t the vault address. Withdraw sends from the wallet you connected.</p>
         ) : null}
 
         <div className="seg flow-seg" role="group" aria-label="Transfer direction">
@@ -362,8 +362,8 @@ function WalletBody({
           <span>Amount</span>
           <input data-amount inputMode="decimal" value={amountText} onChange={(event) => setAmountText(event.target.value)} placeholder={unit === "SOL" ? "0.10" : "25"} />
         </label>
-        {solAmount !== null && unit === "USD" ? <p className="quiet">About {solText(solAmount, 6)} SOL{data.solPriceExample ? " at the sample price" : ""}.</p> : null}
-        <p className="quiet">Above {solText(data.maxTransferSol, 4)} SOL, the sheet asks you to type {CONFIRM_WORD}.</p>
+        {solAmount !== null && unit === "USD" ? <p className="quiet">About {solText(solAmount, 6)} SOL{data.solPriceExample ? ", using the sample price" : ""}.</p> : null}
+        <p className="quiet">Over {solText(data.maxTransferSol, 4)} SOL, type {CONFIRM_WORD} to continue.</p>
 
         {flow === "withdraw" ? (
           <>
@@ -382,11 +382,11 @@ function WalletBody({
             ) : null}
             <label className="remember">
               <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
-              Remember this address on this phone
+              Remember this address on this device
             </label>
           </>
         ) : (
-          <p className="quiet">Sends to the trading wallet{data.walletAddress ? ` ${shortAddress(data.walletAddress)}` : ""}. You approve it in the wallet app.</p>
+          <p className="quiet">Sends to the vault address{data.walletAddress ? ` ${shortAddress(data.walletAddress)}` : ""}. You approve it in your wallet.</p>
         )}
         {error && !sheet ? <p className="pnl-down" role="alert">{error}</p> : null}
         <button className="gold-btn" type="button" data-review onClick={openReview}>Review</button>
@@ -405,8 +405,8 @@ function WalletBody({
             {phase === "done" && link ? (
               <>
                 <p className="eyebrow">Sent</p>
-                <h2 id="sheet-title">The wallet app approved it.</h2>
-                <p>{solText(solAmount, 6)} SOL is on its way.</p>
+                <h2 id="sheet-title">Nice, that went through</h2>
+                <p>{solText(solAmount, 6)} SOL sent.</p>
                 <p><a href={link} target="_blank" rel="noopener noreferrer">View on Solscan</a></p>
                 <button className="gold-btn" type="button" onClick={() => setSheet(false)}>Done</button>
               </>
@@ -415,7 +415,7 @@ function WalletBody({
                 <p className="eyebrow">{flow === "topup" ? "Top up" : "Withdraw"}</p>
                 <h2 id="sheet-title">{solText(solAmount, 6)} SOL</h2>
                 <p className={cluster === "devnet" ? "quiet" : "warn"}>
-                  {cluster === "devnet" ? "Devnet. These coins are not real." : "Mainnet. This transfer is real."}
+                  {cluster === "devnet" ? "Devnet. These aren't real funds." : "Mainnet. This one is real."}
                 </p>
                 <div className="sheet-row">
                   <span>To</span>
@@ -428,7 +428,7 @@ function WalletBody({
                 </div>
                 {overCap ? (
                   <label className="field">
-                    <span>Above {solText(data.maxTransferSol, 4)} SOL. Type {CONFIRM_WORD}</span>
+                    <span>Over {solText(data.maxTransferSol, 4)} SOL. Type {CONFIRM_WORD}</span>
                     <input data-confirm-word value={confirmText} onChange={(event) => setConfirmText(event.target.value)} autoCapitalize="characters" autoCorrect="off" />
                   </label>
                 ) : null}
@@ -442,7 +442,7 @@ function WalletBody({
                     disabled={!connected || phase === "sending" || (overCap && confirmText !== CONFIRM_WORD)}
                     onClick={approve}
                   >
-                    {phase === "sending" ? "Waiting for the wallet app" : connected ? "Approve in wallet" : "Connect a wallet to approve"}
+                    {phase === "sending" ? "Waiting for your wallet" : connected ? "Approve in wallet" : "Connect a wallet first"}
                   </button>
                 </div>
               </>

@@ -4,19 +4,11 @@ export function DenStory() {
       <div className="story-copy">
         <p className="eyebrow">
           <span className="verd-dot" aria-hidden="true" />
-          The room under the noise
+          About
         </p>
         <h2>The Den</h2>
         <div className="prose">
-          <p>
-            There is a room under the noise. The ceiling is low, the map has lost its corners to an
-            old fire, and the parts that remain are enough.
-          </p>
-          <p>
-            People who find this place do not come to be seen. They set something down, warm their
-            hands, and leave before the street can remember their outline.
-          </p>
-          <p>The fire is kept small. A larger one would paint the shutters. We prefer the shutters dark.</p>
+          <p>Nothing fancy out here. Sign in if this is yours.</p>
         </div>
       </div>
       <div className="map-card" aria-hidden="true">
@@ -37,7 +29,7 @@ export function DenStory() {
             <path d="M32 52 L28 32 L32 36 L36 32 Z" />
           </svg>
         </div>
-        <p className="map-caption">Corners burned. The rest is enough.</p>
+        <p className="map-caption">Just a sketch.</p>
       </div>
     </section>
   );

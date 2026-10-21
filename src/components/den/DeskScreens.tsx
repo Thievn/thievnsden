@@ -27,17 +27,17 @@ export function OverviewScreen({ data, now }: { data: VaultPayload; now: number 
             <CountUp value={overview.todayPnl} format={signedMoney} />
           </p>
           <Spark values={data.dailyPnl.map((row) => row.usd)} up={overview.todayPnl >= 0} />
-          <p className="stat-note">New York day</p>
+          <p className="stat-note">New York</p>
         </article>
         <article className="glass stat">
           <p className="stat-kicker">Open</p>
           <p className="stat-value">{overview.openCount}<span> / {data.maxOpen}</span></p>
-          <p className="stat-note">Room for {Math.max(0, data.maxOpen - overview.openCount)} more</p>
+          <p className="stat-note">{Math.max(0, data.maxOpen - overview.openCount)} spots left</p>
         </article>
         <article className="glass stat">
           <p className="stat-kicker">Entries</p>
           <p className="stat-value">{overview.entriesToday}</p>
-          <p className="stat-note">Opens since midnight</p>
+          <p className="stat-note">Since midnight</p>
         </article>
         <article className="glass stat">
           <p className="stat-kicker">Daily loss</p>
@@ -52,7 +52,7 @@ export function OverviewScreen({ data, now }: { data: VaultPayload; now: number 
       <article className="glass pad">
         <div className="row-between">
           <h2>Daily result</h2>
-          <p className="quiet">{overview.lastRun ? `${overview.lastRun.kind} ${overview.lastRun.status} · ${ago(overview.lastRun.ranAt, now)}` : "No run yet"}</p>
+          <p className="quiet">{overview.lastRun ? `${overview.lastRun.kind} ${overview.lastRun.status} · ${ago(overview.lastRun.ranAt, now)}` : "Nothing has run yet"}</p>
         </div>
         <DailyBars rows={data.dailyPnl} />
       </article>
@@ -71,11 +71,11 @@ export function AlertsScreen({
   onAck: (id: string) => void;
   now: number;
 }) {
-  if (alerts.length === 0) return <p className="empty glass">No alerts waiting.</p>;
+  if (alerts.length === 0) return <p className="empty glass">No alerts right now.</p>;
   const open = alerts.filter((alert) => !alert.acknowledged).length;
   return (
     <div className="stack">
-      <p className="quiet">{open === 0 ? "All marked." : `${open} still open.`}</p>
+      <p className="quiet">{open === 0 ? "All caught up." : `${open} still open.`}</p>
       {alerts.map((alert) => {
         const urgent = !alert.acknowledged && (alert.kind === "APPROVAL_NEEDED" || alert.kind === "SELL_NOW");
         return (
@@ -84,13 +84,13 @@ export function AlertsScreen({
               <p className="kind">{kindLabel(alert.kind)}</p>
               <p className="quiet">{ago(alert.createdAt, now)}</p>
             </div>
-            <h2>{alert.symbol ?? "Desk"}</h2>
+            <h2>{alert.symbol ?? "Alert"}</h2>
             <p>{alert.text}</p>
             {alert.acknowledged ? (
-              <p className="quiet">Marked.</p>
+              <p className="quiet">Done</p>
             ) : (
               <button className="ghost-btn" type="button" disabled={pending === alert.id} onClick={() => onAck(alert.id)}>
-                {pending === alert.id ? "Marking" : "Acknowledge"}
+                {pending === alert.id ? "Saving…" : "Got it"}
               </button>
             )}
           </article>
@@ -101,7 +101,7 @@ export function AlertsScreen({
 }
 
 export function PositionsScreen({ data, now }: { data: VaultPayload; now: number }) {
-  if (data.positions.length === 0) return <p className="empty glass">No open positions.</p>;
+  if (data.positions.length === 0) return <p className="empty glass">Nothing open right now.</p>;
   return (
     <div className="stack">
       {data.positions.map((position) => (
@@ -146,8 +146,8 @@ export function ChecksScreen({ data }: { data: VaultPayload }) {
     <div className="stack">
       <article className="glass pad">
         <div className="row-between">
-          <h2>Gates</h2>
-          <p className="quiet">Rows, not unique names</p>
+          <h2>Funnel</h2>
+          <p className="quiet">Row counts</p>
         </div>
         <FunnelBars rows={funnel} />
       </article>
@@ -170,7 +170,7 @@ export function ChecksScreen({ data }: { data: VaultPayload }) {
       {rows.length === 0 ? <p className="empty glass">Nothing matches.</p> : (
         <div className="stack">
           {rows.slice(0, 80).map((check) => <CheckCard key={check.id} check={check} />)}
-          {rows.length > 80 ? <p className="quiet">Showing the latest 80 of {rows.length}.</p> : null}
+          {rows.length > 80 ? <p className="quiet">Showing the latest 80 of {rows.length}</p> : null}
         </div>
       )}
     </div>
@@ -184,7 +184,7 @@ function CheckCard({ check }: { check: CheckRow }) {
         <p className="kind">{check.symbol ?? shortAddress(check.mint)}</p>
         <p className={check.verdict === "BUY" ? "pnl-up" : "quiet"}>{check.verdict}</p>
       </div>
-      <p>{check.reason ?? "No reason written."}</p>
+      <p>{check.reason ?? "No reason."}</p>
       <p className="quiet">{check.stage}{check.confidence !== null ? ` · ${Math.round(check.confidence * 100)}%` : ""} · {nyClock(check.time)} NY</p>
     </article>
   );
@@ -205,7 +205,7 @@ export function TradesScreen({ data }: { data: VaultPayload }) {
           <p className="quiet">{winRate.wins} won · {winRate.losses} lost · {winRate.flat} flat</p>
         </article>
       </div>
-      {data.trades.length === 0 ? <p className="empty glass">No trades yet.</p> : (
+      {data.trades.length === 0 ? <p className="empty glass">No trades yet</p> : (
         <div className="stack">
           {data.trades.map((trade) => (
             <article key={trade.id} className="glass trade-card">
@@ -227,7 +227,7 @@ export function TradesScreen({ data }: { data: VaultPayload }) {
 }
 
 export function ReportsScreen({ data }: { data: VaultPayload }) {
-  if (data.reports.length === 0) return <p className="empty glass">No daily report yet.</p>;
+  if (data.reports.length === 0) return <p className="empty glass">No report yet.</p>;
   return (
     <div className="stack">
       {data.reports.map((report) => (
@@ -244,7 +244,7 @@ export function ReportsScreen({ data }: { data: VaultPayload }) {
 }
 
 export function RunsScreen({ data, now }: { data: VaultPayload; now: number }) {
-  if (data.runs.length === 0) return <p className="empty glass">No runs yet.</p>;
+  if (data.runs.length === 0) return <p className="empty glass">Nothing has run yet.</p>;
   return (
     <div className="stack">
       {data.runs.map((run) => (

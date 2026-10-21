@@ -1,29 +1,30 @@
 "use client";
 
 import { useState } from "react";
+import { InstallPrompt } from "./InstallPrompt";
 import { VaultDesk } from "./VaultDesk";
 
 const ROOMS = [
   {
     id: "vault",
-    label: "The Vault",
+    label: "Vault",
     short: "Vault",
-    kicker: "Coming soon",
-    body: "This chamber is cut and still bare. What it will hold has not been carried down.",
+    kicker: "Empty",
+    body: "Nothing here yet.",
   },
   {
     id: "ledger",
-    label: "The Ledger",
+    label: "Ledger",
     short: "Ledger",
-    kicker: "Unmarked",
-    body: "The book is on the table. Every line is still blank.",
+    kicker: "Empty",
+    body: "Nothing here yet.",
   },
   {
     id: "notes",
     label: "Notes",
     short: "Notes",
-    kicker: "Blank scraps",
-    body: "A stack of unmarked parchment. Nothing has been written yet.",
+    kicker: "Empty",
+    body: "No notes yet.",
   },
 ] as const;
 
@@ -49,16 +50,17 @@ export function Dashboard({ ownerName }: { ownerName: string | null }) {
   return (
     <div className="den-shell">
       <header className="den-top">
-        <p className="eyebrow">Inside</p>
-        {ownerName ? <p className="signed-name">{ownerName}</p> : null}
-        <p className={ownerName ? "signed-line" : "den-greeting"}>The door knew your hand.</p>
+        <p className="welcome">
+          Welcome back{ownerName ? <>, <span className="signed-name">{ownerName}</span></> : null}
+        </p>
       </header>
+      <InstallPrompt />
 
-      <nav className="den-nav" aria-label="Private rooms">
+      <nav className="den-nav" aria-label="Sections">
         <a className="rail-mark" href="/">
           Thievn&apos;s Den
         </a>
-        <div className="tablist" role="tablist" aria-label="Rooms" onKeyDown={onKeyDown}>
+        <div className="tablist" role="tablist" aria-label="Sections" onKeyDown={onKeyDown}>
           {ROOMS.map((item) => (
             <button
               key={item.id}
@@ -79,7 +81,7 @@ export function Dashboard({ ownerName }: { ownerName: string | null }) {
         <form method="post" action="/api/auth">
           <input type="hidden" name="intent" value="logout" />
           <button className="logout" type="submit">
-            Logout
+            Sign out
           </button>
         </form>
       </nav>

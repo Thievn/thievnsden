@@ -22,6 +22,9 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100svh;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
   background:
     radial-gradient(1200px 700px at 50% -10%, rgba(142, 31, 47, 0.16), transparent 60%),
     var(--ink);
@@ -646,7 +649,11 @@ button, input { font: inherit; color: inherit; }
   display: grid;
   align-content: center;
   justify-items: start;
-  padding: 2rem 1.25rem;
+  padding:
+    calc(2rem + env(safe-area-inset-top))
+    calc(1.25rem + env(safe-area-inset-right))
+    calc(2rem + env(safe-area-inset-bottom))
+    calc(1.25rem + env(safe-area-inset-left));
   max-width: 40rem;
   margin: 0 auto;
 }
@@ -666,11 +673,18 @@ button, input { font: inherit; color: inherit; }
 .den-top { padding: calc(1.3rem + env(safe-area-inset-top)) 1.25rem 0.2rem; }
 
 .den-greeting,
-.signed-name {
+.signed-name,
+.welcome {
   font-family: var(--font-fraunces), Georgia, serif;
   font-size: 1.55rem;
   line-height: 1.25;
   text-wrap: balance;
+}
+
+.welcome .signed-name {
+  display: inline;
+  font-size: 1em;
+  color: var(--gold);
 }
 
 .signed-name {
@@ -684,6 +698,28 @@ button, input { font: inherit; color: inherit; }
   font-family: var(--font-fraunces), Georgia, serif;
   font-size: 1.05rem;
 }
+
+.install-bar {
+  position: fixed;
+  z-index: 40;
+  left: calc(0.8rem + env(safe-area-inset-left));
+  right: calc(0.8rem + env(safe-area-inset-right));
+  bottom: calc(5.6rem + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(26, 29, 38, 0.96);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  font-size: 0.95rem;
+}
+
+.install-bar p { margin: 0; }
+
+.install-actions { display: flex; gap: 0.35rem; flex: none; }
 
 .den-nav {
   position: fixed;
@@ -906,6 +942,12 @@ button, input { font: inherit; color: inherit; }
   .logout { text-align: left; padding-left: 0.9rem; }
 
   .room { margin-top: 1.6rem; padding: 2rem 2rem 2.2rem; }
+
+  .install-bar {
+    left: auto;
+    width: min(24rem, calc(100vw - 2rem));
+    bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  }
 }
 
 @media (max-width: 380px) {

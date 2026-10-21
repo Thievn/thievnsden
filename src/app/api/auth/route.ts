@@ -9,8 +9,8 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const FAIL = "The lock does not turn.";
-const UNSET = "The lock is not set.";
+const FAIL = "Hmm, wrong name or password";
+const UNSET = "Sign-in isn't set up yet.";
 
 function wantsJson(req: NextRequest) {
   return (req.headers.get("accept") ?? "").includes("application/json");

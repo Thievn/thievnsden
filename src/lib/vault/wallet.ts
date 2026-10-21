@@ -36,7 +36,7 @@ function rpcFor(cluster: Cluster): string {
 }
 
 function safeError(): string {
-  return "The chain did not answer.";
+  return "Couldn't reach the network.";
 }
 
 async function withTimeout<T>(work: Promise<T>, ms = 8_000): Promise<T> {

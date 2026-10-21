@@ -200,7 +200,7 @@ export async function acknowledgeAlert(id: string): Promise<void> {
 
 export function publicDeskError(error: unknown): string {
   const message = error instanceof Error ? error.message : "";
-  if (message === "UNCONFIGURED") return "The vault is not connected.";
-  if (message.startsWith("BOOK_")) return "The book did not open.";
-  return "The book did not open.";
+  if (message === "UNCONFIGURED") return "Vault isn't connected.";
+  if (message.startsWith("BOOK_")) return "Couldn't load the data.";
+  return "Couldn't load the data.";
 }

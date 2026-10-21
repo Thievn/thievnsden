@@ -62,3 +62,6 @@ Still needed before the wallet balance and transfers have a destination:
 | `DEN_WALLET_ADDRESS` | No | Public trading-wallet address. Returned only after sign-in, and only if it is a 32-byte public key. |
 | `SOLANA_RPC_URL` | Yes, if set | Optional mainnet RPC for balance reads. If it is a private URL it can embed an API key. The browser never receives it. |
 | `DEN_MAX_TRANSFER_SOL` | No | Optional sanity cap per transfer. Default `2`. Larger amounts require typing `CONFIRM`. They are not blocked. |
+| `VAPID_PUBLIC_KEY` | No | Public Web Push key. Settings uses it to subscribe this phone. Generate with `npx --yes web-push generate-vapid-keys`. |
+
+The matching `VAPID_PRIVATE_KEY` does not go on Vercel. The desk box also needs `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` (`mailto:thievnsden@gmail.com`), `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` so `desk/notify.py` can send. See [DESK_NOTIFY.md](DESK_NOTIFY.md). Run `supabase/push.sql` once before the first alert.

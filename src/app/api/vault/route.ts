@@ -10,11 +10,18 @@ import {
 } from "@/lib/vault/constants";
 import { previewFeatures, readMaxTransferSol, resolveCluster } from "@/lib/vault/env";
 import { exampleBalance, exampleDesk } from "@/lib/vault/example";
+import { readEndpoint, readPushPrefs, readSubscription, readVapidPublicKey, TEST_NOTICE } from "@/lib/vault/push";
 import {
   acknowledgeAlert,
+  deletePushSubscription,
   deskIsEmpty,
   loadDesk,
+  loadPushState,
   publicDeskError,
+  publicPushError,
+  queuePushTest,
+  savePushPrefs,
+  savePushSubscription,
   supabaseConfigured,
 } from "@/lib/vault/supabase";
 import type { BalanceSample, DeskSource, DeskView, VaultPayload, WalletSnapshot } from "@/lib/vault/types";
@@ -83,6 +90,7 @@ function payload(input: {
     ticketUsd: TICKET_USD,
     maxOpen: MAX_OPEN,
     haltUsd: DAILY_LOSS_HALT_USD,
+    vapidPublicKey: readVapidPublicKey(),
   };
 }
 
@@ -175,12 +183,31 @@ export async function POST(req: NextRequest) {
   if (!(await hasOwnerSession())) {
     return NextResponse.json({ ok: false, error: LOCKED }, { status: 401 });
   }
-  const contentLength = Number(req.headers.get("content-length") ?? "0");
-  if (Number.isFinite(contentLength) && contentLength > 2_000) {
+  const raw = await req.text();
+  if (raw.length > 12_000) {
     return NextResponse.json({ ok: false, error: LOCKED }, { status: 413 });
   }
-  const body = await req.json().catch(() => null) as { action?: unknown; id?: unknown } | null;
-  if (body?.action !== "acknowledge" || typeof body.id !== "string") {
+  let body: Record<string, unknown> | null = null;
+  try {
+    const parsed = JSON.parse(raw || "null") as unknown;
+    body = parsed && typeof parsed === "object" ? parsed as Record<string, unknown> : null;
+  } catch {
+    body = null;
+  }
+  if (!body || typeof body.action !== "string") {
+    return NextResponse.json({ ok: false, error: "Nothing to update." }, { status: 400 });
+  }
+  if (body.action === "acknowledge") return acknowledge(body);
+  if (body.action === "push-state") return pushState(body);
+  if (body.action === "subscribe") return subscribe(body);
+  if (body.action === "unsubscribe") return unsubscribe(body);
+  if (body.action === "push-prefs") return pushPrefs(body);
+  if (body.action === "push-test") return pushTest();
+  return NextResponse.json({ ok: false, error: "Nothing to update." }, { status: 400 });
+}
+
+async function acknowledge(body: Record<string, unknown>) {
+  if (typeof body.id !== "string") {
     return NextResponse.json({ ok: false, error: "Nothing to update." }, { status: 400 });
   }
   if (body.id.startsWith("ex-")) {
@@ -196,4 +223,64 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Couldn't save that." }, { status: 502 });
   }
   return NextResponse.json({ ok: true });
+}
+
+async function pushState(body: Record<string, unknown>) {
+  try {
+    const state = await loadPushState(readEndpoint(body.endpoint));
+    return NextResponse.json({
+      ok: true,
+      configured: supabaseConfigured(),
+      vapidPublicKey: readVapidPublicKey(),
+      ...state,
+    });
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: publicPushError(error) }, { status: 502 });
+  }
+}
+
+async function subscribe(body: Record<string, unknown>) {
+  const subscription = readSubscription(body.subscription);
+  if (!subscription) {
+    return NextResponse.json({ ok: false, error: "That subscription didn't look right." }, { status: 400 });
+  }
+  const prefs = readPushPrefs(body.prefs);
+  try {
+    await savePushSubscription(subscription, prefs);
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: publicPushError(error) }, { status: 502 });
+  }
+  return NextResponse.json({ ok: true });
+}
+
+async function unsubscribe(body: Record<string, unknown>) {
+  const endpoint = readEndpoint(body.endpoint);
+  if (!endpoint) {
+    return NextResponse.json({ ok: false, error: "Nothing to update." }, { status: 400 });
+  }
+  try {
+    await deletePushSubscription(endpoint);
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: publicPushError(error) }, { status: 502 });
+  }
+  return NextResponse.json({ ok: true });
+}
+
+async function pushPrefs(body: Record<string, unknown>) {
+  const prefs = readPushPrefs(body.prefs);
+  try {
+    const stored = await savePushPrefs(prefs);
+    return NextResponse.json({ ok: true, stored });
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: publicPushError(error) }, { status: 502 });
+  }
+}
+
+async function pushTest() {
+  try {
+    await queuePushTest();
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: publicPushError(error) }, { status: 502 });
+  }
+  return NextResponse.json({ ok: true, preview: TEST_NOTICE });
 }

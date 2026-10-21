@@ -70,6 +70,13 @@ export function VaultDesk() {
   }, [cluster]);
 
   useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("screen");
+    if (requested && SCREENS.some(([id]) => id === requested)) {
+      setScreen(requested as Screen);
+    }
+  }, []);
+
+  useEffect(() => {
     let stop = false;
     const run = (silent: boolean) => {
       if (!stop) void load(silent);

@@ -158,4 +158,5 @@ export type VaultPayload = {
   ticketUsd: number;
   maxOpen: number;
   haltUsd: number;
+  vapidPublicKey: string | null;
 };

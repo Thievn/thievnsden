@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { InstallPrompt } from "./InstallPrompt";
+import { AlertSettings } from "./AlertSettings";
 import { VaultDesk } from "./VaultDesk";
 
 const ROOMS = [
@@ -26,6 +26,13 @@ const ROOMS = [
     kicker: "Empty",
     body: "No notes yet.",
   },
+  {
+    id: "settings",
+    label: "Settings",
+    short: "Alerts",
+    kicker: "Alerts",
+    body: "",
+  },
 ] as const;
 
 type RoomId = (typeof ROOMS)[number]["id"];
@@ -48,13 +55,12 @@ export function Dashboard({ ownerName }: { ownerName: string | null }) {
   }
 
   return (
-    <div className="den-shell">
+    <div className="den-shell" data-den-app="">
       <header className="den-top">
         <p className="welcome">
           Welcome back{ownerName ? <>, <span className="signed-name">{ownerName}</span></> : null}
         </p>
       </header>
-      <InstallPrompt />
 
       <nav className="den-nav" aria-label="Sections">
         <a className="rail-mark" href="/">
@@ -96,13 +102,15 @@ export function Dashboard({ ownerName }: { ownerName: string | null }) {
             hidden={room !== item.id}
             className={item.id === "vault" ? "vault-hold" : "room"}
           >
-            {item.id === "vault" ? <VaultDesk /> : (
+            {item.id === "vault" ? <VaultDesk /> : null}
+            {item.id === "settings" ? <AlertSettings /> : null}
+            {item.id !== "vault" && item.id !== "settings" ? (
               <>
                 <p className="eyebrow">{item.kicker}</p>
                 <h1>{item.label}</h1>
                 <p>{item.body}</p>
               </>
-            )}
+            ) : null}
             {item.id === "ledger" ? (
               <div className="ruled" aria-hidden="true">
                 <span />

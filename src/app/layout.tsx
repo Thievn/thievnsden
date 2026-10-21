@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Cinzel, Fraunces, Outfit } from "next/font/google";
-import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -75,10 +74,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className={`${outfit.variable} ${fraunces.variable} ${cinzel.variable}`}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
+        <link rel="stylesheet" href="/pwa.css" />
+        <script src="/pwa.js" defer />
       </head>
       <body>
         <div className="grain" aria-hidden="true" />
-        <RegisterServiceWorker />
         {children}
       </body>
     </html>

@@ -1,3 +1,4 @@
+import { prefsFromRow, prefsToColumns, type PushPrefs, type StoredSubscription } from "./push";
 import type { AlertRow, CheckRow, DeskMode, PositionRow, ReportRow, RunRow, Stage, TradeAction, TradeRow, Verdict } from "./types";
 
 if (typeof window !== "undefined") {
@@ -203,4 +204,75 @@ export function publicDeskError(error: unknown): string {
   if (message === "UNCONFIGURED") return "Vault isn't connected.";
   if (message.startsWith("BOOK_")) return "Couldn't load the data.";
   return "Couldn't load the data.";
+}
+
+export function publicPushError(error: unknown): string {
+  const message = error instanceof Error ? error.message : "";
+  if (message === "UNCONFIGURED" || message === "BOOK_404") return "Alerts aren't saved yet.";
+  return "Couldn't save that.";
+}
+
+function quoteFilter(value: string): string {
+  return encodeURIComponent(value);
+}
+
+export async function loadPushState(endpoint: string | null): Promise<{ subscribed: boolean; prefs: PushPrefs }> {
+  const fallback = { subscribed: false, prefs: prefsFromRow({}) };
+  if (!supabaseConfigured()) return fallback;
+  if (endpoint) {
+    const mine = asRows(await rest(`push_subscriptions?select=*&endpoint=eq.${quoteFilter(endpoint)}&limit=1`));
+    if (mine[0]) return { subscribed: true, prefs: prefsFromRow(mine[0]) };
+  }
+  const shared = asRows(await rest("push_subscriptions?select=*&order=updated_at.desc&limit=1"));
+  if (!shared[0]) return fallback;
+  const prefs = prefsFromRow(shared[0]);
+  return { subscribed: false, prefs: { ...prefs, alertsOn: false } };
+}
+
+export async function savePushSubscription(subscription: StoredSubscription, prefs: PushPrefs): Promise<void> {
+  await rest("push_subscriptions?on_conflict=endpoint", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=minimal",
+    },
+    body: JSON.stringify({
+      endpoint: subscription.endpoint,
+      p256dh: subscription.p256dh,
+      auth: subscription.auth,
+      ...prefsToColumns({ ...prefs, alertsOn: true }),
+    }),
+  });
+}
+
+export async function savePushPrefs(prefs: PushPrefs): Promise<boolean> {
+  const existing = asRows(await rest("push_subscriptions?select=id&limit=1"));
+  if (!existing[0]) return false;
+  await rest("push_subscriptions?id=not.is.null", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify(prefsToColumns(prefs)),
+  });
+  return true;
+}
+
+export async function deletePushSubscription(endpoint: string): Promise<void> {
+  await rest(`push_subscriptions?endpoint=eq.${quoteFilter(endpoint)}`, {
+    method: "DELETE",
+    headers: { Prefer: "return=minimal" },
+  });
+}
+
+export async function queuePushTest(): Promise<void> {
+  await rest("push_outbox", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify({ event: "test", payload: {} }),
+  });
 }

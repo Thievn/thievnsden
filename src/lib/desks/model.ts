@@ -42,6 +42,7 @@ export type HubCard = {
   openCount: number;
   marks: Mark[];
   spark: Point[];
+  waiting: boolean;
 };
 
 export type PositionView = {
@@ -127,6 +128,7 @@ export type DeskDetail = {
   settingsSaved: boolean;
   using: SettingsUsing;
   wallets: WalletView[];
+  waiting: boolean;
 };
 
 const TIME_KEYS = ["time", "at", "ts", "t", "created_at", "updated_at", "recorded_at", "traded_at", "opened", "heartbeat_at", "as_of", "ran_at"];
@@ -557,6 +559,7 @@ export function buildDesks(tables: RawTables, now: Date): { cards: HubCard[]; de
       settingsSaved: saved !== null,
       using,
       wallets: walletViews,
+      waiting: meta.venue && tradeRows.length === 0 && equityCurve.length === 0 && positionViews.length === 0,
     };
   }
 
@@ -576,6 +579,7 @@ export function buildDesks(tables: RawTables, now: Date): { cards: HubCard[]; de
       openCount: detail.openCount,
       marks: detail.positions.slice(0, 5).map((position) => ({ symbol: position.symbol, iconUrl: position.iconUrl })),
       spark: detail.equityCurve.slice(-36),
+      waiting: detail.waiting,
     };
   });
   return { cards, details };

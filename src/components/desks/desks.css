@@ -13,6 +13,7 @@
 .pad { padding: 1rem 0.95rem 1.05rem; }
 
 .desk-shell {
+  position: relative;
   min-height: 100svh;
   padding-bottom: calc(4.8rem + env(safe-area-inset-bottom));
   background:
@@ -333,8 +334,7 @@
 .field input,
 .field select,
 .pair-picks button,
-.wallet-list button,
-.desk-bar button {
+.wallet-list button {
   border-radius: 0.8rem;
   border: 1px solid rgba(212, 162, 76, 0.35);
   background: #12151c;
@@ -388,6 +388,17 @@ fieldset[disabled] { opacity: 0.72; }
 }
 .check-feed em { color: #e6d8b8; font-style: normal; }
 
+.den-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: 0.15rem 0 0 1rem;
+  padding: 0 0.2rem;
+  text-decoration: none;
+  color: #e6d8b8;
+  letter-spacing: 0.08em;
+}
+
 .desk-bar {
   position: fixed;
   left: 0;
@@ -396,24 +407,45 @@ fieldset[disabled] { opacity: 0.72; }
   z-index: 6;
   display: flex;
   gap: 0.35rem;
-  overflow-x: auto;
   padding: 0.4rem 0.55rem calc(0.4rem + env(safe-area-inset-bottom));
   background: rgba(11, 13, 18, 0.96);
   border-top: 1px solid rgba(212, 162, 76, 0.28);
 }
 
+.desk-menu { position: relative; flex: 1; display: flex; }
+
+.desk-pop {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.45rem);
+  transform: translateX(-50%);
+  display: grid;
+  min-width: 12rem;
+  padding: 0.35rem;
+  border-radius: 0.9rem;
+  background: #1a1d26;
+  border: 1px solid rgba(212, 162, 76, 0.4);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+}
+
+.desk-pop a { justify-content: flex-start; width: 100%; }
+
 .desk-bar a,
 .desk-bar button {
-  flex: none;
+  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 44px;
+  min-height: 44px;
   padding: 0 0.8rem;
+  border: 0;
   border-radius: 999px;
   text-decoration: none;
   color: #f2e6c9;
   background: transparent;
+  font: inherit;
+  cursor: pointer;
 }
 
 .desk-bar a[aria-current="page"] {
@@ -470,6 +502,7 @@ fieldset[disabled] { opacity: 0.72; }
     border-top: 0;
     border-bottom: 1px solid rgba(212, 162, 76, 0.28);
   }
+  .desk-pop { bottom: auto; top: calc(100% + 0.45rem); }
   .desk-main { padding: 0.5rem 1.5rem 2.5rem; }
   .pos-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 }

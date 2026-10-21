@@ -69,8 +69,10 @@ export function DeskHub({
                 ))}
               </span>
             </p>
-            <CardSpark values={card.spark.map((point) => point.usd)} up={card.todayPnl >= 0} />
-            <a className="open-desk" href={`/desk/${card.id}`}>Open desk</a>
+            {card.waiting ? <p className="quiet">Venue data starts flowing shortly.</p> : (
+              <CardSpark values={card.spark.map((point) => point.usd)} up={card.todayPnl >= 0} />
+            )}
+            <a className="open-desk" href={`/desk/${card.id}`}>Open desk →</a>
           </article>
         ))}
       </div>

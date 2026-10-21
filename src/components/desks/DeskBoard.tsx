@@ -50,6 +50,7 @@ export function DeskBoard({
         {detail.venue ? <a className="text-link" href={`/desk/${detail.id}/settings`}>Settings</a> : null}
       </header>
       {source === "example" ? <p className="note-banner">Sample numbers, until a desk is connected.</p> : null}
+      {detail.waiting ? <p className="note-banner">Venue data starts flowing shortly.</p> : null}
       {error ? <p className="warn-banner" role="alert">{error}</p> : null}
 
       <div className="stat-grid">

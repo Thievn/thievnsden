@@ -34,11 +34,10 @@ function PaperLock() {
 function LaterKeys() {
   return (
     <section className="glass pad stack">
-      <h2>Exchange API keys</h2>
+      <h2>Exchange keys: coming later (write-only via Vault)</h2>
       <form onSubmit={(event) => event.preventDefault()}>
         <fieldset disabled>
-          <p>Coming later.</p>
-          <p>When this exists, use a trade-only key, leave withdrawals off, lock it to an IP allowlist, and rotate it every 90 days.</p>
+          <p>Trade-only keys, withdrawals off, an IP allowlist, and rotate every 90 days.</p>
           <label className="field">Key<input autoComplete="off" placeholder="Coming later" /></label>
           <label className="field">Secret<input type="password" autoComplete="off" placeholder="Coming later" /></label>
           <button type="button">Coming later</button>

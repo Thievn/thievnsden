@@ -1,36 +1,44 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname } from "next/navigation";
-
-const LINKS = [
-  { href: "/desk", label: "Desks", exact: true },
-  { href: "/desk/solana", label: "Solana", exact: false },
-  { href: "/desk/binanceus", label: "Binance", exact: false },
-  { href: "/desk/coinbase", label: "Coinbase", exact: false },
-  { href: "/den", label: "Den", exact: true },
-];
-
-function isCurrent(pathname: string, href: string, exact: boolean): boolean {
-  if (exact) return pathname === href;
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
+import { DESK_IDS, DESKS, isDeskId } from "@/lib/desks/ids";
 
 export function DeskNav() {
   const pathname = usePathname() ?? "/desk";
+  const [open, setOpen] = useState(false);
+  const parts = pathname.split("/").filter(Boolean);
+  const deskId = parts[0] === "desk" && isDeskId(parts[1]) ? parts[1] : null;
+  const onSettings = parts[2] === "settings";
+  const settingsHref = `/desk/${deskId ?? "solana"}/settings`;
+
   return (
     <nav className="desk-bar" aria-label="Desks">
-      {LINKS.map((link) => {
-        const current = isCurrent(pathname, link.href, link.exact);
-        return (
-          <a key={link.href} href={link.href} aria-current={current ? "page" : undefined}>
-            {link.label}
-          </a>
-        );
-      })}
-      <form method="post" action="/api/auth">
-        <input type="hidden" name="intent" value="logout" />
-        <button type="submit">Sign out</button>
-      </form>
+      <a href="/desk" aria-current={pathname === "/desk" ? "page" : undefined}>Hub</a>
+      <div className="desk-menu">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-current={deskId && !onSettings ? "page" : undefined}
+          onClick={() => setOpen((value) => !value)}
+        >
+          Desks
+        </button>
+        {open ? (
+          <div className="desk-pop" role="group" aria-label="Choose a desk">
+            {DESK_IDS.map((id) => {
+              const href = `/desk/${id}`;
+              const current = deskId === id && !onSettings;
+              return (
+                <a key={id} href={href} aria-current={current ? "page" : undefined} onClick={() => setOpen(false)}>
+                  {DESKS[id].name}
+                </a>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+      <a href={settingsHref} aria-current={onSettings ? "page" : undefined}>Settings</a>
     </nav>
   );
 }

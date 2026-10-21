@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { composeNegative, composePositive, decideFace, HIDDEN_AGE_NEGATIVE, minorReason } from "./safety.ts";
+import { composeNegative, composePositive, decideFace, HIDDEN_AGE_NEGATIVE, isExplicit, minorReason, SPICY_NOTE } from "./safety.ts";
 import { chromaGraph, qwenEditGraph, zimageGraph } from "./workflows.ts";
 
 test("age terms are blocked and adult explicit text is not", () => {
@@ -27,27 +27,23 @@ test("the hidden age negative is server-side and does not ban nudity", () => {
   assert.doesNotMatch(positive, /no nudity|must be clothed|sfw/i);
 });
 
-test("a real upload has to match the face lock", () => {
-  assert.equal(decideFace(null, "upload", true).ok, false);
-  assert.equal(
-    decideFace({ realFace: true, faceCount: 1, minor: false, samePerson: false }, "upload", true).ok,
-    false,
-  );
-  assert.equal(
-    decideFace({ realFace: true, faceCount: 1, minor: false, samePerson: null }, "upload", false).ok,
-    false,
-  );
-  assert.equal(
-    decideFace({ realFace: false, faceCount: 0, minor: false, samePerson: null }, "upload", false).ok,
-    true,
-  );
-  assert.equal(
-    decideFace({ realFace: true, faceCount: 1, minor: false, samePerson: true }, "upload", true).ok,
-    true,
-  );
-  assert.equal(decideFace({ realFace: true, faceCount: 1, minor: true, samePerson: true }, "upload", true).ok, false);
-  assert.equal(decideFace({ realFace: true, faceCount: 1, minor: false, samePerson: null }, "enroll", false).ok, true);
-  assert.equal(decideFace({ realFace: false, faceCount: 0, minor: false, samePerson: null }, "enroll", false).ok, false);
+test("explicit edits of someone else's real face are the only face block", () => {
+  const stranger = { realFace: true, faceCount: 1, minor: false, samePerson: false };
+  const dean = { realFace: true, faceCount: 1, minor: false, samePerson: true };
+  const drawing = { realFace: false, faceCount: 0, minor: false, samePerson: null };
+  assert.equal(isExplicit("change the jacket and the street"), false);
+  assert.equal(isExplicit("a nude portrait"), true);
+  assert.equal(decideFace(stranger, "upload", false).ok, true);
+  assert.equal(decideFace(stranger, "upload", true).ok, false);
+  assert.equal(decideFace(stranger, "upload", true).ok ? "" : (decideFace(stranger, "upload", true) as { error: string }).error, SPICY_NOTE);
+  assert.equal(decideFace(dean, "upload", true).ok, true);
+  assert.equal(decideFace(drawing, "upload", true).ok, true);
+  assert.equal(decideFace({ realFace: true, faceCount: 2, minor: false, samePerson: true }, "upload", false).ok, true);
+  assert.equal(decideFace({ realFace: true, faceCount: 2, minor: false, samePerson: true }, "upload", true).ok, false);
+  assert.equal(decideFace(null, "upload", false).ok, false);
+  assert.equal(decideFace({ ...stranger, minor: true }, "upload", false).ok, false);
+  assert.equal(decideFace(dean, "enroll").ok, true);
+  assert.equal(decideFace(drawing, "enroll").ok, false);
 });
 
 test("generation graphs carry the hidden age negative and no nudity sticker", () => {

@@ -3,7 +3,7 @@ import { describeBody, enhancePrompt, grokConfigured, readFace } from "./grok";
 import { parseDataUrl, toBase64, toDataUrl } from "./images";
 import { clampBatch, clampCfg, clampSeed, clampSteps, clampStrength, pixelSize, styleById, type ModelId } from "./options";
 import { bytesFromRunpodOutput, publicImageError, readRunpod, runpodConfigured, submitWorkflow } from "./runpod";
-import { AGE_BLOCK, composePositive, decideFace, minorReason } from "./safety";
+import { AGE_BLOCK, composePositive, decideFace, isExplicit, minorReason } from "./safety";
 import {
   createFolder,
   downloadObject,
@@ -56,9 +56,9 @@ function present(image: AtticImage) {
   };
 }
 
-async function screenUpload(dataUrl: string, hasLock: boolean, lockUrl: string | null, mode: "enroll" | "upload") {
+async function screenUpload(dataUrl: string, lockUrl: string | null, mode: "enroll" | "upload", explicit = false) {
   const report = await readFace(dataUrl, mode === "upload" ? lockUrl : null);
-  return { report, decision: decideFace(report, mode, hasLock) };
+  return { report, decision: decideFace(report, mode, explicit) };
 }
 
 async function lockDataUrl(): Promise<{ hasLock: boolean; url: string | null }> {
@@ -201,16 +201,17 @@ async function make(body: Record<string, unknown> | null, action: "generate" | "
   const lock = await lockDataUrl();
   if (lock.hasLock && !lock.url) return reply(503, { error: "Face check is unavailable. Nothing was saved." });
   const uploads = [subject, outfit, extra].filter((item): item is { mime: string; bytes: Uint8Array } => Boolean(item));
-  let matchedDean = false;
+  const explicit = isExplicit(userPrompt);
+  let keepFace = false;
   for (const upload of uploads) {
     const digest = createHash("sha256").update(upload.bytes).digest("hex");
     if (await isAtticResult(digest)) continue;
-    const screened = await screenUpload(toDataUrl(upload.mime, upload.bytes), lock.hasLock, lock.url, "upload");
+    const screened = await screenUpload(toDataUrl(upload.mime, upload.bytes), lock.url, "upload", explicit);
     if (!screened.decision.ok) return reply(400, { error: screened.decision.error });
-    if (screened.report?.realFace && screened.report.samePerson === true) matchedDean = true;
+    if (screened.report?.realFace) keepFace = true;
   }
 
-  const positive = composePositive(userPrompt, style.text, !matchedDean);
+  const positive = composePositive(userPrompt, style.text, !keepFace);
   const denoise = tool === "restore" ? 0.4 : tool === "upscale" ? 0.3 : strength;
   const editPrompt =
     tool === "restore"
@@ -295,7 +296,7 @@ async function faceLock(body: Record<string, unknown> | null): Promise<Reply> {
   if (!image) return reply(400, { error: "Use a clear photo of your face." });
   if (!grokConfigured()) return reply(503, { error: "Face check is unavailable. Nothing was saved." });
   const dataUrl = toDataUrl(image.mime, image.bytes);
-  const screened = await screenUpload(dataUrl, false, null, "enroll");
+  const screened = await screenUpload(dataUrl, null, "enroll");
   if (!screened.decision.ok) return reply(400, { error: screened.decision.error });
   await uploadObject("face/lock.jpg", image.mime, image.bytes);
   await saveProfile({ face_path: "face/lock.jpg" });
@@ -314,7 +315,7 @@ async function bodyScan(body: Record<string, unknown> | null): Promise<Reply> {
   const lock = await lockDataUrl();
   if (lock.hasLock && !lock.url) return reply(503, { error: "Face check is unavailable. Nothing was saved." });
   const dataUrl = toDataUrl(image.mime, image.bytes);
-  const screened = await screenUpload(dataUrl, lock.hasLock, lock.url, "upload");
+  const screened = await screenUpload(dataUrl, lock.url, "upload", false);
   if (!screened.decision.ok) return reply(400, { error: screened.decision.error });
   const notes = (await describeBody(dataUrl)) ?? "";
   const safeNotes = minorReason(notes) ? "" : notes;

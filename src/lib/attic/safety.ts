@@ -13,6 +13,19 @@ const AGE_PATTERNS: RegExp[] = [
 
 export const AGE_BLOCK = "Adults only.";
 
+export const SPICY_NOTE = "Spicy edits work on you or made-up characters.";
+
+const EXPLICIT =
+  /\b(nud(e|es|ity)|naked|nsfw|topless|bottomless|undress\w*|uncloth\w*|strip(ped|ping)?\b|nipples?|areola\w*|breasts?|boobs?|tits?|genital\w*|pussy|vagina\w*|vulva|penis|cock\b|dick\b|sex(ual|y)?\b|porn\w*|explicit|xxx|erotic\w*|lewd|orgasm\w*|masturbat\w*|lingerie|thong|see[- ]?through|sheer)\b/i;
+
+/** True when the request is asking for explicit output. Does not block that output by itself. */
+export function isExplicit(text: string | null | undefined): boolean {
+  const value = (text ?? "").trim();
+  if (!value) return false;
+  const folded = value.toLowerCase().replace(/0/g, "o").replace(/3/g, "e").replace(/1/g, "i").replace(/@/g, "a").replace(/\$/g, "s");
+  return EXPLICIT.test(value) || EXPLICIT.test(folded);
+}
+
 /** Appended on the server. Never shown in the editor and never returned to the browser. */
 export const HIDDEN_AGE_NEGATIVE =
   "child, children, kid, toddler, infant, minor, underage, teen, teenager, preteen, loli, shota, childlike, baby face, young child, schoolgirl, schoolboy";
@@ -62,21 +75,17 @@ export type FaceReport = {
 export function decideFace(
   report: FaceReport | null,
   mode: "enroll" | "upload",
-  hasLock: boolean,
+  explicit = false,
 ): { ok: true } | { ok: false; error: string } {
+  if (report?.minor) return { ok: false, error: AGE_BLOCK };
   if (!report) return { ok: false, error: "Face check is unavailable. Nothing was saved." };
-  if (report.minor) return { ok: false, error: AGE_BLOCK };
   if (mode === "enroll") {
     if (!report.realFace || report.faceCount !== 1) {
       return { ok: false, error: "Use a clear photo of your face. One person." };
     }
     return { ok: true };
   }
-  if (report.realFace && report.faceCount > 1) {
-    return { ok: false, error: "One real face only." };
-  }
-  if (!report.realFace || report.faceCount === 0) return { ok: true };
-  if (!hasLock) return { ok: false, error: "Set your face lock first. A real photo has to be you." };
-  if (report.samePerson !== true) return { ok: false, error: "That face doesn't match your lock." };
+  const otherRealFace = report.realFace && (report.faceCount > 1 || report.samePerson !== true);
+  if (otherRealFace && explicit) return { ok: false, error: SPICY_NOTE };
   return { ok: true };
 }

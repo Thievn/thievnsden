@@ -670,7 +670,27 @@ button, input { font: inherit; color: inherit; }
     var(--ink);
 }
 
-.den-top { padding: calc(1.3rem + env(safe-area-inset-top)) 1.25rem 0.2rem; }
+.den-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: calc(1.3rem + env(safe-area-inset-top)) 1.25rem 0.2rem;
+}
+
+.attic-pin {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-top: 0.35rem;
+  display: grid;
+  place-items: center;
+  color: rgba(242, 230, 201, 0.28);
+  text-decoration: none;
+}
+
+.attic-pin:hover,
+.attic-pin:focus-visible { color: rgba(242, 230, 201, 0.55); }
 
 .den-greeting,
 .signed-name,

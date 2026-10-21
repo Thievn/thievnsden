@@ -46,7 +46,7 @@ Already set on production and preview. Leave them server-only. Do not reset them
 
 | Name | Secret | Purpose |
 | --- | --- | --- |
-| `XAI_API_KEY` | Yes | Optional. This app does not read it. |
+| `XAI_API_KEY` | Yes | Den's Attic uses it for Enhance, the face check, and body notes. Server only. |
 | `SUPABASE_URL` | No | Desk project URL. Server only. |
 | `SUPABASE_ANON_KEY` | No | Present on the project. This app does not use it. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server reads and alert acknowledgements. Never sent to the browser. |
@@ -65,3 +65,14 @@ Still needed before the wallet balance and transfers have a destination:
 | `VAPID_PUBLIC_KEY` | No | Public Web Push key. Settings uses it to subscribe this phone. Generate with `npx --yes web-push generate-vapid-keys`. |
 
 The matching `VAPID_PRIVATE_KEY` does not go on Vercel. The desk box also needs `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` (`mailto:thievnsden@gmail.com`), `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` so `desk/notify.py` can send. See [DESK_NOTIFY.md](DESK_NOTIFY.md). Run `supabase/push.sql` once before the first alert.
+
+Still needed before Den's Attic can make pictures:
+
+| Name | Secret | Purpose |
+| --- | --- | --- |
+| `RUNPOD_API_KEY` | Yes | Server key for the picture worker. Never sent to the browser. |
+| `RUNPOD_ENDPOINT_ID` | Yes | Server endpoint id for that worker. Chroma and Z-Image make new pictures. Qwen edits them. |
+
+Optional filename overrides, only if the worker volume uses different files: `STUDIO_CHROMA_UNET`, `STUDIO_CHROMA_CLIP_1`, `STUDIO_CHROMA_CLIP_2`, `STUDIO_CHROMA_CLIP_TYPE`, `STUDIO_CHROMA_VAE`, `STUDIO_ZIMAGE_UNET`, `STUDIO_ZIMAGE_CLIP`, `STUDIO_ZIMAGE_VAE`, `STUDIO_QWEN_UNET`, `STUDIO_QWEN_LORA`, `STUDIO_QWEN_CLIP`, `STUDIO_QWEN_VAE`, `GROK_REWRITE_MODEL`, `GROK_VISION_MODEL`.
+
+Run `supabase/attic.sql` once before the first picture. It adds owner-only tables and a private `attic` bucket. The service role is the only key that can use them. Signed-out visitors get a 404 at `/attic`. There is no link on the public page.

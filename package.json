@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --import ./scripts/register.mjs --test src/lib/session.test.ts src/lib/vault/aggregate.test.ts src/lib/vault/push.test.ts src/lib/vault/notify.test.ts src/lib/vault/reasons.test.ts src/lib/solana/transfer.test.ts src/lib/pwa.test.ts"
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --import ./scripts/register.mjs --test src/lib/session.test.ts src/lib/vault/aggregate.test.ts src/lib/vault/push.test.ts src/lib/vault/notify.test.ts src/lib/vault/reasons.test.ts src/lib/solana/transfer.test.ts src/lib/pwa.test.ts src/lib/attic/safety.test.ts"
   },
   "dependencies": {
     "@solana/wallet-adapter-backpack": "^0.1.14",

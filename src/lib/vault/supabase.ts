@@ -71,7 +71,36 @@ function asRows(value: unknown): Record<string, unknown>[] {
   return Array.isArray(value) ? value.filter((row) => row && typeof row === "object") as Record<string, unknown>[] : [];
 }
 
-const SOLANA = "desk_id=eq.solana";
+const SOLANA_TABLES = new Set([
+  "desk_checks",
+  "desk_positions",
+  "desk_trades",
+  "desk_alerts",
+  "desk_runs",
+]);
+
+export function vaultReadPath(table: string, query: string): string {
+  const scope = SOLANA_TABLES.has(table) ? "&desk_id=eq.solana" : "";
+  return `${table}?${query}${scope}`;
+}
+
+export function deskColumnMissing(error: unknown): boolean {
+  if (!(error instanceof Error) || error.message !== "BOOK_400") return false;
+  const detail = "detail" in error ? String((error as { detail?: unknown }).detail ?? "") : "";
+  return /desk_id/i.test(detail);
+}
+
+async function readVaultTable(table: string, query: string): Promise<unknown> {
+  try {
+    return await rest(vaultReadPath(table, query));
+  } catch (error) {
+    if (SOLANA_TABLES.has(table) && deskColumnMissing(error)) {
+      console.error("vault desk_id skipped", table);
+      return rest(`${table}?${query}`);
+    }
+    throw error;
+  }
+}
 
 export async function serviceRest(path: string, init?: RequestInit): Promise<unknown> {
   return rest(path, init);
@@ -83,12 +112,12 @@ export function recordRows(value: unknown): Record<string, unknown>[] {
 
 export async function loadDesk(): Promise<DeskTables> {
   const [checks, positions, trades, alerts, reports, runs] = await Promise.all([
-    rest(`desk_checks?select=id,time,mint,symbol,stage,verdict,confidence,reason&${SOLANA}&order=time.desc&limit=800`),
-    rest(`desk_positions?select=mint,symbol,entry,qty0,qty,peak,liq0,opened,steps&${SOLANA}&order=opened.desc&limit=50`),
-    rest(`desk_trades?select=id,time,mint,symbol,action,usd,pnl,reason&${SOLANA}&order=time.desc&limit=300`),
-    rest(`desk_alerts?select=id,created_at,source,kind,mint,symbol,text,acknowledged&${SOLANA}&order=created_at.desc&limit=100`),
-    rest(`desk_reports?select=day,mode,body,created_at&${SOLANA}&order=day.desc&limit=60`),
-    rest(`desk_runs?select=id,ran_at,kind,status,counts,error&${SOLANA}&order=ran_at.desc&limit=40`),
+    readVaultTable("desk_checks", "select=id,time,mint,symbol,stage,verdict,confidence,reason&order=time.desc&limit=800"),
+    readVaultTable("desk_positions", "select=mint,symbol,entry,qty0,qty,peak,liq0,opened,steps&order=opened.desc&limit=50"),
+    readVaultTable("desk_trades", "select=id,time,mint,symbol,action,usd,pnl,reason&order=time.desc&limit=300"),
+    readVaultTable("desk_alerts", "select=id,created_at,source,kind,mint,symbol,text,acknowledged&order=created_at.desc&limit=100"),
+    readVaultTable("desk_reports", "select=day,mode,body,created_at&order=day.desc&limit=60"),
+    readVaultTable("desk_runs", "select=id,ran_at,kind,status,counts,error&order=ran_at.desc&limit=40"),
   ]);
 
   return {

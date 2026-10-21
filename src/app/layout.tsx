@@ -1,168 +1,85 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
-import { Fraunces, Geist, Geist_Mono } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Cinzel, Fraunces, Outfit } from "next/font/google";
 import "./globals.css";
-import { AgeGate } from "@/components/AgeGate";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
-import { SiteChrome } from "@/components/SiteChrome";
-import { AnnouncementBanner } from "@/components/AnnouncementBanner";
-import { AnalyticsTracker } from "@/components/AnalyticsTracker";
-import { JsonLd } from "@/components/JsonLd";
-import { PwaRegister } from "@/components/PwaRegister";
-import { DenBoot } from "@/components/DenBoot";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const outfit = Outfit({
   subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const fraunces = Fraunces({
   subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
 });
 
-const denSerif = Fraunces({
+const cinzel = Cinzel({
   subsets: ["latin"],
-  variable: "--font-den-serif",
+  weight: ["500", "700"],
+  variable: "--font-cinzel",
+  display: "swap",
 });
 
-const siteTitle = "Thievn's Den";
-const siteDescription =
-  "Dark humor, honest writing, AI art, gaming, and experimental tools from Thievn. Home of Face The Den and unfiltered thoughts.";
-
-const ogImage =
-  "/api/og?title=Thievn%27s%20Den&subtitle=Dark%20humor%20%C2%B7%20Gaming%20%C2%B7%20Face%20The%20Den";
+const title = "Thievn's Den";
+const description = "A quiet little corner.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://thievnsden.com"),
   title: {
-    default: siteTitle,
+    default: title,
     template: `%s · Thievn's Den`,
   },
-  description: siteDescription,
-  applicationName: "Thievn's Den",
-  authors: [{ name: "Thievn", url: "https://thievnsden.com/about" }],
-  creator: "Thievn",
-  publisher: "Thievn",
-  keywords: [
-    "Thievn",
-    "Thievn's Den",
-    "dark humor",
-    "AI art",
-    "AI roast",
-    "Face The Den",
-    "gaming",
-    "personal essays",
-    "cynical humor",
-    "anime art",
-  ],
-  alternates: {
-    canonical: "/",
-  },
+  description,
+  applicationName: title,
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "https://thievnsden.com",
-    siteName: "Thievn's Den",
-    title: siteTitle,
-    description: siteDescription,
-    images: [{ url: ogImage, width: 1200, height: 630, alt: "Thievn's Den" }],
+    siteName: title,
+    title,
+    description,
   },
   twitter: {
-    card: "summary_large_image",
-    title: siteTitle,
-    description: siteDescription,
-    creator: "@Thievn",
-    site: "@Thievn",
-    images: [ogImage],
+    card: "summary",
+    title,
+    description,
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
-    },
-  },
-  category: "entertainment",
-  icons: {
-    icon: [
-      { url: "/mark/icon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/mark/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/mark/icon-512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: "/mark/apple-180.png",
-  },
+  robots: { index: true, follow: true },
   appleWebApp: {
     capable: true,
+    title: "Den",
     statusBarStyle: "black-translucent",
-    title: "The Den",
-    startupImage: [
-      "/splash-apple",
-      {
-        url: "/splash-apple?w=1170&h=2532",
-        media:
-          "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)",
-      },
-      {
-        url: "/splash-apple?w=1179&h=2556",
-        media:
-          "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)",
-      },
-      {
-        url: "/splash-apple?w=1284&h=2778",
-        media:
-          "(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)",
-      },
-      {
-        url: "/splash-apple?w=1290&h=2796",
-        media:
-          "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)",
-      },
-    ],
   },
-  formatDetection: {
-    telephone: false,
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
 export const viewport: Viewport = {
+  themeColor: "#0B0D12",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
-  themeColor: "#070707",
   viewportFit: "cover",
+  colorScheme: "dark",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${denSerif.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-[#070707] text-neutral-200 overflow-x-hidden">
-        <JsonLd />
-        <DenBoot />
-        <AgeGate />
-        <AnnouncementBanner />
-        <Navbar />
-        <SiteChrome>
-          <main className="flex-1 w-full">{children}</main>
-        </SiteChrome>
-        <Footer />
-        <Suspense fallback={null}>
-          <AnalyticsTracker />
-        </Suspense>
-        <PwaRegister />
-        <Analytics />
-        <SpeedInsights />
+    <html lang="en" className={`${outfit.variable} ${fraunces.variable} ${cinzel.variable}`}>
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <link rel="stylesheet" href="/pwa.css" />
+        <script src="/pwa.js" defer />
+      </head>
+      <body>
+        <div className="grain" aria-hidden="true" />
+        {children}
       </body>
     </html>
   );

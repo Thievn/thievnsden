@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /den
+Disallow: /api/

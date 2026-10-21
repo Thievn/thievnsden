@@ -3,35 +3,19 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Thievn's Den",
-    short_name: "The Den",
-    description:
-      "Dark humor, Face The Den, thoughts, loot, and gaming. Install for the full Den experience.",
+    short_name: "Den",
+    description: "A quiet little corner.",
+    id: "/",
     start_url: "/",
     scope: "/",
     display: "standalone",
-    orientation: "portrait-primary",
-    background_color: "#070707",
-    theme_color: "#070707",
-    categories: ["entertainment", "lifestyle"],
+    background_color: "#0B0D12",
+    theme_color: "#0B0D12",
     icons: [
-      {
-        src: "/mark/icon-192.png",
-        sizes: "192x192",
-        type: "image/png",
-        purpose: "any",
-      },
-      {
-        src: "/mark/icon-512.png",
-        sizes: "512x512",
-        type: "image/png",
-        purpose: "any",
-      },
-      {
-        src: "/mark/icon-512.png",
-        sizes: "512x512",
-        type: "image/png",
-        purpose: "maskable",
-      },
+      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icons/icon-192-maskable.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+      { src: "/icons/icon-512-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

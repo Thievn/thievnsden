@@ -151,14 +151,15 @@ export function VaultDoor() {
           <h2 id={titleId}>The lock</h2>
           <p className="lock-note">There is no other key.</p>
           <form method="post" action="/api/auth" onSubmit={onSubmit}>
-            <label htmlFor={emailId}>Email</label>
+            <label htmlFor={emailId}>Name or email</label>
             <input
               ref={emailRef}
               id={emailId}
               name="email"
-              type="email"
+              type="text"
               autoComplete="username"
-              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
               required
               spellCheck={false}
               disabled={pending}

@@ -21,16 +21,27 @@ export function authConfigured(): boolean {
   return email.length > 3 && email.includes("@") && password.length >= 10 && sessionSecret() !== null;
 }
 
+/** Display name for the signed-in owner. Original casing. Null when unset or unusable. */
+export function ownerUsername(): string | null {
+  const name = process.env.DEN_OWNER_USERNAME?.trim() ?? "";
+  if (name.length < 2 || name.length > 40) return null;
+  if (/[\s@]/.test(name)) return null;
+  return name;
+}
+
 function digest(value: string): Buffer {
   return createHash("sha256").update(value).digest();
 }
 
-export function credentialsMatch(email: string, password: string): boolean {
-  const expectedEmail = (process.env.DEN_OWNER_EMAIL ?? "unset-owner@example.com").trim().toLowerCase();
-  const expectedPassword = process.env.DEN_OWNER_PASSWORD ?? "unset-passphrase";
-  const emailOk = timingSafeEqual(digest(email.trim().toLowerCase()), digest(expectedEmail));
-  const passwordOk = timingSafeEqual(digest(password), digest(expectedPassword));
-  return authConfigured() && emailOk && passwordOk;
+export function credentialsMatch(identifier: string, password: string): boolean {
+  if (!authConfigured()) return false;
+  const given = digest(identifier.trim().toLowerCase());
+  const expectedEmail = (process.env.DEN_OWNER_EMAIL ?? "").trim().toLowerCase();
+  const emailOk = timingSafeEqual(given, digest(expectedEmail));
+  const username = ownerUsername();
+  const usernameOk = username ? timingSafeEqual(given, digest(username.toLowerCase())) : false;
+  const passwordOk = timingSafeEqual(digest(password), digest(process.env.DEN_OWNER_PASSWORD ?? ""));
+  return (emailOk || usernameOk) && passwordOk;
 }
 
 function signature(payload: string): Buffer | null {

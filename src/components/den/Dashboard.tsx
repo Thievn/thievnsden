@@ -29,7 +29,7 @@ const ROOMS = [
 
 type RoomId = (typeof ROOMS)[number]["id"];
 
-export function Dashboard() {
+export function Dashboard({ ownerName }: { ownerName: string | null }) {
   const [room, setRoom] = useState<RoomId>("vault");
 
   function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -50,7 +50,8 @@ export function Dashboard() {
     <div className="den-shell">
       <header className="den-top">
         <p className="eyebrow">Inside</p>
-        <p className="den-greeting">The door knew your hand.</p>
+        {ownerName ? <p className="signed-name">{ownerName}</p> : null}
+        <p className={ownerName ? "signed-line" : "den-greeting"}>The door knew your hand.</p>
       </header>
 
       <nav className="den-nav" aria-label="Private rooms">

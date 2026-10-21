@@ -50,14 +50,15 @@ Already set on production and preview. Leave them server-only. Do not reset them
 | `SUPABASE_URL` | No | Desk project URL. Server only. |
 | `SUPABASE_ANON_KEY` | No | Present on the project. This app does not use it. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Server reads and alert acknowledgements. Never sent to the browser. |
+| `DEN_OWNER_EMAIL` | No | One way through the door. Matched without case sensitivity. Must include `@`. |
+| `DEN_OWNER_USERNAME` | No | Signed-in name in the Vault, and the other way through the door. Matched without case sensitivity. |
+| `DEN_OWNER_PASSWORD` | Yes | The passphrase itself, at least 10 characters. Not a hash. A hash will not open the door. |
+| `SESSION_SECRET` | Yes | HMAC key for the session cookie, at least 32 characters. `openssl rand -base64 48`. |
 
-Still needed before the private door and the wallet behave:
+Still needed before the wallet balance and transfers have a destination:
 
 | Name | Secret | Purpose |
 | --- | --- | --- |
-| `DEN_OWNER_EMAIL` | No | The one account. Matched without case sensitivity. Must include `@`. |
-| `DEN_OWNER_PASSWORD` | Yes | The passphrase itself, at least 10 characters. Not a hash. A hash will not open the door. |
-| `SESSION_SECRET` | Yes | HMAC key for the session cookie, at least 32 characters. `openssl rand -base64 48`. |
 | `DEN_WALLET_ADDRESS` | No | Public trading-wallet address. Returned only after sign-in, and only if it is a 32-byte public key. |
 | `SOLANA_RPC_URL` | Yes, if set | Optional mainnet RPC for balance reads. If it is a private URL it can embed an API key. The browser never receives it. |
 | `DEN_MAX_TRANSFER_SOL` | No | Optional sanity cap per transfer. Default `2`. Larger amounts require typing `CONFIRM`. They are not blocked. |

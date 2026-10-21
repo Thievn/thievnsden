@@ -35,9 +35,12 @@ create table if not exists public.attic_images (
   status text not null default 'queued',
   runpod_id text,
   content_sha text,
+  upload_sha text,
   error text,
   parent_id uuid
 );
+
+alter table public.attic_images add column if not exists upload_sha text;
 
 create index if not exists attic_images_created_idx on public.attic_images (created_at desc);
 

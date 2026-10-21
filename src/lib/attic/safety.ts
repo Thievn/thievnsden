@@ -72,19 +72,13 @@ export type FaceReport = {
   samePerson: boolean | null;
 };
 
+/** Generation-time gate. Saving an upload does not call this. */
 export function decideFace(
   report: FaceReport | null,
-  mode: "enroll" | "upload",
   explicit = false,
 ): { ok: true } | { ok: false; error: string } {
   if (report?.minor) return { ok: false, error: AGE_BLOCK };
-  if (!report) return { ok: false, error: "Face check is unavailable. Nothing was saved." };
-  if (mode === "enroll") {
-    if (!report.realFace || report.faceCount !== 1) {
-      return { ok: false, error: "Use a clear photo of your face. One person." };
-    }
-    return { ok: true };
-  }
+  if (!report) return { ok: false, error: "Face check is unavailable." };
   const otherRealFace = report.realFace && (report.faceCount > 1 || report.samePerson !== true);
   if (otherRealFace && explicit) return { ok: false, error: SPICY_NOTE };
   return { ok: true };

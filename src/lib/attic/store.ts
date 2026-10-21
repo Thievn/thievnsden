@@ -234,8 +234,15 @@ export async function updateImage(id: string, patch: Record<string, unknown>): P
 
 export async function isAtticResult(sha: string): Promise<boolean> {
   if (!/^[a-f0-9]{64}$/i.test(sha)) return false;
-  const value = await rest(`attic_images?content_sha=eq.${sha}&status=eq.done&select=id&limit=1`);
+  const value = await rest(`attic_images?content_sha=eq.${sha}&status=eq.done&kind=neq.upload&select=id&limit=1`);
   return rows(value).length > 0;
+}
+
+export async function findUpload(sha: string): Promise<AtticImage | null> {
+  if (!/^[a-f0-9]{64}$/i.test(sha)) return null;
+  const value = await rest(`attic_images?upload_sha=eq.${sha}&kind=eq.upload&select=id&limit=1`);
+  const id = text(rows(value)[0]?.id);
+  return id ? imageById(id) : null;
 }
 
 export async function imageById(id: string): Promise<AtticImage | null> {

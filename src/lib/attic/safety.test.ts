@@ -33,17 +33,15 @@ test("explicit edits of someone else's real face are the only face block", () =>
   const drawing = { realFace: false, faceCount: 0, minor: false, samePerson: null };
   assert.equal(isExplicit("change the jacket and the street"), false);
   assert.equal(isExplicit("a nude portrait"), true);
-  assert.equal(decideFace(stranger, "upload", false).ok, true);
-  assert.equal(decideFace(stranger, "upload", true).ok, false);
-  assert.equal(decideFace(stranger, "upload", true).ok ? "" : (decideFace(stranger, "upload", true) as { error: string }).error, SPICY_NOTE);
-  assert.equal(decideFace(dean, "upload", true).ok, true);
-  assert.equal(decideFace(drawing, "upload", true).ok, true);
-  assert.equal(decideFace({ realFace: true, faceCount: 2, minor: false, samePerson: true }, "upload", false).ok, true);
-  assert.equal(decideFace({ realFace: true, faceCount: 2, minor: false, samePerson: true }, "upload", true).ok, false);
-  assert.equal(decideFace(null, "upload", false).ok, false);
-  assert.equal(decideFace({ ...stranger, minor: true }, "upload", false).ok, false);
-  assert.equal(decideFace(dean, "enroll").ok, true);
-  assert.equal(decideFace(drawing, "enroll").ok, false);
+  assert.equal(decideFace(stranger, false).ok, true);
+  assert.equal(decideFace(stranger, true).ok, false);
+  assert.equal(decideFace(stranger, true).ok ? "" : (decideFace(stranger, true) as { error: string }).error, SPICY_NOTE);
+  assert.equal(decideFace(dean, true).ok, true);
+  assert.equal(decideFace(drawing, true).ok, true);
+  assert.equal(decideFace({ realFace: true, faceCount: 2, minor: false, samePerson: true }, false).ok, true);
+  assert.equal(decideFace({ realFace: true, faceCount: 2, minor: false, samePerson: true }, true).ok, false);
+  assert.equal(decideFace(null, false).ok, false);
+  assert.equal(decideFace({ ...stranger, minor: true }, false).ok, false);
 });
 
 test("generation graphs carry the hidden age negative and no nudity sticker", () => {

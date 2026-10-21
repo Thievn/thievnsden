@@ -23,6 +23,44 @@ type Shot = {
 
 type Tool = "generate" | "img2img" | "inpaint" | "expand" | "upscale" | "restore" | "outfit";
 
+function asShot(value: unknown): Shot | null {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Partial<Shot>;
+  if (typeof row.id !== "string") return null;
+  return {
+    id: row.id,
+    prompt: typeof row.prompt === "string" ? row.prompt : "",
+    negative: typeof row.negative === "string" ? row.negative : "",
+    model: typeof row.model === "string" ? row.model : null,
+    style: typeof row.style === "string" ? row.style : null,
+    seed: typeof row.seed === "number" ? row.seed : null,
+    width: typeof row.width === "number" ? row.width : null,
+    height: typeof row.height === "number" ? row.height : null,
+    favorite: Boolean(row.favorite),
+    folder: typeof row.folder === "string" ? row.folder : null,
+    status: typeof row.status === "string" ? row.status : "done",
+    error: typeof row.error === "string" ? row.error : null,
+    url: typeof row.url === "string" ? row.url : null,
+    kind: typeof row.kind === "string" ? row.kind : "upload",
+  };
+}
+
+function shotsFrom(value: unknown): Shot[] {
+  return Array.isArray(value) ? value.flatMap((item) => {
+    const shot = asShot(item);
+    return shot ? [shot] : [];
+  }) : [];
+}
+
+class LabError extends Error {
+  images: Shot[];
+
+  constructor(message: string, images: Shot[]) {
+    super(message);
+    this.images = images;
+  }
+}
+
 async function post(body: Record<string, unknown>) {
   const response = await fetch("/api/lab", {
     method: "POST",
@@ -30,7 +68,12 @@ async function post(body: Record<string, unknown>) {
     body: JSON.stringify(body),
   });
   const json = (await response.json().catch(() => null)) as Record<string, unknown> | null;
-  if (!response.ok) throw new Error(typeof json?.error === "string" ? json.error : "That didn't go through.");
+  if (!response.ok) {
+    throw new LabError(typeof json?.error === "string" ? json.error : "That didn't go through.", [
+      ...shotsFrom(json?.images),
+      ...shotsFrom(json?.image ? [json.image] : []),
+    ]);
+  }
   return json ?? {};
 }
 
@@ -118,12 +161,35 @@ export function Attic() {
     return () => window.clearTimeout(timer);
   }, [images]);
 
+  function prepend(next: Shot[]) {
+    if (!next.length) return;
+    setImages((current) => {
+      const ids = new Set(current.map((item) => item.id));
+      const fresh = next.filter((item) => !ids.has(item.id));
+      return fresh.length ? [...fresh, ...current] : current;
+    });
+  }
+
+  async function keep(dataUrl: string) {
+    try {
+      const json = await post({ action: "save", image: dataUrl });
+      const shot = asShot(json.image);
+      if (shot) prepend([shot]);
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : "";
+      if (reason instanceof LabError && reason.images.length) prepend(reason.images);
+      if (message && message !== "History isn't set up yet.") setError(message);
+    }
+  }
+
   async function pick(setter: (value: string) => void, file: File | undefined) {
     if (!file) return;
     setError(null);
     try {
-      setter(await fileToDataUrl(file));
+      const dataUrl = await fileToDataUrl(file);
+      setter(dataUrl);
       setMask(null);
+      await keep(dataUrl);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Couldn't read that picture.");
     }
@@ -187,9 +253,11 @@ export function Attic() {
     maskCtx.fillRect(0, 0, canvas.width, canvas.height);
     maskCtx.fillStyle = "black";
     maskCtx.fillRect(x, y, image.width, image.height);
-    setSource(canvas.toDataURL("image/jpeg", 0.9));
+    const next = canvas.toDataURL("image/jpeg", 0.9);
+    setSource(next);
     setMask(maskCanvas.toDataURL("image/png"));
     setTool("expand");
+    await keep(next);
   }
 
   async function run(kind: "make" | "enhance" | "face" | "body", file?: File) {
@@ -206,6 +274,8 @@ export function Attic() {
       if (kind === "face" && file) {
         const json = await post({ action: "face-lock", image: await fileToDataUrl(file) });
         setFace(Boolean(json.face));
+        const shot = asShot(json.image);
+        if (shot) prepend([shot]);
         setNotice("Face lock is on.");
         return;
       }
@@ -213,6 +283,8 @@ export function Attic() {
         const json = await post({ action: "body-scan", image: await fileToDataUrl(file) });
         setBody(Boolean(json.body));
         setBodyNotes(typeof json.bodyNotes === "string" ? json.bodyNotes : "");
+        const shot = asShot(json.image);
+        if (shot) prepend([shot]);
         setNotice("Body scan saved.");
         return;
       }
@@ -260,9 +332,10 @@ export function Attic() {
           kind: chosen,
         });
       }
-      setImages((current) => [...added, ...current]);
+      prepend([...added, ...shotsFrom(json.images)]);
       setNotice("It's cooking.");
     } catch (reason) {
+      if (reason instanceof LabError && reason.images.length) prepend(reason.images);
       setError(reason instanceof Error ? reason.message : "That didn't go through.");
     } finally {
       setBusy(false);

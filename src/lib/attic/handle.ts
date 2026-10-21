@@ -7,6 +7,7 @@ import { AGE_BLOCK, composePositive, decideFace, isExplicit, minorReason } from 
 import {
   createFolder,
   downloadObject,
+  findUpload,
   imageById,
   imagesByIds,
   insertImage,
@@ -56,9 +57,39 @@ function present(image: AtticImage) {
   };
 }
 
-async function screenUpload(dataUrl: string, lockUrl: string | null, mode: "enroll" | "upload", explicit = false) {
-  const report = await readFace(dataUrl, mode === "upload" ? lockUrl : null);
-  return { report, decision: decideFace(report, mode, explicit) };
+/** Runs only while making a picture. Saving an upload does not call this. */
+async function checkGenerationFace(dataUrl: string, lockUrl: string | null, explicit: boolean) {
+  const report = await readFace(dataUrl, lockUrl);
+  return { report, decision: decideFace(report, explicit) };
+}
+
+async function rememberUpload(image: { mime: string; bytes: Uint8Array }): Promise<AtticImage | null> {
+  if (!storageConfigured()) return null;
+  const digest = createHash("sha256").update(image.bytes).digest("hex");
+  const existing = await findUpload(digest);
+  if (existing) return existing;
+  const row = await insertImage({
+    kind: "upload",
+    prompt: "",
+    negative: "",
+    status: "done",
+    upload_sha: digest,
+  });
+  const ext = image.mime === "image/png" ? "png" : image.mime === "image/webp" ? "webp" : "jpg";
+  const path = `uploads/${row.id}.${ext}`;
+  await uploadObject(path, image.mime, image.bytes);
+  await updateImage(row.id, { storage_path: path, status: "done" });
+  return imageById(row.id);
+}
+
+async function rememberUploads(images: Array<{ mime: string; bytes: Uint8Array } | null>) {
+  const saved: AtticImage[] = [];
+  for (const image of images) {
+    if (!image) continue;
+    const row = await rememberUpload(image);
+    if (row && !saved.some((item) => item.id === row.id)) saved.push(row);
+  }
+  return saved;
 }
 
 async function lockDataUrl(): Promise<{ hasLock: boolean; url: string | null }> {
@@ -76,6 +107,7 @@ export async function handleLab(body: Record<string, unknown> | null): Promise<R
     if (action === "enhance") return await enhance(body);
     if (action === "generate" || action === "edit") return await make(body, action);
     if (action === "poll") return await poll(body);
+    if (action === "save") return await saveUpload(body);
     if (action === "face-lock") return await faceLock(body);
     if (action === "face-clear") return await clearFace();
     if (action === "body-scan") return await bodyScan(body);
@@ -131,6 +163,8 @@ async function enhance(body: Record<string, unknown> | null): Promise<Reply> {
 async function make(body: Record<string, unknown> | null, action: "generate" | "edit"): Promise<Reply> {
   const prompt = str(body?.prompt, 2000);
   const negative = str(body?.negative, 800);
+  if (action === "edit") return edit(body, prompt, negative);
+
   if (!prompt) return reply(400, { error: "Write a prompt first." });
   if (minorReason(prompt) || minorReason(negative)) return reply(400, { error: AGE_BLOCK });
   if (!runpodConfigured()) return reply(503, { error: publicImageError("IMAGE_NOT_CONFIGURED") });
@@ -142,10 +176,7 @@ async function make(body: Record<string, unknown> | null, action: "generate" | "
   const steps = clampSteps(model, body?.steps);
   const cfg = clampCfg(model, body?.cfg);
   const batch = clampBatch(body?.batch);
-  const strength = clampStrength(body?.strength);
   const seed = clampSeed(body?.seed);
-  const tool = str(body?.tool, 20) || (action === "generate" ? "generate" : "img2img");
-  const scale = Number(body?.scale) === 4 ? 4 : 2;
 
   let userPrompt = prompt;
   if (body?.useBody === true) {
@@ -155,59 +186,80 @@ async function make(body: Record<string, unknown> | null, action: "generate" | "
     }
   }
 
-  if (action === "generate") {
-    const positive = composePositive(userPrompt, style.text, true);
-    const jobs = [];
-    for (let index = 0; index < batch; index += 1) {
-      const itemSeed = seed + index;
-      const row = await insertImage({
-        kind: "generate",
-        prompt,
-        negative,
-        model,
-        style: style.id,
-        seed: itemSeed,
-        steps,
-        cfg,
-        width: size.w,
-        height: size.h,
-        status: "queued",
-      });
-      try {
-        const graph =
-          model === "zimage"
-            ? zimageGraph(positive, negative, { seed: itemSeed, steps, cfg, ...size })
-            : chromaGraph(positive, negative, { seed: itemSeed, steps, cfg, ...size });
-        const runpodId = await submitWorkflow(graph, []);
-        await updateImage(row.id, { runpod_id: runpodId, status: "running" });
-        jobs.push({ id: row.id, status: "running", seed: itemSeed });
-      } catch (error) {
-        const code = error instanceof Error ? error.message : "IMAGE_FAILED";
-        await updateImage(row.id, { status: "failed", error: publicImageError(code) });
-        jobs.push({ id: row.id, status: "failed", seed: itemSeed });
-      }
+  const positive = composePositive(userPrompt, style.text, true);
+  const jobs = [];
+  for (let index = 0; index < batch; index += 1) {
+    const itemSeed = seed + index;
+    const row = await insertImage({
+      kind: "generate",
+      prompt,
+      negative,
+      model,
+      style: style.id,
+      seed: itemSeed,
+      steps,
+      cfg,
+      width: size.w,
+      height: size.h,
+      status: "queued",
+    });
+    try {
+      const graph =
+        model === "zimage"
+          ? zimageGraph(positive, negative, { seed: itemSeed, steps, cfg, ...size })
+          : chromaGraph(positive, negative, { seed: itemSeed, steps, cfg, ...size });
+      const runpodId = await submitWorkflow(graph, []);
+      await updateImage(row.id, { runpod_id: runpodId, status: "running" });
+      jobs.push({ id: row.id, status: "running", seed: itemSeed });
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "IMAGE_FAILED";
+      await updateImage(row.id, { status: "failed", error: publicImageError(code) });
+      jobs.push({ id: row.id, status: "failed", seed: itemSeed });
     }
-    return reply(200, { jobs, prompt });
   }
+  return reply(200, { jobs, prompt });
+}
 
+async function edit(body: Record<string, unknown> | null, prompt: string, negative: string): Promise<Reply> {
   const subject = parseDataUrl(body?.image);
-  if (!subject) return reply(400, { error: "Add a picture first." });
   const outfit = parseDataUrl(body?.outfit);
   const extra = parseDataUrl(body?.extra);
   const mask = parseDataUrl(body?.mask);
-  if ((tool === "inpaint" || tool === "expand") && !mask) return reply(400, { error: "Paint the area to change." });
-  if (tool === "outfit" && !outfit) return reply(400, { error: "Add an outfit picture." });
+  const saved = (await rememberUploads([subject, outfit, extra])).map(present);
+  const blocked = (status: number, error: string) => reply(status, { error, images: saved });
+  const tool = str(body?.tool, 20) || "img2img";
+  const scale = Number(body?.scale) === 4 ? 4 : 2;
+  const strength = clampStrength(body?.strength);
+  const seed = clampSeed(body?.seed);
+  const style = styleById(str(body?.style, 40));
+  const size = pixelSize(str(body?.ratio, 40), str(body?.resolution, 20));
+
+  if (!subject) return blocked(400, "Add a picture first.");
+  if ((tool === "inpaint" || tool === "expand") && !mask) return blocked(400, "Paint the area to change.");
+  if (tool === "outfit" && !outfit) return blocked(400, "Add an outfit picture.");
+  if (!prompt) return blocked(400, "Write a prompt first.");
+  if (minorReason(prompt) || minorReason(negative)) return blocked(400, AGE_BLOCK);
+  if (!runpodConfigured()) return blocked(503, publicImageError("IMAGE_NOT_CONFIGURED"));
+  if (!storageConfigured()) return blocked(503, "History isn't set up yet.");
+
+  let userPrompt = prompt;
+  if (body?.useBody === true) {
+    const profile = await loadProfile();
+    if (profile.bodyNotes && !minorReason(profile.bodyNotes)) {
+      userPrompt = `${userPrompt} Build: ${profile.bodyNotes}`;
+    }
+  }
 
   const lock = await lockDataUrl();
-  if (lock.hasLock && !lock.url) return reply(503, { error: "Face check is unavailable. Nothing was saved." });
+  if (lock.hasLock && !lock.url) return blocked(503, "Face check is unavailable.");
   const uploads = [subject, outfit, extra].filter((item): item is { mime: string; bytes: Uint8Array } => Boolean(item));
   const explicit = isExplicit(userPrompt);
   let keepFace = false;
   for (const upload of uploads) {
     const digest = createHash("sha256").update(upload.bytes).digest("hex");
     if (await isAtticResult(digest)) continue;
-    const screened = await screenUpload(toDataUrl(upload.mime, upload.bytes), lock.url, "upload", explicit);
-    if (!screened.decision.ok) return reply(400, { error: screened.decision.error });
+    const screened = await checkGenerationFace(toDataUrl(upload.mime, upload.bytes), lock.url, explicit);
+    if (!screened.decision.ok) return blocked(400, screened.decision.error);
     if (screened.report?.realFace) keepFace = true;
   }
 
@@ -254,12 +306,20 @@ async function make(body: Record<string, unknown> | null, action: "generate" | "
   try {
     const runpodId = await submitWorkflow(graph, images);
     await updateImage(row.id, { runpod_id: runpodId, status: "running" });
-    return reply(200, { jobs: [{ id: row.id, status: "running", seed }], prompt });
+    return reply(200, { jobs: [{ id: row.id, status: "running", seed }], prompt, images: saved });
   } catch (error) {
     const code = error instanceof Error ? error.message : "IMAGE_FAILED";
     await updateImage(row.id, { status: "failed", error: publicImageError(code) });
-    return reply(502, { error: publicImageError(code), jobs: [{ id: row.id, status: "failed", seed }] });
+    return reply(502, { error: publicImageError(code), jobs: [{ id: row.id, status: "failed", seed }], images: saved });
   }
+}
+
+async function saveUpload(body: Record<string, unknown> | null): Promise<Reply> {
+  const image = parseDataUrl(body?.image);
+  if (!image) return reply(400, { error: "Add a picture first." });
+  const saved = await rememberUpload(image);
+  if (!saved) return reply(503, { error: "History isn't set up yet." });
+  return reply(200, { image: present(saved) });
 }
 
 async function poll(body: Record<string, unknown> | null): Promise<Reply> {
@@ -293,14 +353,17 @@ async function poll(body: Record<string, unknown> | null): Promise<Reply> {
 
 async function faceLock(body: Record<string, unknown> | null): Promise<Reply> {
   const image = parseDataUrl(body?.image);
-  if (!image) return reply(400, { error: "Use a clear photo of your face." });
-  if (!grokConfigured()) return reply(503, { error: "Face check is unavailable. Nothing was saved." });
-  const dataUrl = toDataUrl(image.mime, image.bytes);
-  const screened = await screenUpload(dataUrl, null, "enroll");
-  if (!screened.decision.ok) return reply(400, { error: screened.decision.error });
-  await uploadObject("face/lock.jpg", image.mime, image.bytes);
-  await saveProfile({ face_path: "face/lock.jpg" });
-  return reply(200, { face: true });
+  if (!image) return reply(400, { error: "Add a picture first." });
+  const saved = await rememberUpload(image);
+  const presented = saved ? present(saved) : null;
+  if (!presented) return reply(503, { error: "History isn't set up yet." });
+  try {
+    await uploadObject("face/lock.jpg", image.mime, image.bytes);
+    await saveProfile({ face_path: "face/lock.jpg" });
+  } catch (error) {
+    return reply(500, { error: publicStoreError(error), image: presented, face: false });
+  }
+  return reply(200, { face: true, image: presented });
 }
 
 async function clearFace(): Promise<Reply> {
@@ -311,17 +374,21 @@ async function clearFace(): Promise<Reply> {
 async function bodyScan(body: Record<string, unknown> | null): Promise<Reply> {
   const image = parseDataUrl(body?.image);
   if (!image) return reply(400, { error: "Add a picture first." });
-  if (!grokConfigured()) return reply(503, { error: "Face check is unavailable. Nothing was saved." });
-  const lock = await lockDataUrl();
-  if (lock.hasLock && !lock.url) return reply(503, { error: "Face check is unavailable. Nothing was saved." });
-  const dataUrl = toDataUrl(image.mime, image.bytes);
-  const screened = await screenUpload(dataUrl, lock.url, "upload", false);
-  if (!screened.decision.ok) return reply(400, { error: screened.decision.error });
-  const notes = (await describeBody(dataUrl)) ?? "";
-  const safeNotes = minorReason(notes) ? "" : notes;
-  await uploadObject("body/scan.jpg", image.mime, image.bytes);
-  await saveProfile({ body_path: "body/scan.jpg", body_notes: safeNotes });
-  return reply(200, { body: true, bodyNotes: safeNotes });
+  const saved = await rememberUpload(image);
+  const presented = saved ? present(saved) : null;
+  if (!presented) return reply(503, { error: "History isn't set up yet." });
+  let notes = "";
+  if (grokConfigured()) {
+    const described = (await describeBody(toDataUrl(image.mime, image.bytes))) ?? "";
+    notes = minorReason(described) ? "" : described;
+  }
+  try {
+    await uploadObject("body/scan.jpg", image.mime, image.bytes);
+    await saveProfile({ body_path: "body/scan.jpg", body_notes: notes });
+  } catch (error) {
+    return reply(500, { error: publicStoreError(error), image: presented, body: false });
+  }
+  return reply(200, { body: true, bodyNotes: notes, image: presented });
 }
 
 async function clearBody(): Promise<Reply> {

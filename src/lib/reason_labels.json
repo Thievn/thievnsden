@@ -1,0 +1,43 @@
+{
+  "_note": "Plain, fun display text for desk kill reasons. Display only: the desk's raw codes and data are unchanged.",
+  "stages": {
+    "limits": "House rules",
+    "facts": "Rug sniff test",
+    "pool": "Pool check",
+    "grok": "Grok read the room on X",
+    "budget": "Grok's off duty"
+  },
+  "reasons": {
+    "no_report": "No Rugcheck report yet. Can't vet what we can't see.",
+    "already_rugged": "Already rugged. The rug's gone and so is everyone's money.",
+    "mint_open": "The dev can still print more coins whenever they want. Hard pass.",
+    "freeze_open": "The dev can freeze your coins so you can't sell. That's a trap.",
+    "danger:*": "Rugcheck flagged a big red warning: {detail}.",
+    "risk_score": "Rugcheck's risk score is too spicy. Too many warning signs.",
+    "lp_unlocked": "The pool cash isn't locked, so the dev could pull it and run.",
+    "top10_heavy": "A handful of wallets hold way too much. One dump and it craters.",
+    "dev_holds": "The dev is still sitting on a fat bag, ready to dump.",
+    "insiders": "Insider wallets are hiding in the holder list. Smells like a setup.",
+    "no_pool": "No trading pool found. Nowhere to even buy it.",
+    "no_price": "No real price yet. Can't trade a mystery.",
+    "thin_pool": "The pool's too shallow. Not enough money in it to get in and out clean.",
+    "ticket_too_big": "Even a $25 buy would shove this tiny pool around. Too small.",
+    "too_fresh": "Too fresh out the oven. Under 30 minutes old, so everything's still a guess.",
+    "too_old": "Over 3 days old. The launch hype has already passed it by.",
+    "nobody_can_sell": "Lots of buys but zero sells. Classic honeypot: you can get in, but you can't get out.",
+    "halted_daily_loss": "We hit today's $50 loss limit. Desk is done for the day.",
+    "already_open": "We already hold this one.",
+    "max_open": "Already holding 4 coins, which is the max. No room for more.",
+    "insufficient_balance": "Not enough paper cash left for another $25 buy.",
+    "max_entries_today": "Already made 6 buys today. That's the daily limit.",
+    "cooldown": "We traded this one in the last 24 hours. Cooling off.",
+    "daily grok budget reached": "Grok's $2 daily budget is used up, so this one got skipped without a look. It gets another shot tomorrow.",
+    "rugcheck failed*": "Rugcheck was down, so this one got skipped. No guessing.",
+    "dexscreener failed*": "DexScreener was down, so this one got skipped. No guessing.",
+    "grok failed*": "Grok didn't answer, so this one got skipped. No guessing."
+  },
+  "grok_prefix": {
+    "BUY": "Grok likes it: ",
+    "SKIP": "Grok smelled a rat: "
+  }
+}

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { AlertRow, CheckRow, Stage, VaultPayload, Verdict } from "@/lib/vault/types";
 import { DailyBars, EquityArea, FunnelBars, WinDonut } from "./vault/Charts";
-import { ago, kindLabel, liq, nyClock, openFor, plainMoney, qty, shortAddress, shortDay, signedMoney, stageLabel, tinyPrice } from "./vault/format";
+import { ago, explainReason, kindLabel, liq, nyClock, openFor, plainMoney, qty, shortAddress, shortDay, signedMoney, stageLabel, tinyPrice } from "./vault/format";
 import { CountUp, Spark } from "./vault/motion";
 
 const STAGES: Array<Stage | "all"> = ["all", "limits", "facts", "pool", "grok", "budget"];
@@ -132,15 +132,16 @@ export function ChecksScreen({ data }: { data: VaultPayload }) {
     if (stage !== "all" && check.stage !== stage) return false;
     if (verdict !== "all" && check.verdict !== verdict) return false;
     if (!query.trim()) return true;
-    const hay = `${check.symbol ?? ""} ${check.reason ?? ""} ${check.mint}`.toLowerCase();
+    const shown = explainReason(check.stage, check.verdict, check.reason);
+    const hay = `${check.symbol ?? ""} ${check.reason ?? ""} ${shown.label} ${check.mint}`.toLowerCase();
     return hay.includes(query.trim().toLowerCase());
   }), [data.checks, query, stage, verdict]);
   const funnel = [
     { name: "Checked", value: data.funnel.checked },
-    { name: "Limits", value: data.funnel.passedLimits },
-    { name: "Facts", value: data.funnel.passedFacts },
-    { name: "Pool", value: data.funnel.passedPool },
-    { name: "Budget limit", value: data.funnel.budget },
+    { name: stageLabel("limits"), value: data.funnel.passedLimits },
+    { name: stageLabel("facts"), value: data.funnel.passedFacts },
+    { name: stageLabel("pool"), value: data.funnel.passedPool },
+    { name: stageLabel("budget"), value: data.funnel.budget },
     { name: "Bought", value: data.funnel.bought },
   ];
   return (
@@ -179,13 +180,15 @@ export function ChecksScreen({ data }: { data: VaultPayload }) {
 }
 
 function CheckCard({ check }: { check: CheckRow }) {
+  const reason = explainReason(check.stage, check.verdict, check.reason);
   return (
     <article className="glass check-card">
       <div className="row-between">
         <p className="kind">{check.symbol ?? shortAddress(check.mint)}</p>
         <p className={check.verdict === "BUY" ? "pnl-up" : "quiet"}>{check.verdict}</p>
       </div>
-      <p>{check.reason ?? "No reason."}</p>
+      <p title={reason.raw ?? undefined}>{reason.label}</p>
+      {reason.raw ? <p className="reason-code">{reason.raw}</p> : null}
       <p className="quiet">{stageLabel(check.stage)}{check.confidence !== null ? ` · ${Math.round(check.confidence * 100)}%` : ""} · {nyClock(check.time)} NY</p>
     </article>
   );
@@ -208,19 +211,22 @@ export function TradesScreen({ data }: { data: VaultPayload }) {
       </div>
       {data.trades.length === 0 ? <p className="empty glass">No trades yet</p> : (
         <div className="stack">
-          {data.trades.map((trade) => (
+          {data.trades.map((trade) => {
+            const reason = explainReason(null, null, trade.reason);
+            return (
             <article key={trade.id} className="glass trade-card">
               <div>
                 <p className="kind">{trade.action}</p>
                 <h2>{trade.symbol ?? shortAddress(trade.mint)}</h2>
-                <p className="quiet">{trade.reason ?? "—"} · {nyClock(trade.time)} NY</p>
+                <p className="quiet" title={reason.raw ?? undefined}>{reason.label}{reason.raw ? ` · ${reason.raw}` : ""} · {nyClock(trade.time)} NY</p>
               </div>
               <div className="trade-nums">
                 <p>{plainMoney(trade.usd)}</p>
                 <p className={tone(trade.pnl ?? 0)}>{signedMoney(trade.pnl ?? 0)}</p>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

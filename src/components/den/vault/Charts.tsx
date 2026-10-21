@@ -103,21 +103,20 @@ export function FunnelBars({
 }: {
   rows: { name: string; value: number }[];
 }) {
-  const reduced = useReducedMotion();
   if (!rows.some((row) => row.value > 0)) return <p className="quiet">No checks yet</p>;
+  const max = Math.max(...rows.map((row) => row.value), 1);
   return (
-    <Frame label="Checks by stage">
-      <ResponsiveContainer width="100%" height={260}>
-        <BarChart data={rows} layout="vertical" margin={{ top: 8, right: 12, left: 8, bottom: 0 }}>
-          <XAxis type="number" hide />
-          <YAxis type="category" dataKey="name" width={108} tick={{ fill: "#F2E6C9", fontSize: 12 }} axisLine={false} tickLine={false} />
-          <Tooltip content={({ active, payload }) => (
-            <Tip active={active} label={String(payload?.[0]?.payload?.name ?? "")} text={String(payload?.[0]?.value ?? "")} />
-          )} />
-          <Bar dataKey="value" radius={[0, 8, 8, 0]} fill="#D4A24C" isAnimationActive={!reduced} maxBarSize={18} />
-        </BarChart>
-      </ResponsiveContainer>
-    </Frame>
+    <div className="funnel-list" role="img" aria-label="Checks by stage">
+      {rows.map((row) => (
+        <div key={row.name} className="funnel-row">
+          <span>{row.name}</span>
+          <div className="funnel-track" aria-hidden="true">
+            <i style={{ width: `${Math.max(row.value === 0 ? 0 : 8, (row.value / max) * 100)}%` }} />
+          </div>
+          <b>{row.value}</b>
+        </div>
+      ))}
+    </div>
   );
 }
 

@@ -50,6 +50,7 @@ export function exampleDesk(now = new Date()): DeskView {
     check("ex-c6", day(0, 9, 31), "KEY", MINTS.key, "pool", "SKIP", "too_fresh"),
     check("ex-c7", day(0, 9, 40), "WAX", MINTS.wax, "grok", "BUY", "passed", 0.74),
     check("ex-c8", day(0, 10, 2), "EMBER", MINTS.ember, "grok", "SKIP", "low confidence", 0.31),
+    check("ex-c8b", day(0, 10, 8), "ASH", MINTS.ash, "budget", "SKIP", "daily budget"),
     check("ex-c9", day(-1, 11, 5), "HOOD", MINTS.hood, "limits", "SKIP", "cooldown"),
     check("ex-c10", day(-1, 11, 11), "CINDER", MINTS.cinder, "facts", "SKIP", "lp_unlocked"),
     check("ex-c11", day(-1, 11, 20), "ASH", MINTS.ash, "facts", "SKIP", "danger:freeze"),

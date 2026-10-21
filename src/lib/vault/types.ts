@@ -1,4 +1,4 @@
-export type Stage = "limits" | "facts" | "pool" | "grok";
+export type Stage = "limits" | "facts" | "pool" | "grok" | "budget";
 export type Verdict = "BUY" | "SKIP";
 export type TradeAction = "open" | "partial" | "close";
 export type DeskMode = "PAPER" | "LIVE";
@@ -80,6 +80,7 @@ export type Funnel = {
   passedLimits: number;
   passedFacts: number;
   passedPool: number;
+  budget: number;
   bought: number;
 };
 

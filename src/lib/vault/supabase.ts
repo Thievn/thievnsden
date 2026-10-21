@@ -13,7 +13,7 @@ export type DeskTables = {
   runs: RunRow[];
 };
 
-const STAGES = new Set<Stage>(["limits", "facts", "pool", "grok"]);
+const STAGES = new Set<Stage>(["limits", "facts", "pool", "grok", "budget"]);
 const VERDICTS = new Set<Verdict>(["BUY", "SKIP"]);
 const ACTIONS = new Set<TradeAction>(["open", "partial", "close"]);
 const MODES = new Set<DeskMode>(["PAPER", "LIVE"]);

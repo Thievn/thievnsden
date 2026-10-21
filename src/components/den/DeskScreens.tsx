@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 import type { AlertRow, CheckRow, Stage, VaultPayload, Verdict } from "@/lib/vault/types";
 import { DailyBars, EquityArea, FunnelBars, WinDonut } from "./vault/Charts";
-import { ago, kindLabel, liq, nyClock, openFor, plainMoney, qty, shortAddress, shortDay, signedMoney, tinyPrice } from "./vault/format";
+import { ago, kindLabel, liq, nyClock, openFor, plainMoney, qty, shortAddress, shortDay, signedMoney, stageLabel, tinyPrice } from "./vault/format";
 import { CountUp, Spark } from "./vault/motion";
 
-const STAGES: Array<Stage | "all"> = ["all", "limits", "facts", "pool", "grok"];
+const STAGES: Array<Stage | "all"> = ["all", "limits", "facts", "pool", "grok", "budget"];
 const VERDICTS: Array<Verdict | "all"> = ["all", "BUY", "SKIP"];
 
 function tone(value: number) {
@@ -140,6 +140,7 @@ export function ChecksScreen({ data }: { data: VaultPayload }) {
     { name: "Limits", value: data.funnel.passedLimits },
     { name: "Facts", value: data.funnel.passedFacts },
     { name: "Pool", value: data.funnel.passedPool },
+    { name: "Budget limit", value: data.funnel.budget },
     { name: "Bought", value: data.funnel.bought },
   ];
   return (
@@ -154,7 +155,7 @@ export function ChecksScreen({ data }: { data: VaultPayload }) {
       <div className="filters">
         <div className="seg" role="group" aria-label="Stage">
           {STAGES.map((item) => (
-            <button key={item} type="button" className={stage === item ? "is-on" : ""} onClick={() => setStage(item)}>{item}</button>
+            <button key={item} type="button" className={stage === item ? "is-on" : ""} onClick={() => setStage(item)}>{item === "all" ? "all" : stageLabel(item)}</button>
           ))}
         </div>
         <div className="seg" role="group" aria-label="Verdict">
@@ -185,7 +186,7 @@ function CheckCard({ check }: { check: CheckRow }) {
         <p className={check.verdict === "BUY" ? "pnl-up" : "quiet"}>{check.verdict}</p>
       </div>
       <p>{check.reason ?? "No reason."}</p>
-      <p className="quiet">{check.stage}{check.confidence !== null ? ` · ${Math.round(check.confidence * 100)}%` : ""} · {nyClock(check.time)} NY</p>
+      <p className="quiet">{stageLabel(check.stage)}{check.confidence !== null ? ` · ${Math.round(check.confidence * 100)}%` : ""} · {nyClock(check.time)} NY</p>
     </article>
   );
 }

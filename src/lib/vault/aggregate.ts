@@ -90,9 +90,10 @@ export function buildDesk(input: {
     checks,
     funnel: {
       checked: checks.length,
-      passedLimits: passed(["facts", "pool", "grok"]),
-      passedFacts: passed(["pool", "grok"]),
-      passedPool: passed(["grok"]),
+      passedLimits: passed(["facts", "pool", "grok", "budget"]),
+      passedFacts: passed(["pool", "grok", "budget"]),
+      passedPool: passed(["grok", "budget"]),
+      budget: passed(["budget"]),
       bought: checks.filter((check) => check.verdict === "BUY").length,
     },
     trades,

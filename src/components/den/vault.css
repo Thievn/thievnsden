@@ -243,13 +243,15 @@
 }
 
 .seg button {
-  flex: 1;
+  flex: 1 0 auto;
   min-height: 40px;
+  padding: 0 0.7rem;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: var(--parchment-dim);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .seg button.is-on { background: rgba(212, 162, 76, 0.18); color: var(--parchment); }

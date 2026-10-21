@@ -55,6 +55,7 @@ test("the funnel counts rows that reached each gate", () => {
       row("3", "pool", "SKIP"),
       row("4", "grok", "BUY"),
       row("5", "grok", "SKIP"),
+      row("6", "budget", "SKIP"),
     ],
     positions: [],
     trades: [],
@@ -64,10 +65,11 @@ test("the funnel counts rows that reached each gate", () => {
     now: NOW,
   });
   assert.deepEqual(view.funnel, {
-    checked: 5,
-    passedLimits: 4,
-    passedFacts: 3,
-    passedPool: 2,
+    checked: 6,
+    passedLimits: 5,
+    passedFacts: 4,
+    passedPool: 3,
+    budget: 1,
     bought: 1,
   });
 });
@@ -77,6 +79,7 @@ test("preview sample has a curve, a buy, and both urgent alerts", () => {
   assert.ok(view.overview.todayPnl !== 0);
   assert.ok(view.equity.length > 2);
   assert.equal(view.dailyPnl.length, 14);
+  assert.equal(view.funnel.budget, 1);
   assert.ok(view.funnel.bought > 0);
   assert.ok(view.funnel.bought <= view.funnel.passedPool);
   assert.ok(view.alerts.some((alert) => alert.kind === "APPROVAL_NEEDED" && !alert.acknowledged));

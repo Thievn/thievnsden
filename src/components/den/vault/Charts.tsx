@@ -107,10 +107,10 @@ export function FunnelBars({
   if (!rows.some((row) => row.value > 0)) return <p className="quiet">No checks yet</p>;
   return (
     <Frame label="Checks by stage">
-      <ResponsiveContainer width="100%" height={220}>
+      <ResponsiveContainer width="100%" height={260}>
         <BarChart data={rows} layout="vertical" margin={{ top: 8, right: 12, left: 8, bottom: 0 }}>
           <XAxis type="number" hide />
-          <YAxis type="category" dataKey="name" width={78} tick={{ fill: "#F2E6C9", fontSize: 12 }} axisLine={false} tickLine={false} />
+          <YAxis type="category" dataKey="name" width={108} tick={{ fill: "#F2E6C9", fontSize: 12 }} axisLine={false} tickLine={false} />
           <Tooltip content={({ active, payload }) => (
             <Tip active={active} label={String(payload?.[0]?.payload?.name ?? "")} text={String(payload?.[0]?.value ?? "")} />
           )} />

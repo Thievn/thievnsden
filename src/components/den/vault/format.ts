@@ -90,6 +90,18 @@ const KINDS: Record<string, string> = {
   PAPER_SOLD: "Paper sell",
 };
 
+const STAGES: Record<string, string> = {
+  limits: "Limits",
+  facts: "Facts",
+  pool: "Pool",
+  grok: "Grok",
+  budget: "Budget limit",
+};
+
+export function stageLabel(stage: string): string {
+  return STAGES[stage] ?? stage;
+}
+
 export function kindLabel(kind: string | null): string {
   if (!kind) return "Note";
   return KINDS[kind] ?? kind.replaceAll("_", " ").toLowerCase();

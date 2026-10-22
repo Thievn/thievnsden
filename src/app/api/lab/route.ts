@@ -26,11 +26,11 @@ export async function POST(req: NextRequest) {
   if (!(await hasOwnerSession())) return NextResponse.json(MISSING, { status: 404 });
   if (!sameOrigin(req)) return NextResponse.json(MISSING, { status: 404 });
   const contentLength = Number(req.headers.get("content-length") ?? "0");
-  if (Number.isFinite(contentLength) && contentLength > 4_200_000) {
+  if (Number.isFinite(contentLength) && contentLength > 25_000_000) {
     return NextResponse.json({ error: "That file is too big." }, { status: 413 });
   }
   const text = await req.text();
-  if (text.length > 4_200_000) return NextResponse.json({ error: "That file is too big." }, { status: 413 });
+  if (text.length > 25_000_000) return NextResponse.json({ error: "That file is too big." }, { status: 413 });
   let body: Record<string, unknown> | null = null;
   try {
     const parsed = text ? JSON.parse(text) : null;

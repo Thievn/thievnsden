@@ -2,25 +2,32 @@ import { createHash } from "node:crypto";
 import { describeBody, enhancePrompt, grokConfigured, readFace } from "./grok";
 import { parseDataUrl, toBase64, toDataUrl } from "./images";
 import { clampBatch, clampCfg, clampSeed, clampSteps, clampStrength, pixelSize, styleById, type ModelId } from "./options";
+import { buildCharacterPrompt, sanitizeRecipe } from "./presets";
 import { bytesFromRunpodOutput, publicImageError, readRunpod, runpodConfigured, submitWorkflow } from "./runpod";
 import { AGE_BLOCK, composePositive, decideFace, isExplicit, minorReason } from "./safety";
 import {
+  characterById,
   createFolder,
+  deleteCharacter,
   downloadObject,
   findUpload,
   imageById,
   imagesByIds,
   insertImage,
   isAtticResult,
+  listCharacters,
   listFolders,
   listImages,
   loadProfile,
   publicStoreError,
+  saveCharacter,
   saveProfile,
   storageConfigured,
+  updateCharacter,
   updateImage,
   uploadObject,
   type AtticImage,
+  type LabCharacter,
 } from "./store";
 import { chromaGraph, qwenEditGraph, zimageGraph } from "./workflows";
 
@@ -53,7 +60,23 @@ function present(image: AtticImage) {
     folder: image.folder,
     status: image.status,
     error: image.error,
+    parentId: image.parentId,
     url: image.url,
+  };
+}
+
+function presentCharacter(character: LabCharacter) {
+  return {
+    id: character.id,
+    name: character.name,
+    style: character.style,
+    appearance: character.appearance,
+    personality: character.personality,
+    scene: character.scene,
+    prompt: character.prompt,
+    favorite: character.favorite,
+    url: character.url,
+    updatedAt: character.updatedAt,
   };
 }
 
@@ -115,6 +138,9 @@ export async function handleLab(body: Record<string, unknown> | null): Promise<R
     if (action === "favorite") return await favorite(body);
     if (action === "folder") return await folder(body);
     if (action === "file") return await file(body);
+    if (action === "character-save") return await characterSave(body);
+    if (action === "character-delete") return await characterDelete(body);
+    if (action === "character-favorite") return await characterFavorite(body);
     return reply(400, { error: "Unknown action." });
   } catch (error) {
     return reply(500, { error: publicStoreError(error) });
@@ -129,18 +155,25 @@ async function state(): Promise<Reply> {
       bodyNotes: "",
       folders: [],
       images: [],
+      characters: [],
       runpod: runpodConfigured(),
       grok: grokConfigured(),
       storage: false,
     });
   }
-  const [profile, folders, images] = await Promise.all([loadProfile(), listFolders(), listImages()]);
+  const [profile, folders, images, characters] = await Promise.all([
+    loadProfile(),
+    listFolders(),
+    listImages(),
+    listCharacters().catch(() => [] as LabCharacter[]),
+  ]);
   return reply(200, {
     face: Boolean(profile.facePath),
     body: Boolean(profile.bodyPath),
     bodyNotes: profile.bodyNotes,
     folders,
     images: images.map(present),
+    characters: characters.map(presentCharacter),
     runpod: runpodConfigured(),
     grok: grokConfigured(),
     storage: true,
@@ -161,16 +194,21 @@ async function enhance(body: Record<string, unknown> | null): Promise<Reply> {
 }
 
 async function make(body: Record<string, unknown> | null, action: "generate" | "edit"): Promise<Reply> {
-  const prompt = str(body?.prompt, 2000);
+  const recipe = action === "generate" ? sanitizeRecipe(body?.recipe) : null;
+  const built = recipe ? buildCharacterPrompt(recipe) : "";
+  const typed = str(body?.prompt, 2000);
   const negative = str(body?.negative, 800);
+  const prompt = action === "edit" ? typed : body?.custom === true && typed ? typed : built || typed;
   if (action === "edit") return edit(body, prompt, negative);
+  if (minorReason(prompt) || minorReason(negative) || minorReason(built) || minorReason(recipe?.name) || minorReason(recipe?.action)) {
+    return reply(400, { error: AGE_BLOCK });
+  }
 
   if (!prompt) return reply(400, { error: "Write a prompt first." });
-  if (minorReason(prompt) || minorReason(negative)) return reply(400, { error: AGE_BLOCK });
   if (!runpodConfigured()) return reply(503, { error: publicImageError("IMAGE_NOT_CONFIGURED") });
   if (!storageConfigured()) return reply(503, { error: "History isn't set up yet." });
 
-  const style = styleById(str(body?.style, 40));
+  const style = styleById(recipe?.style || str(body?.style, 40));
   const model: ModelId = body?.model === "zimage" ? "zimage" : "chroma";
   const size = pixelSize(str(body?.ratio, 40), str(body?.resolution, 20));
   const steps = clampSteps(model, body?.steps);
@@ -239,6 +277,12 @@ async function edit(body: Record<string, unknown> | null, prompt: string, negati
   if (tool === "outfit" && !outfit) return blocked(400, "Add an outfit picture.");
   if (!prompt) return blocked(400, "Write a prompt first.");
   if (minorReason(prompt) || minorReason(negative)) return blocked(400, AGE_BLOCK);
+  const faceGate = await checkGenerationFace(
+    toDataUrl(subject.mime, subject.bytes),
+    (await lockDataUrl()).url,
+    isExplicit(`${prompt}\n${negative}`),
+  );
+  if (!faceGate.decision.ok) return blocked(400, faceGate.decision.error);
   if (!runpodConfigured()) return blocked(503, publicImageError("IMAGE_NOT_CONFIGURED"));
   if (!storageConfigured()) return blocked(503, "History isn't set up yet.");
 
@@ -260,10 +304,11 @@ async function edit(body: Record<string, unknown> | null, prompt: string, negati
         : tool === "outfit"
           ? `Change the outfit to match the clothing reference. Keep the face identical. ${positive}`
           : positive;
+  const parent = str(body?.parent, 40);
   const graph = qwenEditGraph(editPrompt, negative, {
     seed,
     denoise,
-    lock: tool === "inpaint" || tool === "restore" || tool === "outfit",
+    lock: true,
     images: {
       outfit: Boolean(outfit),
       extra: Boolean(extra),
@@ -289,6 +334,7 @@ async function edit(body: Record<string, unknown> | null, prompt: string, negati
     height: size.h,
     strength: denoise,
     status: "queued",
+    parent_id: /^[0-9a-f-]{36}$/i.test(parent) ? parent : null,
   });
   try {
     const runpodId = await submitWorkflow(graph, images);
@@ -409,5 +455,43 @@ async function file(body: Record<string, unknown> | null): Promise<Reply> {
   if (!image?.storagePath) return reply(404, { error: "That picture isn't here." });
   const file = await downloadObject(image.storagePath);
   if (!file) return reply(404, { error: "That picture isn't here." });
-  return reply(200, { dataUrl: toDataUrl(file.mime, file.bytes) });
+  return reply(200, { dataUrl: toDataUrl(file.mime, file.bytes), image: present(image) });
+}
+
+async function characterSave(body: Record<string, unknown> | null): Promise<Reply> {
+  const recipe = sanitizeRecipe(body?.recipe);
+  if (!recipe?.name) return reply(400, { error: "Give her a name." });
+  const prompt = buildCharacterPrompt({ ...recipe, action: "" });
+  if (minorReason(recipe.name) || minorReason(prompt)) return reply(400, { error: AGE_BLOCK });
+  if (!storageConfigured()) return reply(503, { error: "History isn't set up yet." });
+  const id = str(body?.id, 40);
+  const existing = /^[0-9a-f-]{36}$/i.test(id) ? id : null;
+  if (existing && !(await characterById(existing))) return reply(404, { error: "That character isn't here." });
+  const saved = await saveCharacter({
+    id: existing,
+    name: recipe.name,
+    style: recipe.style,
+    appearance: recipe.appearance,
+    personality: recipe.personality,
+    scene: recipe.scene,
+    prompt,
+    favorite: typeof body?.favorite === "boolean" ? body.favorite : undefined,
+    cover: parseDataUrl(body?.cover),
+  });
+  return reply(200, { character: presentCharacter(saved) });
+}
+
+async function characterDelete(body: Record<string, unknown> | null): Promise<Reply> {
+  const id = str(body?.id, 40);
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return reply(400, { error: "That character isn't here." });
+  await deleteCharacter(id);
+  return reply(200, { id });
+}
+
+async function characterFavorite(body: Record<string, unknown> | null): Promise<Reply> {
+  const id = str(body?.id, 40);
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return reply(400, { error: "That character isn't here." });
+  const on = body?.on === true;
+  await updateCharacter(id, { favorite: on });
+  return reply(200, { id, favorite: on });
 }

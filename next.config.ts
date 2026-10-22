@@ -14,7 +14,15 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
+  async rewrites() {
+    return [
+      { source: "/edit", destination: "/attic/edit" },
+      { source: "/gallery", destination: "/attic/gallery" },
+      { source: "/characters", destination: "/attic/characters" },
+    ];
+  },
   async headers() {
+    const quiet = [{ key: "X-Robots-Tag", value: "noindex, nofollow" }];
     return [
       {
         source: "/sw.js",
@@ -31,6 +39,11 @@ const nextConfig: NextConfig = {
         source: "/pwa.css",
         headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
       },
+      { source: "/attic", headers: quiet },
+      { source: "/attic/:path*", headers: quiet },
+      { source: "/edit", headers: quiet },
+      { source: "/gallery", headers: quiet },
+      { source: "/characters", headers: quiet },
       {
         source: "/:path*",
         headers: [

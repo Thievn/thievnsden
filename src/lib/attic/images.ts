@@ -1,4 +1,4 @@
-const MAX_BYTES = 3_500_000;
+const MAX_BYTES = 25_000_000;
 
 export function parseDataUrl(value: unknown): { mime: string; bytes: Uint8Array } | null {
   if (typeof value !== "string") return null;

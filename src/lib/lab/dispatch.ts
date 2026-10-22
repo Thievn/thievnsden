@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { minorReason as denAge } from "@/lib/attic/safety";
 import { downloadObject, imageById, insertImage, storageConfigured, uploadObject } from "@/lib/attic/store";
 import { ensureAdult } from "./adult";
-import { isExplicitEdit } from "./explicit";
+import { isExplicitEdit, namesRealPerson, strictNude } from "./explicit";
+import { provenanceOf, recordProvenance, screenImage } from "./provenance";
 import { minorReason as labAge, STYLES } from "./options";
 import poses from "./poses.json";
 import { parseDataUrl, readTicket, signImage, signTicket, verifyImage, weakest } from "./sign";
@@ -171,6 +172,7 @@ async function generate(body: Record<string, unknown>): Promise<Reply> {
   const adultWhy = blocked(prompt);
   if (adultWhy) return reply(400, { error: adultWhy });
   const count = Math.max(1, Math.min(4, Number(body.n) || 1));
+  const cleanGen = !(await namesRealPerson(prompt));
   const pose = body.pose && typeof body.pose === "object" ? (body.pose as { data?: string; strength?: number }) : null;
   if (pose?.data && engine !== "zimage") {
     return reply(400, { error: "Poses only work with photo styles." });
@@ -194,7 +196,7 @@ async function generate(body: Record<string, unknown>): Promise<Reply> {
       id,
       seed,
       engine,
-      t: signTicket({ id, src: "lab", kind: "gen", prompt, seed, engine, style: style.id, w, h, strength: null, parentId: null }),
+      t: signTicket({ id, src: "lab", kind: "gen", prompt, seed, engine, style: style.id, w, h, strength: null, parentId: null, prov: { clean: cleanGen, parent: null } }),
     });
   }
   return reply(200, { jobs, engine, seed: base });
@@ -250,8 +252,32 @@ async function edit(body: Record<string, unknown>): Promise<Reply> {
   try {
     explicit = (await isExplicitEdit(instr)).explicit;
   } catch {
-    explicit = false;
+    explicit = true; // screening unavailable -> treat as explicit (fail closed)
   }
+  const posedIn = Boolean(poseData);
+  const flags: string[] = [];
+  // Provenance (server-side SHA-256 lookup; client tags are not trusted for this).
+  const provOf = async (buf: Buffer) => provenanceOf(buf).catch(() => ({ sha: "", clean: false, origin: null as string | null }));
+  const subjectProv = await provOf(subject.buf);
+  const refProvs = await Promise.all(refs.map((item) => provOf(item.buf)));
+  const lineageClean = subjectProv.clean && refProvs.every((item) => item.clean);
+  // Age + real-person screen on the subject (always) and on every outside image.
+  const subjectScreen = await screenImage(subject.buf, explicit || !subjectProv.clean);
+  if (subjectScreen.minor || !subjectScreen.ok) return reply(400, { error: subjectScreen.reason || "Adults only." });
+  if (!subjectProv.clean && subjectScreen.realPerson) flags.push(`subject looks like a real photo (${["vision", ...subjectScreen.signals].join(", ")})`);
+  for (const [k, item] of refs.entries()) {
+    if (refProvs[k].clean) continue;
+    const screen = await screenImage(item.buf, true);
+    if (!screen.ok) return reply(400, { error: screen.reason || "Adults only." });
+    if (screen.realPerson) flags.push(`outfit ref ${k + 1} looks like a real photo`);
+  }
+  if (explicit) {
+    // Explicit mode: Den text-to-image lineage only, no outside images of any kind.
+    if (!subjectProv.clean) return reply(403, { error: "Explicit edits only work on pictures the Den made from text. Uploads and outside images are refused." });
+    if (refs.length || posedIn) return reply(403, { error: "Explicit edits can't use outfit or pose pictures. Remove them and try again." });
+    if (subjectScreen.realPerson) return reply(403, { error: "That picture looks like a real person, so explicit edits are refused." });
+  }
+  const nsfw = explicit && subjectProv.clean && lineageClean && !refs.length && !posedIn && strictNude(instr);
   const images: { name: string; image: string }[] = [];
   const meta = await sharp(subject.buf).metadata();
   let subjectOut = await sharp(subject.buf).rotate().png().toBuffer();
@@ -285,7 +311,7 @@ async function edit(body: Record<string, unknown>): Promise<Reply> {
   if (body.mask) {
     const mask = parseDataUrl(body.mask);
     if (!mask) return reply(400, { error: "Bad mask" });
-    const fitted = await sharp(mask.buf).resize(meta.width, meta.height, { fit: "fill" }).png().toBuffer();
+    const fitted = await sharp(mask.buf).resize(meta.width, meta.height, { fit: "fill" }).grayscale().threshold(128).png().toBuffer();
     images.push({ name: "mask.png", image: fitted.toString("base64") });
   }
   const index = 1 + (refs.length ? 1 : 0);
@@ -305,7 +331,7 @@ async function edit(body: Record<string, unknown>): Promise<Reply> {
   }
   if (instr) parts.push(instr);
   if (body.mask) parts.push("Only change the masked area; keep the rest identical.");
-  const loras = pickLoras(instr, { refs: refsCollage, explicit, pose: posed });
+  const loras = pickLoras(instr, { refs: refsCollage, explicit, pose: posed, nsfw });
   const text = withTriggers(`${parts.join(" ")}${ADULT}`, loras);
   const textWhy = blocked(text);
   if (textWhy) return reply(400, { error: textWhy });
@@ -347,10 +373,12 @@ async function edit(body: Record<string, unknown>): Promise<Reply> {
         strength,
         parentId,
         loras: loras.map((lora) => ({ id: lora.id, file: lora.file, strength: lora.strength })),
+        prov: { clean: lineageClean, parent: subjectProv.sha || null },
+        explicit,
       }),
     });
   }
-  return reply(200, { jobs, src, explicit, instruction: text, loras: loras.map((lora) => lora.id) });
+  return reply(200, { jobs, src, explicit, instruction: text, loras: loras.map((lora) => lora.id), flags });
 }
 
 async function status(body: Record<string, unknown>): Promise<Reply> {
@@ -387,6 +415,15 @@ async function status(body: Record<string, unknown>): Promise<Reply> {
       runpodId: id,
       parentId: typeof ticket?.parentId === "string" ? ticket.parentId : null,
       src,
+    }).catch(() => null);
+    const prov = (ticket?.prov || {}) as { clean?: boolean; parent?: string | null };
+    const kind = String(ticket?.kind || "gen");
+    await recordProvenance(jpg, {
+      origin: kind === "gen" ? "t2i" : "edit",
+      clean: (kind === "gen" || kind === "edit") && prov.clean === true,
+      parentSha: typeof prov.parent === "string" ? prov.parent : null,
+      runpodId: id,
+      imageId: saved?.id ?? null,
     }).catch(() => null);
     return reply(200, {
       status: "COMPLETED",

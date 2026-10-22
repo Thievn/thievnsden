@@ -64,11 +64,11 @@ export function addPose(wf,{strength=0.8,name="pose.png"}){
 // PixelDriftFix homography realign, then LFPixelPerfectComposite pastes only the changed region onto the untouched original.
 // Pose edits change geometry -> drift fix/auto-composite are skipped (mask still honoured).
 // denoise<1 keeps more of the original. Must run as its own job (never chained with Z-Image/Chroma: RAM OOM).
-export function qwenEdit({instr,seed,denoise=1,refs=false,pose=false,mask=false,maxMegapixels=1.6,pixelPerfect=true}){
+export function qwenEdit({instr,seed,denoise=1,refs=false,pose=false,mask=false,maxMegapixels=1.6,pixelPerfect=true,loras=[]}:{instr:string;seed:number;denoise?:number;refs?:boolean;pose?:boolean;mask?:boolean;maxMegapixels?:number;pixelPerfect?:boolean;loras?:{file:string;strength:number}[]}){
   const extra=[];if(refs)extra.push("e_ref");if(pose)extra.push("e_pose");
   const enc=prompt=>{const i={clip:["q5",0],prompt,image1:["p1",1]};extra.forEach((n,k)=>{i["image"+(k+2)]=[n,0];});return i;};
   const pp=pixelPerfect&&!pose;
-  const g={
+  const g:Record<string,any>={
 "q1":{class_type:"UNETLoader",inputs:{unet_name:"qwen_image_edit_2511_fp8mixed.safetensors",weight_dtype:"default"}},
 "q2":{class_type:"LoraLoaderModelOnly",inputs:{model:["q1",0],lora_name:"Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors",strength_model:1.0}},
 "q3":{class_type:"ModelSamplingAuraFlow",inputs:{model:["q2",0],shift:3.0}},
@@ -89,6 +89,8 @@ export function qwenEdit({instr,seed,denoise=1,refs=false,pose=false,mask=false,
 "c1":{class_type:"ImageCrop",inputs:{image:["q14",0],width:["p1",2],height:["p1",3],x:0,y:0}},
 "pc":{class_type:"LFPixelPerfectComposite",inputs:{original:["e_src",0],edited:["c1",0],work_w:0,work_h:0,mode:pp?(mask?"mask":"auto"):(mask?"mask":"off"),threshold:0.07,grow:12,feather:8,min_area:0.0015}},
 "q15":{class_type:"SaveImage",inputs:{images:["pc",0],filename_prefix:"lfedit"}}};
+  let tail="q2";(loras||[]).slice(0,3).forEach((l,k)=>{const n="lx"+(k+1);g[n]={class_type:"LoraLoaderModelOnly",inputs:{model:[tail,0],lora_name:l.file,strength_model:Math.max(0.5,Math.min(0.8,l.strength))}};tail=n;});
+  g.q3.inputs.model=[tail,0];
   if(pp){g.df={class_type:"PixelDriftFix",inputs:{source_image:["p1",1],edited_image:["c1",0],method:"flat_4_points",max_mesh_points:400}};g.pc.inputs.edited=["df",0];}
   if(refs)g.e_ref={class_type:"LoadImage",inputs:{image:"refs.png"}};
   if(pose)g.e_pose={class_type:"LoadImage",inputs:{image:"pose.png"}};

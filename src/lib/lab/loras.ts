@@ -72,13 +72,20 @@ export const MAX_EXTRA_LORAS = 3;
 
 const clamp = (value: number) => Math.max(0.5, Math.min(0.8, value));
 
-export function pickLoras(text: string, opts: { refs: boolean; explicit: boolean }): LabLora[] {
+// AnyPose (lilylilith/AnyPose, Apache-2.0): base + helper pair, 0.7 each, attachment-triggered (pose image), never keyword.
+export const ANYPOSE: LabLora[] = [
+  { id: "anypose-base", file: "2511-AnyPose-base-000006250.safetensors", strength: 0.7, trigger: "" },
+  { id: "anypose-helper", file: "2511-AnyPose-helper-00006000.safetensors", strength: 0.7, trigger: "" },
+];
+for (const lora of ANYPOSE) LORA_ALLOWLIST.add(lora.file);
+
+export function pickLoras(text: string, opts: { refs: boolean; explicit: boolean; pose?: boolean }): LabLora[] {
   const source = String(text || "");
-  if (!source.trim()) return [];
+  const picked: LabLora[] = opts.pose ? ANYPOSE.map((lora) => ({ ...lora })) : [];
+  if (!source.trim()) return picked;
   const seen = new Set<string>();
-  const picked: LabLora[] = [];
   for (const rule of [...RULES].sort((a, b) => a.priority - b.priority)) {
-    if (picked.length >= MAX_EXTRA_LORAS) break;
+    if (picked.length >= MAX_EXTRA_LORAS) break; // pose pair uses 2 of 3 -> at most one other
     if (seen.has(rule.group) || !LORA_ALLOWLIST.has(rule.file)) continue;
     if (rule.needsRefs && !opts.refs) continue;
     if (rule.noRefs && opts.refs) continue;

@@ -295,14 +295,17 @@ async function edit(body: Record<string, unknown>): Promise<Reply> {
       `Dress the woman in image 1 in the outfit shown in image 2${refs.length > 1 ? ` (image 2 is a collage of ${refs.length} outfit references; combine the garments shown)` : ""}. Keep her face, hair, skin tone and body exactly the same as image 1; ignore the faces and bodies of anyone in image 2.`,
     );
   }
-  if (pose) {
+  if (posed) {
+    // Lab pose input is an OpenPose skeleton (photos are rejected client-side). Tested 2026-10-22: AnyPose README
+    // person-to-person framing ignores skeletons, so keep the skeleton instruction and add AnyPose's accuracy lines.
+    const p = index + 1;
     parts.push(
-      `Change her pose so her body matches the OpenPose stick-figure skeleton in image ${index + 1}: ${pose.hint}. Keep her face, hair, outfit and body proportions identical. Do not draw the skeleton.`,
+      `Change her pose so her body matches the OpenPose stick-figure skeleton in image ${p}${pose?.hint ? `: ${pose.hint}` : ""}. The position of the arms, head and legs should be the same as the pose we are trying to copy. Keep her face, hair, outfit and body proportions identical to image 1 and keep the background of image 1. Do not draw the skeleton.`,
     );
   }
   if (instr) parts.push(instr);
   if (body.mask) parts.push("Only change the masked area; keep the rest identical.");
-  const loras = pickLoras(instr, { refs: refsCollage, explicit });
+  const loras = pickLoras(instr, { refs: refsCollage, explicit, pose: posed });
   const text = withTriggers(`${parts.join(" ")}${ADULT}`, loras);
   const textWhy = blocked(text);
   if (textWhy) return reply(400, { error: textWhy });

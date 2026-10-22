@@ -245,7 +245,6 @@ async function edit(body: Record<string, unknown> | null, prompt: string, negati
   if ((tool === "inpaint" || tool === "expand") && !mask) return blocked(400, "Paint the area to change.");
   if (tool === "outfit" && !outfit) return blocked(400, "Add an outfit picture.");
   if (!prompt) return blocked(400, "Write a prompt first.");
-  if (minorReason(prompt) || minorReason(negative)) return blocked(400, AGE_BLOCK);
   if (!runpodConfigured()) return blocked(503, publicImageError("IMAGE_NOT_CONFIGURED"));
   if (!storageConfigured()) return blocked(503, "History isn't set up yet.");
 

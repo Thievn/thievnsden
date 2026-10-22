@@ -271,13 +271,8 @@ async function edit(body: Record<string, unknown>): Promise<Reply> {
     if (!screen.ok) return reply(400, { error: screen.reason || "Adults only." });
     if (screen.realPerson) flags.push(`outfit ref ${k + 1} looks like a real photo`);
   }
-  if (explicit) {
-    // Explicit mode: Den text-to-image lineage only, no outside images of any kind.
-    if (!subjectProv.clean) return reply(403, { error: "Explicit edits only work on pictures the Den made from text. Uploads and outside images are refused." });
-    if (refs.length || posedIn) return reply(403, { error: "Explicit edits can't use outfit or pose pictures. Remove them and try again." });
-    if (subjectScreen.realPerson) return reply(403, { error: "That picture looks like a real person, so explicit edits are refused." });
-  }
-  const nsfw = explicit && subjectProv.clean && lineageClean && !refs.length && !posedIn && strictNude(instr);
+  // Explicit / nude edits are allowed on any upload.
+  const nsfw = explicit && strictNude(instr);
   const images: { name: string; image: string }[] = [];
   const meta = await sharp(subject.buf).metadata();
   let subjectOut = await sharp(subject.buf).rotate().png().toBuffer();

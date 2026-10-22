@@ -58,10 +58,8 @@ test("the public site does not mention the attic", () => {
     "../../app/page.tsx",
     "../../app/layout.tsx",
     "../../app/not-found.tsx",
-    "../../components/DenStory.tsx",
-    "../../components/CrewCode.tsx",
-    "../../components/SiteFooter.tsx",
-    "../../components/VaultDoor.tsx",
+    "../../components/landing/SignIn.tsx",
+    "../../components/landing/landing.module.css",
   ];
   for (const file of files) {
     const text = readFileSync(new URL(file, import.meta.url), "utf8");

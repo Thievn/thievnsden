@@ -47,10 +47,8 @@ test("the public page does not mention the desk", () => {
     "../app/page.tsx",
     "../app/layout.tsx",
     "../app/not-found.tsx",
-    "../components/DenStory.tsx",
-    "../components/CrewCode.tsx",
-    "../components/SiteFooter.tsx",
-    "../components/VaultDoor.tsx",
+    "../components/landing/SignIn.tsx",
+    "../components/landing/landing.module.css",
   ];
   const banned = /\b(trad(e|ing)|crypto|wallet|solana|bitcoin|token|money|bot)\b/i;
   for (const file of files) {

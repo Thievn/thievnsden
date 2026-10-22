@@ -33,3 +33,28 @@ export async function isExplicitEdit(instr: string) {
   ]);
   return { explicit: !!verdict.explicit, why: verdict.why || "classifier" };
 }
+
+// Strict nudity intent for the explicit LoRA: only plain, unambiguous requests. Euphemisms never load it.
+const STRICT_NUDE = /\b(nude|naked|nudity|fully nude|topless|bottomless|bare breasts?|nipples?|genitals?|pussy|vagina|vulva|penis|explicit nude|nsfw nude)\b/i;
+export function strictNude(instr: string) {
+  return STRICT_NUDE.test(String(instr || ""));
+}
+
+// Does a text-to-image prompt target a real, identifiable person (celebrity, named public figure, "photo of my ex")?
+// Used only to mark generator outputs as not eligible for explicit edits. Fails closed (true) on errors.
+export async function namesRealPerson(prompt: string) {
+  if (!String(prompt || "").trim()) return false;
+  try {
+    const verdict = (await grok([
+      {
+        role: "system",
+        content:
+          'Reply ONLY JSON {"explicit":true|false,"why":"short"}. Set explicit=true if this image prompt asks to depict a specific real, identifiable person (a celebrity, public figure, influencer, named private individual, or "looks like <real name>"). Fictional characters and generic descriptions = false.',
+      },
+      { role: "user", content: String(prompt).slice(0, 2000) },
+    ])) as { explicit?: boolean };
+    return Boolean(verdict.explicit);
+  } catch {
+    return true;
+  }
+}

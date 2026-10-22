@@ -79,9 +79,15 @@ export const ANYPOSE: LabLora[] = [
 ];
 for (const lora of ANYPOSE) LORA_ALLOWLIST.add(lora.file);
 
-export function pickLoras(text: string, opts: { refs: boolean; explicit: boolean; pose?: boolean }): LabLora[] {
+// Explicit-anatomy LoRA (ScottzillaSystems MCNL v1, OpenRAIL++). Only when dispatch.ts passes nsfw=true, which requires
+// strict nudity wording + explicit intent + clean Den text-to-image provenance + no outside images.
+export const EXPLICIT_LORA: LabLora = { id: "explicit-mcnl", file: "den_explicit_mcnl_qie2511.safetensors", strength: 0.7, trigger: "" };
+LORA_ALLOWLIST.add(EXPLICIT_LORA.file);
+
+export function pickLoras(text: string, opts: { refs: boolean; explicit: boolean; pose?: boolean; nsfw?: boolean }): LabLora[] {
   const source = String(text || "");
   const picked: LabLora[] = opts.pose ? ANYPOSE.map((lora) => ({ ...lora })) : [];
+  if (opts.nsfw && opts.explicit && !opts.refs) picked.push({ ...EXPLICIT_LORA });
   if (!source.trim()) return picked;
   const seen = new Set<string>();
   for (const rule of [...RULES].sort((a, b) => a.priority - b.priority)) {

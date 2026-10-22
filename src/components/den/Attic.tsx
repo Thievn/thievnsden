@@ -78,16 +78,12 @@ async function post(body: Record<string, unknown>) {
 }
 
 async function fileToDataUrl(file: File) {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1280 / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Couldn't read that picture.");
-  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  return canvas.toDataURL("image/jpeg", 0.86);
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("Couldn't read that picture."));
+    reader.readAsDataURL(file);
+  });
 }
 
 export function Attic() {
@@ -354,13 +350,13 @@ export function Attic() {
         <a className="attic-back" href="/den">
           Back
         </a>
-        <h1>Den&apos;s Attic</h1>
+        <h1>Den's Attic</h1>
         <button type="button" className={advanced ? "attic-mode is-on" : "attic-mode"} onClick={() => setAdvanced((value) => !value)}>
           {advanced ? "Advanced" : "Simple"}
         </button>
       </header>
 
-      {!connected ? <p className="attic-note">The picture machine isn&apos;t connected yet. You can still look around.</p> : null}
+      {!connected ? <p className="attic-note">The picture machine isn't connected yet. You can still look around.</p> : null}
       {notice ? <p className="attic-note">{notice}</p> : null}
       {error ? <p className="attic-error">{error}</p> : null}
 
@@ -476,11 +472,10 @@ export function Attic() {
             </div>
             {tool === "expand" ? (
               <div className="chip-row">
-                {(["left", "right", "up", "down"] as const).map((direction) => (
-                  <button key={direction} type="button" className="chip" onClick={() => expand(direction)}>
-                    {direction}
-                  </button>
-                ))}
+                <button type="button" onClick={() => expand("left")}>Left</button>
+                <button type="button" onClick={() => expand("right")}>Right</button>
+                <button type="button" onClick={() => expand("up")}>Up</button>
+                <button type="button" onClick={() => expand("down")}>Down</button>
               </div>
             ) : null}
             {tool === "upscale" ? (
@@ -489,10 +484,10 @@ export function Attic() {
                 <button type="button" className={scale === 4 ? "chip is-on" : "chip"} onClick={() => setScale(4)}>4x</button>
               </div>
             ) : null}
-            {tool === "img2img" || tool === "inpaint" ? (
+            {tool !== "upscale" && tool !== "restore" ? (
               <label>
-                Strength {strength.toFixed(2)}
-                <input className="range" type="range" min={0.2} max={1} step={0.05} value={strength} onChange={(event) => setStrength(Number(event.target.value))} />
+                Strength
+                <input type="range" min="0.2" max="0.9" step="0.05" value={strength} onChange={(event) => setStrength(Number(event.target.value))} />
               </label>
             ) : null}
           </>
@@ -502,90 +497,65 @@ export function Attic() {
             <input type="checkbox" checked={useBody} onChange={(event) => setUseBody(event.target.checked)} />
             Use body scan
           </label>
-          <span className="quiet">{face ? "Face lock on" : "No face lock"}</span>
-        </div>
-        {bodyNotes ? <p className="quiet">{bodyNotes}</p> : null}
-        <div className="chip-row">
-          <label className="chip">
-            Face scan
-            <input className="sr-only" type="file" accept="image/*" onChange={(event) => run("face", event.target.files?.[0])} />
-          </label>
-          <label className="chip">
-            Body scan
-            <input className="sr-only" type="file" accept="image/*" onChange={(event) => run("body", event.target.files?.[0])} />
-          </label>
-          {face ? (
-            <button
-              type="button"
-              className="chip"
-              onClick={() => post({ action: "face-clear" }).then(() => setFace(false)).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Couldn't clear that."))}
-            >
-              Clear face
-            </button>
-          ) : null}
-          {body ? (
-            <button
-              type="button"
-              className="chip"
-              onClick={() => post({ action: "body-clear" }).then(() => { setBody(false); setBodyNotes(""); }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Couldn't clear that."))}
-            >
-              Clear body
-            </button>
-          ) : null}
         </div>
       </section>
 
       <section className="attic-card">
         <div className="attic-row">
-          <h2>History</h2>
-          <button type="button" className={favoritesOnly ? "chip is-on" : "chip"} onClick={() => setFavoritesOnly((value) => !value)}>
-            Favorites
+          <label className="slot">
+            Face lock
+            <input className="sr-only" type="file" accept="image/*" onChange={(event) => run("face", event.target.files?.[0])} />
+          </label>
+          {face ? (
+            <button type="button" className="text-button" onClick={() => post({ action: "face-clear" }).then(() => setFace(false)).catch(() => undefined)}>
+              Clear face
+            </button>
+          ) : null}
+          <label className="slot">
+            Body scan
+            <input className="sr-only" type="file" accept="image/*" onChange={(event) => run("body", event.target.files?.[0])} />
+          </label>
+          {body ? (
+            <button type="button" className="text-button" onClick={() => post({ action: "body-clear" }).then(() => { setBody(false); setBodyNotes(""); }).catch(() => undefined)}>
+              Clear body
+            </button>
+          ) : null}
+        </div>
+        {bodyNotes ? <p className="attic-note">{bodyNotes}</p> : null}
+      </section>
+
+      <section className="attic-card">
+        <div className="attic-row">
+          <input value={folderName} onChange={(event) => setFolderName(event.target.value)} placeholder="New folder" />
+          <button type="button" className="text-button" onClick={() => {
+            const name = folderName.trim();
+            if (!name) return;
+            post({ action: "folder", create: true, name }).then((json) => {
+              setFolders(Array.isArray(json.folders) ? json.folders.filter((item): item is string => typeof item === "string") : []);
+              setFolderName("");
+            }).catch(() => undefined);
+          }}>
+            Add
           </button>
-        </div>
-        <div className="pair">
-          <label>
-            Folder
-            <select value={folderFilter} onChange={(event) => setFolderFilter(event.target.value)}>
-              <option value="all">All</option>
-              {folders.map((name) => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
+          <label className="check">
+            <input type="checkbox" checked={favoritesOnly} onChange={(event) => setFavoritesOnly(event.target.checked)} />
+            Favorites
           </label>
-          <label>
-            New folder
-            <input
-              value={folderName}
-              maxLength={40}
-              onChange={(event) => setFolderName(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key !== "Enter" || !folderName.trim()) return;
-                post({ action: "folder", create: true, name: folderName.trim() })
-                  .then((json) => {
-                    setFolders(Array.isArray(json.folders) ? json.folders.filter((item): item is string => typeof item === "string") : []);
-                    setFolderName("");
-                  })
-                  .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "Couldn't save that folder."));
-              }}
-              placeholder="Name, then Enter"
-            />
-          </label>
+          <select value={folderFilter} onChange={(event) => setFolderFilter(event.target.value)}>
+            <option value="all">All</option>
+            {folders.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
         </div>
-        {shown.length === 0 ? <p className="quiet">Nothing up here yet.</p> : null}
         <div className="gallery">
           {shown.map((item) => (
-            <article key={item.id} className="shot">
-              {item.url ? <img src={item.url} alt="" /> : <p className="quiet">{item.status === "failed" ? item.error || "Couldn't finish that." : "Cooking"}</p>}
-              <div className="shot-actions">
+            <article key={item.id}>
+              {item.url ? <img src={item.url} alt="" /> : <div className="placeholder">{item.status}</div>}
+              <div className="meta">
                 <button
                   type="button"
                   onClick={() => {
-                    setPrompt(item.prompt);
-                    setNegative(item.negative);
-                    if (item.style) setStyle(item.style);
-                    if (item.model === "zimage" || item.model === "chroma") setModel(item.model);
-                    if (item.seed != null) setSeed(String(item.seed));
-                    setNotice("Settings loaded.");
                     if (item.url) {
                       post({ action: "file", id: item.id })
                         .then((json) => {

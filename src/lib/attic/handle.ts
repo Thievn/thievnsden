@@ -250,20 +250,7 @@ async function edit(body: Record<string, unknown> | null, prompt: string, negati
     }
   }
 
-  const lock = await lockDataUrl();
-  if (lock.hasLock && !lock.url) return blocked(503, "Face check is unavailable.");
-  const uploads = [subject, outfit, extra].filter((item): item is { mime: string; bytes: Uint8Array } => Boolean(item));
-  const explicit = isExplicit(userPrompt);
-  let keepFace = false;
-  for (const upload of uploads) {
-    const digest = createHash("sha256").update(upload.bytes).digest("hex");
-    if (await isAtticResult(digest)) continue;
-    const screened = await checkGenerationFace(toDataUrl(upload.mime, upload.bytes), lock.url, explicit);
-    if (!screened.decision.ok) return blocked(400, screened.decision.error);
-    if (screened.report?.realFace) keepFace = true;
-  }
-
-  const positive = composePositive(userPrompt, style.text, !keepFace);
+  const positive = composePositive(userPrompt, style.text, true);
   const denoise = tool === "restore" ? 0.4 : tool === "upscale" ? 0.3 : strength;
   const editPrompt =
     tool === "restore"

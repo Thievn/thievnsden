@@ -1,59 +1,86 @@
-import { CrewCode } from "@/components/CrewCode";
-import { DenStory } from "@/components/DenStory";
-import { SiteFooter } from "@/components/SiteFooter";
-import { VaultDoor } from "@/components/VaultDoor";
+import { Geist } from "next/font/google";
+import { SignInForm } from "@/components/landing/SignIn";
+import styles from "@/components/landing/landing.module.css";
+
+const geist = Geist({
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const CARDS = [
+  {
+    title: "Quiet",
+    body: "This page does not explain the rest.",
+  },
+  {
+    title: "Private",
+    body: "Made for one person.",
+  },
+  {
+    title: "Simple",
+    body: "Sign in, and you are through.",
+  },
+];
 
 export default function HomePage() {
   return (
-    <>
-      <a className="skip" href="#the-den">
+    <div className={`${geist.className} ${styles.gate}`} data-gate="">
+      <a className={styles.skip} href="#main">
         Skip to content
       </a>
-      <header className="hero">
-        <div className="atmosphere" aria-hidden="true">
-          <div className="hero-wash" />
-          <div className="hero-glow" />
-          <div className="hero-grain" />
-        </div>
-
-        <nav className="topnav" aria-label="Site">
-          <a className="brand-mini" href="#top">
-            Thievn&apos;s Den
-          </a>
-          <ul>
-            <li>
-              <a href="#the-den">Den</a>
-            </li>
-            <li>
-              <a href="#notes">Notes</a>
-            </li>
-            <li>
-              <a href="#the-vault">Sign in</a>
-            </li>
-          </ul>
-        </nav>
-
-        <div className="hero-layout" id="top">
-          <div className="hero-copy">
-            <h1 className="wordmark">
-              <span className="wordmark-line">Thievn&rsquo;s</span>
-              <span className="wordmark-rule" aria-hidden="true" />
-              <span className="wordmark-line wordmark-den">Den</span>
-            </h1>
-            <p className="lede">A quiet little corner.</p>
-            <a className="descend" href="#the-vault">
+      <header className={styles.nav} id="top">
+        <div className={styles.wrap}>
+          <div className={styles.navRow}>
+            <a className={styles.logo} href="#top">
+              Thievn&rsquo;s Den
+            </a>
+            <a className={styles.navBtn} href="#sign-in">
               Sign in
             </a>
           </div>
         </div>
       </header>
 
-      <main>
-        <DenStory />
-        <CrewCode />
-        <VaultDoor />
+      <main id="main">
+        <section className={styles.hero}>
+          <div className={styles.wrap}>
+            <div className={styles.heroGrid}>
+              <div className={styles.copy}>
+                <h1>
+                  Thievn&rsquo;s <em>Den</em>
+                </h1>
+                <p className={styles.lead}>A quiet little corner.</p>
+                <a className={styles.cta} href="#sign-in">
+                  Sign in
+                </a>
+              </div>
+              <SignInForm />
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.section} aria-labelledby="front-title">
+          <div className={styles.wrap}>
+            <p className={styles.eyebrow}>Out here</p>
+            <h2 id="front-title">Just the front.</h2>
+            <div className={styles.cards}>
+              {CARDS.map((card) => (
+                <article className={styles.card} key={card.title}>
+                  <h3>{card.title}</h3>
+                  <p>{card.body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
-      <SiteFooter />
-    </>
+
+      <footer className={styles.footer}>
+        <div className={styles.wrap}>
+          <p className={styles.footName}>Thievn&rsquo;s Den</p>
+          <p className={styles.footMeta}>&copy; {new Date().getFullYear()}</p>
+        </div>
+      </footer>
+    </div>
   );
 }

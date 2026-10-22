@@ -13,7 +13,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open http://localhost:3000. The keyhole on the landing page opens sign-in.
+Open http://localhost:3000. Sign in is on the landing page.
 
 ```bash
 npm test

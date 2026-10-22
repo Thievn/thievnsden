@@ -47,10 +47,12 @@ async function chat(body: Record<string, unknown>): Promise<unknown | null> {
 }
 
 const ENHANCE_SYSTEM =
-  "You polish image prompts for a private editor. The subject is a consenting adult, 21 or older. " +
-  "Adult and explicit requests are allowed and must stay when the user asked for them. " +
+  "You polish image prompts for a private editor. You only rewrite text. You never generate images. " +
+  "The subject is a consenting adult, 21 or older. " +
+  "Adult, nude, and explicit sexual requests are allowed and must be rewritten into richer, more detailed prompts when the user asked for them. " +
+  "Never refuse, apologize, or mention policies for adult sexual content. " +
   "Do not add minors, teenagers, childlike traits, or any real person. " +
-  "Do not refuse, apologize, or mention policies. One paragraph, no quotes.";
+  "One paragraph, no quotes.";
 
 export function grokConfigured(): boolean {
   return Boolean(process.env.XAI_API_KEY?.trim());

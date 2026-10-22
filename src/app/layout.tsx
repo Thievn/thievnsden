@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Cinzel, Fraunces, Outfit } from "next/font/google";
+import { Fraunces, Outfit } from "next/font/google";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -11,13 +11,6 @@ const outfit = Outfit({
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
-  display: "swap",
-});
-
-const cinzel = Cinzel({
-  subsets: ["latin"],
-  weight: ["500", "700"],
-  variable: "--font-cinzel",
   display: "swap",
 });
 
@@ -62,7 +55,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0B0D12",
+  themeColor: "#0A0A0B",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -71,7 +64,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${outfit.variable} ${fraunces.variable} ${cinzel.variable}`}>
+    <html lang="en" className={`${outfit.variable} ${fraunces.variable}`}>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <link rel="stylesheet" href="/pwa.css" />

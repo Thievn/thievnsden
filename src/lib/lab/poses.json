@@ -1,0 +1,1109 @@
+[
+{
+"id": "stand_front",
+"name": "Standing",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing facing the camera, arms relaxed, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_contra",
+"name": "Contrapposto",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing in a relaxed contrapposto pose, weight on one leg, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_hips",
+"name": "Hands on hips",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing confidently with hands on hips, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_crossed",
+"name": "Arms crossed",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing with arms crossed, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_hair",
+"name": "Hand in hair",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing, one hand running through her hair, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_hair_both",
+"name": "Both hands in hair",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing with both hands in her hair, head tilted, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_behind_head",
+"name": "Hands behind head",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing with hands behind her head, elbows out, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_cross_legs",
+"name": "Legs crossed",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing with legs crossed at the ankles, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_knee_up",
+"name": "Knee up",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing on one leg with the other knee raised playfully, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_hip_hair",
+"name": "Hip + hair",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing, one hand on hip, the other in her hair, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_q",
+"name": "Three-quarter",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing in three-quarter view, glancing at the camera, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_side",
+"name": "Side profile",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing in side profile, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_side_l",
+"name": "Side profile (left)",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "standing in side profile facing left, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_walk",
+"name": "Walking toward camera",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "walking toward the camera mid-stride, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "stand_half",
+"name": "Half-body portrait",
+"cat": "Standing",
+"aspect": "portrait",
+"hint": "half-body portrait facing the camera, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "sit_chair",
+"name": "Sitting on chair",
+"cat": "Sitting",
+"aspect": "portrait",
+"hint": "sitting on a chair, hands on her knees, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "sit_chair_cross",
+"name": "Chair, legs crossed",
+"cat": "Sitting",
+"aspect": "portrait",
+"hint": "sitting on a chair with legs crossed, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "sit_chair_side",
+"name": "Chair, side view",
+"cat": "Sitting",
+"aspect": "portrait",
+"hint": "sitting on a chair in side profile, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "sit_chair_spread",
+"name": "Chair, backwards lean",
+"cat": "Sitting",
+"aspect": "portrait",
+"hint": "sitting on a chair, knees apart, leaning forward, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "sit_floor_cross",
+"name": "Cross-legged",
+"cat": "Sitting",
+"aspect": "square",
+"hint": "sitting cross-legged on the floor, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "sit_knees_hug",
+"name": "Hugging knees",
+"cat": "Sitting",
+"aspect": "square",
+"hint": "sitting with knees pulled up, arms around her legs, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "sit_mermaid",
+"name": "Legs to the side",
+"cat": "Sitting",
+"aspect": "square",
+"hint": "sitting with legs folded to one side, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "sit_lean_back",
+"name": "Leaning back on hands",
+"cat": "Sitting",
+"aspect": "landscape",
+"hint": "sitting leaning back on her hands, one knee up, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "sit_chair_chin",
+"name": "Chair, chin on hand",
+"cat": "Sitting",
+"aspect": "portrait",
+"hint": "sitting with legs crossed, chin resting on her hand, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "sit_edge_peace",
+"name": "Sitting, peace sign",
+"cat": "Sitting",
+"aspect": "portrait",
+"hint": "sitting and flashing a peace sign, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "kneel_up",
+"name": "Kneeling upright",
+"cat": "Kneeling",
+"aspect": "portrait",
+"hint": "kneeling upright facing the camera, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "kneel_hair",
+"name": "Kneeling, hands in hair",
+"cat": "Kneeling",
+"aspect": "portrait",
+"hint": "kneeling upright with hands in her hair, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "kneel_heels",
+"name": "Sitting on heels",
+"cat": "Kneeling",
+"aspect": "square",
+"hint": "kneeling and sitting back on her heels, hands on thighs, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "kneel_wide",
+"name": "Kneeling, knees apart",
+"cat": "Kneeling",
+"aspect": "square",
+"hint": "kneeling with knees apart, sitting back on her heels, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "kneel_hips",
+"name": "Kneeling, hands on hips",
+"cat": "Kneeling",
+"aspect": "portrait",
+"hint": "kneeling upright with hands on hips, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "kneel_back",
+"name": "Kneeling from behind",
+"cat": "Kneeling",
+"aspect": "square",
+"hint": "kneeling seen from behind, looking back over her shoulder, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "squat",
+"name": "Squatting",
+"cat": "Kneeling",
+"aspect": "square",
+"hint": "squatting down with hands on her knees, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "lie_back",
+"name": "Lying on back",
+"cat": "Lying",
+"aspect": "landscape",
+"hint": "lying on her back, arms above her head, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "lie_back_knee",
+"name": "On back, knee bent",
+"cat": "Lying",
+"aspect": "landscape",
+"hint": "lying on her back with one knee bent, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "lie_stomach",
+"name": "On stomach, feet up",
+"cat": "Lying",
+"aspect": "landscape",
+"hint": "lying on her stomach propped on elbows, feet kicked up behind her, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "lie_side",
+"name": "Lying on side",
+"cat": "Lying",
+"aspect": "landscape",
+"hint": "lying on her side, head propped on her hand, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "lie_side_r",
+"name": "Lying on side (flip)",
+"cat": "Lying",
+"aspect": "landscape",
+"hint": "lying on her side facing right, head propped on her hand, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "lie_stomach_r",
+"name": "On stomach (flip)",
+"cat": "Lying",
+"aspect": "landscape",
+"hint": "lying on her stomach, feet up, facing right, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "fours_side",
+"name": "All fours",
+"cat": "All fours",
+"aspect": "landscape",
+"hint": "on all fours in side view, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "fours_lookback",
+"name": "All fours, looking back",
+"cat": "All fours",
+"aspect": "landscape",
+"hint": "on all fours, looking back at the camera over her shoulder, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "fours_side_r",
+"name": "All fours (flip)",
+"cat": "All fours",
+"aspect": "landscape",
+"hint": "on all fours facing right, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "fours_lookback_r",
+"name": "Looking back (flip)",
+"cat": "All fours",
+"aspect": "landscape",
+"hint": "on all fours facing right, looking back at the camera, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "back_stand",
+"name": "From behind",
+"cat": "From behind",
+"aspect": "portrait",
+"hint": "standing seen from behind, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "back_look",
+"name": "Looking over shoulder",
+"cat": "From behind",
+"aspect": "portrait",
+"hint": "seen from behind, looking back over her shoulder, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "back_hair",
+"name": "Behind, hands in hair",
+"cat": "From behind",
+"aspect": "portrait",
+"hint": "seen from behind with both hands in her hair, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "back_hips",
+"name": "Behind, hands on hips",
+"cat": "From behind",
+"aspect": "portrait",
+"hint": "seen from behind, hands on hips, glancing back, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "back_walk",
+"name": "Walking away",
+"cat": "From behind",
+"aspect": "portrait",
+"hint": "walking away from the camera, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "back_bent",
+"name": "Bent over, looking back",
+"cat": "From behind",
+"aspect": "landscape",
+"hint": "bending over at the waist, looking back, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "back_half",
+"name": "Back, half-body",
+"cat": "From behind",
+"aspect": "portrait",
+"hint": "half-body from behind, looking back over her shoulder, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "selfie_high",
+"name": "High-angle selfie",
+"cat": "Selfie & mirror",
+"aspect": "portrait",
+"hint": "taking a high-angle selfie, arm raised holding the phone, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "selfie_arm",
+"name": "Arm-out selfie",
+"cat": "Selfie & mirror",
+"aspect": "portrait",
+"hint": "arm-length selfie, phone held out, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "selfie_peace",
+"name": "Selfie + peace sign",
+"cat": "Selfie & mirror",
+"aspect": "portrait",
+"hint": "selfie with a peace sign, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "mirror_front",
+"name": "Mirror selfie",
+"cat": "Selfie & mirror",
+"aspect": "portrait",
+"hint": "mirror selfie, phone in front of her face, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "mirror_hip",
+"name": "Mirror selfie, hip pop",
+"cat": "Selfie & mirror",
+"aspect": "portrait",
+"hint": "mirror selfie with a hip pop, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "mirror_back",
+"name": "Mirror selfie from behind",
+"cat": "Selfie & mirror",
+"aspect": "portrait",
+"hint": "mirror selfie showing her back, looking over her shoulder, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "mirror_sit",
+"name": "Mirror selfie sitting",
+"cat": "Selfie & mirror",
+"aspect": "square",
+"hint": "sitting mirror selfie, kneeling on the floor, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "mirror_half",
+"name": "Mirror selfie close",
+"cat": "Selfie & mirror",
+"aspect": "portrait",
+"hint": "close mirror selfie, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "selfie_bed",
+"name": "Bed selfie",
+"cat": "Selfie & mirror",
+"aspect": "landscape",
+"hint": "lying in bed taking a selfie from above, half-body shot",
+"w": 1216,
+"h": 832
+},
+{
+"id": "gaming_armrests",
+"name": "Gaming chair, legs on armrests",
+"cat": "Chair & gaming chair",
+"aspect": "square",
+"hint": "sitting in a gaming chair with legs draped over the armrests, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "gaming_cross",
+"name": "Gaming chair, cross-legged",
+"cat": "Chair & gaming chair",
+"aspect": "square",
+"hint": "sitting cross-legged in a gaming chair, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "gaming_lean",
+"name": "Gaming chair, leaning back",
+"cat": "Chair & gaming chair",
+"aspect": "portrait",
+"hint": "leaning back in a gaming chair, hands behind her head, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "chair_backwards",
+"name": "Straddling chair",
+"cat": "Chair & gaming chair",
+"aspect": "portrait",
+"hint": "sitting backwards on a chair, arms resting on the backrest, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "chair_side_drive",
+"name": "Office chair side",
+"cat": "Chair & gaming chair",
+"aspect": "portrait",
+"hint": "sitting on an office chair in side profile, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "bed_kneel",
+"name": "Kneeling on bed",
+"cat": "Bed",
+"aspect": "square",
+"hint": "kneeling on the bed, hands in her hair, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "bed_sit_edge",
+"name": "Sitting on bed edge",
+"cat": "Bed",
+"aspect": "portrait",
+"hint": "sitting on the edge of the bed, hands on the mattress, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "bed_lie_back",
+"name": "Lying in bed",
+"cat": "Bed",
+"aspect": "landscape",
+"hint": "lying back on the bed, one knee bent, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "bed_stomach",
+"name": "On stomach in bed",
+"cat": "Bed",
+"aspect": "landscape",
+"hint": "lying on her stomach on the bed, feet up, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "bed_side",
+"name": "On side in bed",
+"cat": "Bed",
+"aspect": "landscape",
+"hint": "lying on her side on the bed, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "bed_fours",
+"name": "All fours on bed",
+"cat": "Bed",
+"aspect": "landscape",
+"hint": "on all fours on the bed, looking back, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "shower_hair",
+"name": "Shower, hands in hair",
+"cat": "Shower & bath",
+"aspect": "portrait",
+"hint": "standing under the shower, hands in her wet hair, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "shower_back",
+"name": "Shower from behind",
+"cat": "Shower & bath",
+"aspect": "portrait",
+"hint": "in the shower seen from behind, looking back, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "bath_recline",
+"name": "Reclining in bath",
+"cat": "Shower & bath",
+"aspect": "landscape",
+"hint": "reclining in a bathtub, knees up, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "bath_sit",
+"name": "Sitting in tub",
+"cat": "Shower & bath",
+"aspect": "square",
+"hint": "sitting in the bathtub hugging her knees, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "towel_stand",
+"name": "Towel, standing",
+"cat": "Shower & bath",
+"aspect": "portrait",
+"hint": "standing holding a towel to her chest, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "couch_lounge",
+"name": "Lounging on couch",
+"cat": "Couch",
+"aspect": "landscape",
+"hint": "lounging on the couch, reclined on one arm, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "couch_cross",
+"name": "Couch, cross-legged",
+"cat": "Couch",
+"aspect": "square",
+"hint": "sitting cross-legged on the couch, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "couch_lie",
+"name": "Lying on couch",
+"cat": "Couch",
+"aspect": "landscape",
+"hint": "lying on the couch on her side, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "couch_sit",
+"name": "Sitting on couch",
+"cat": "Couch",
+"aspect": "portrait",
+"hint": "sitting on the couch with legs crossed, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "couch_knees",
+"name": "Couch, knees up",
+"cat": "Couch",
+"aspect": "square",
+"hint": "curled up on the couch with knees pulled up, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "floor_lean",
+"name": "Floor, leaning back",
+"cat": "Floor",
+"aspect": "landscape",
+"hint": "sitting on the floor leaning back on her hands, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "floor_mermaid",
+"name": "Floor, legs to side",
+"cat": "Floor",
+"aspect": "square",
+"hint": "sitting on the floor with legs folded to the side, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "floor_kneel",
+"name": "Floor, kneeling",
+"cat": "Floor",
+"aspect": "square",
+"hint": "kneeling on the floor, hands on her cheeks, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "floor_lie",
+"name": "Floor, lying on back",
+"cat": "Floor",
+"aspect": "landscape",
+"hint": "lying on the floor with arms spread, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "yoga_reach",
+"name": "Reaching up",
+"cat": "Stretching & yoga",
+"aspect": "portrait",
+"hint": "stretching with both arms reaching up, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "yoga_side",
+"name": "Side stretch",
+"cat": "Stretching & yoga",
+"aspect": "portrait",
+"hint": "side stretch, one arm arched over her head, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "yoga_tree",
+"name": "Tree pose",
+"cat": "Stretching & yoga",
+"aspect": "portrait",
+"hint": "yoga tree pose, hands together overhead, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "yoga_warrior",
+"name": "Warrior II",
+"cat": "Stretching & yoga",
+"aspect": "landscape",
+"hint": "yoga warrior II pose, arms extended, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "yoga_dog",
+"name": "Downward dog",
+"cat": "Stretching & yoga",
+"aspect": "landscape",
+"hint": "yoga downward dog pose, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "yoga_cobra",
+"name": "Cobra",
+"cat": "Stretching & yoga",
+"aspect": "landscape",
+"hint": "yoga cobra pose, chest lifted, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "yoga_child",
+"name": "Child's pose",
+"cat": "Stretching & yoga",
+"aspect": "landscape",
+"hint": "yoga child's pose, arms stretched forward, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "dance_up",
+"name": "Dancing, arm up",
+"cat": "Dancing",
+"aspect": "portrait",
+"hint": "dancing with one arm raised, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "dance_both",
+"name": "Dancing, arms up",
+"cat": "Dancing",
+"aspect": "portrait",
+"hint": "dancing with both arms in the air, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "dance_hip",
+"name": "Hip sway",
+"cat": "Dancing",
+"aspect": "portrait",
+"hint": "swaying her hips while dancing, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "dance_twirl",
+"name": "Twirl",
+"cat": "Dancing",
+"aspect": "portrait",
+"hint": "twirling with arms out, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "wall_back",
+"name": "Back against wall",
+"cat": "Leaning & wall",
+"aspect": "portrait",
+"hint": "leaning back against a wall, one foot up on it, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "wall_shoulder",
+"name": "Shoulder on wall",
+"cat": "Leaning & wall",
+"aspect": "portrait",
+"hint": "leaning a shoulder against the wall, arm up, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "wall_hands_up",
+"name": "Wall, arms up",
+"cat": "Leaning & wall",
+"aspect": "portrait",
+"hint": "leaning against the wall with hands behind her head, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "wall_behind",
+"name": "Hands on wall from behind",
+"cat": "Leaning & wall",
+"aspect": "portrait",
+"hint": "facing the wall with hands up on it, looking back, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "counter_sit",
+"name": "Sitting on counter",
+"cat": "Kitchen counter",
+"aspect": "portrait",
+"hint": "sitting on the kitchen counter, hands on the edge, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "counter_lean",
+"name": "Leaning on counter",
+"cat": "Kitchen counter",
+"aspect": "portrait",
+"hint": "leaning back against the kitchen counter, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "counter_bent",
+"name": "Bent over counter",
+"cat": "Kitchen counter",
+"aspect": "landscape",
+"hint": "leaning forward over the kitchen counter on her forearms, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "counter_bent_r",
+"name": "Bent over counter (flip)",
+"cat": "Kitchen counter",
+"aspect": "landscape",
+"hint": "leaning over the counter facing right, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "car_drive",
+"name": "Driver's seat",
+"cat": "Car",
+"aspect": "landscape",
+"hint": "sitting in the driver's seat, hands on the wheel, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "car_hood",
+"name": "Sitting on hood",
+"cat": "Car",
+"aspect": "portrait",
+"hint": "sitting on the hood of a car, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "car_lean",
+"name": "Leaning on car",
+"cat": "Car",
+"aspect": "portrait",
+"hint": "leaning against a car, arms crossed, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "out_walk",
+"name": "Walking",
+"cat": "Outdoor",
+"aspect": "portrait",
+"hint": "walking outdoors, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "out_arms",
+"name": "Arms wide open",
+"cat": "Outdoor",
+"aspect": "landscape",
+"hint": "standing with arms wide open, face to the sky, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "out_bench",
+"name": "Sitting on bench",
+"cat": "Outdoor",
+"aspect": "portrait",
+"hint": "sitting on a bench, legs crossed, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "out_beach_lie",
+"name": "Beach, lying",
+"cat": "Outdoor",
+"aspect": "landscape",
+"hint": "lounging on the beach, leaning back on her hands, full-body shot, whole figure in frame",
+"w": 1216,
+"h": 832
+},
+{
+"id": "out_wave",
+"name": "Waving",
+"cat": "Outdoor",
+"aspect": "portrait",
+"hint": "waving at the camera, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "g_heart",
+"name": "Heart hands",
+"cat": "Hand gestures",
+"aspect": "portrait",
+"hint": "making a heart shape with her hands, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "g_prayer",
+"name": "Hands together",
+"cat": "Hand gestures",
+"aspect": "portrait",
+"hint": "hands pressed together in front of her chest, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "g_cheeks",
+"name": "Hands on cheeks",
+"cat": "Hand gestures",
+"aspect": "portrait",
+"hint": "hands on her cheeks, cute expression, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "g_frame",
+"name": "Framing face",
+"cat": "Hand gestures",
+"aspect": "portrait",
+"hint": "framing her face with both hands, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "g_guns",
+"name": "Finger guns",
+"cat": "Hand gestures",
+"aspect": "portrait",
+"hint": "playful finger guns, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "g_peace",
+"name": "Peace sign",
+"cat": "Hand gestures",
+"aspect": "portrait",
+"hint": "peace sign next to her face, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "g_cover",
+"name": "Giggle, hand over mouth",
+"cat": "Hand gestures",
+"aspect": "portrait",
+"hint": "giggling with a hand over her mouth, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "t_finger_lip",
+"name": "Finger on lip",
+"cat": "Teasing & flirty",
+"aspect": "portrait",
+"hint": "finger to her lips, teasing look, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "t_blow_kiss",
+"name": "Blowing a kiss",
+"cat": "Teasing & flirty",
+"aspect": "portrait",
+"hint": "blowing a kiss to the camera, half-body shot",
+"w": 832,
+"h": 1216
+},
+{
+"id": "t_strap",
+"name": "Tugging strap",
+"cat": "Teasing & flirty",
+"aspect": "portrait",
+"hint": "playfully tugging at a shoulder strap, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "t_lookback_hip",
+"name": "Over shoulder, hip out",
+"cat": "Teasing & flirty",
+"aspect": "portrait",
+"hint": "glancing over her shoulder with her hip out, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+},
+{
+"id": "t_kneel_lean",
+"name": "Kneeling, leaning in",
+"cat": "Teasing & flirty",
+"aspect": "square",
+"hint": "kneeling and leaning toward the camera, full-body shot, whole figure in frame",
+"w": 1024,
+"h": 1024
+},
+{
+"id": "t_wink",
+"name": "Hand on hip wink",
+"cat": "Teasing & flirty",
+"aspect": "portrait",
+"hint": "hand on hip, winking at the camera, full-body shot, whole figure in frame",
+"w": 832,
+"h": 1216
+}
+]

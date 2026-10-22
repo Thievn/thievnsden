@@ -6,28 +6,22 @@ import { buildCharacterPrompt, sanitizeRecipe } from "./presets";
 import { bytesFromRunpodOutput, publicImageError, readRunpod, runpodConfigured, submitWorkflow } from "./runpod";
 import { AGE_BLOCK, composePositive, decideFace, isExplicit, minorReason } from "./safety";
 import {
-  characterById,
   createFolder,
-  deleteCharacter,
   downloadObject,
   findUpload,
   imageById,
   imagesByIds,
   insertImage,
   isAtticResult,
-  listCharacters,
   listFolders,
   listImages,
   loadProfile,
   publicStoreError,
-  saveCharacter,
   saveProfile,
   storageConfigured,
-  updateCharacter,
   updateImage,
   uploadObject,
   type AtticImage,
-  type LabCharacter,
 } from "./store";
 import { chromaGraph, qwenEditGraph, zimageGraph } from "./workflows";
 
@@ -62,21 +56,6 @@ function present(image: AtticImage) {
     error: image.error,
     parentId: image.parentId,
     url: image.url,
-  };
-}
-
-function presentCharacter(character: LabCharacter) {
-  return {
-    id: character.id,
-    name: character.name,
-    style: character.style,
-    appearance: character.appearance,
-    personality: character.personality,
-    scene: character.scene,
-    prompt: character.prompt,
-    favorite: character.favorite,
-    url: character.url,
-    updatedAt: character.updatedAt,
   };
 }
 
@@ -138,9 +117,6 @@ export async function handleLab(body: Record<string, unknown> | null): Promise<R
     if (action === "favorite") return await favorite(body);
     if (action === "folder") return await folder(body);
     if (action === "file") return await file(body);
-    if (action === "character-save") return await characterSave(body);
-    if (action === "character-delete") return await characterDelete(body);
-    if (action === "character-favorite") return await characterFavorite(body);
     return reply(400, { error: "Unknown action." });
   } catch (error) {
     return reply(500, { error: publicStoreError(error) });
@@ -155,25 +131,18 @@ async function state(): Promise<Reply> {
       bodyNotes: "",
       folders: [],
       images: [],
-      characters: [],
       runpod: runpodConfigured(),
       grok: grokConfigured(),
       storage: false,
     });
   }
-  const [profile, folders, images, characters] = await Promise.all([
-    loadProfile(),
-    listFolders(),
-    listImages(),
-    listCharacters().catch(() => [] as LabCharacter[]),
-  ]);
+  const [profile, folders, images] = await Promise.all([loadProfile(), listFolders(), listImages()]);
   return reply(200, {
     face: Boolean(profile.facePath),
     body: Boolean(profile.bodyPath),
     bodyNotes: profile.bodyNotes,
     folders,
     images: images.map(present),
-    characters: characters.map(presentCharacter),
     runpod: runpodConfigured(),
     grok: grokConfigured(),
     storage: true,
@@ -458,40 +427,3 @@ async function file(body: Record<string, unknown> | null): Promise<Reply> {
   return reply(200, { dataUrl: toDataUrl(file.mime, file.bytes), image: present(image) });
 }
 
-async function characterSave(body: Record<string, unknown> | null): Promise<Reply> {
-  const recipe = sanitizeRecipe(body?.recipe);
-  if (!recipe?.name) return reply(400, { error: "Give her a name." });
-  const prompt = buildCharacterPrompt({ ...recipe, action: "" });
-  if (minorReason(recipe.name) || minorReason(prompt)) return reply(400, { error: AGE_BLOCK });
-  if (!storageConfigured()) return reply(503, { error: "History isn't set up yet." });
-  const id = str(body?.id, 40);
-  const existing = /^[0-9a-f-]{36}$/i.test(id) ? id : null;
-  if (existing && !(await characterById(existing))) return reply(404, { error: "That character isn't here." });
-  const saved = await saveCharacter({
-    id: existing,
-    name: recipe.name,
-    style: recipe.style,
-    appearance: recipe.appearance,
-    personality: recipe.personality,
-    scene: recipe.scene,
-    prompt,
-    favorite: typeof body?.favorite === "boolean" ? body.favorite : undefined,
-    cover: parseDataUrl(body?.cover),
-  });
-  return reply(200, { character: presentCharacter(saved) });
-}
-
-async function characterDelete(body: Record<string, unknown> | null): Promise<Reply> {
-  const id = str(body?.id, 40);
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return reply(400, { error: "That character isn't here." });
-  await deleteCharacter(id);
-  return reply(200, { id });
-}
-
-async function characterFavorite(body: Record<string, unknown> | null): Promise<Reply> {
-  const id = str(body?.id, 40);
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return reply(400, { error: "That character isn't here." });
-  const on = body?.on === true;
-  await updateCharacter(id, { favorite: on });
-  return reply(200, { id, favorite: on });
-}

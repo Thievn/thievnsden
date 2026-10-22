@@ -1,16 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --ink: #0b0d12;
-  --slate: #1a1d26;
-  --slate-2: #222633;
-  --gold: #d4a24c;
-  --gold-deep: #b18436;
-  --garnet: #8e1f2f;
-  --verd: #3e7c6b;
-  --parchment: #f2e6c9;
-  --parchment-dim: rgba(242, 230, 201, 0.74);
-  --line: rgba(212, 162, 76, 0.28);
+  --bg: #0a0a0b;
+  --surface: #111113;
+  --ink: #0a0a0b;
+  --slate: #111113;
+  --slate-2: #18181b;
+  --text: #f4f4f5;
+  --muted: #a1a1aa;
+  --accent: #dc143c;
+  --accent-deep: #9b0f2b;
+  --gold: #dc143c;
+  --gold-deep: #9b0f2b;
+  --garnet: #9b0f2b;
+  --verd: #a1a1aa;
+  --parchment: #f4f4f5;
+  --parchment-dim: rgba(244, 244, 245, 0.72);
+  --line: rgba(255, 255, 255, 0.1);
+  --radius: 12px;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.5rem;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   color-scheme: dark;
 }
@@ -25,10 +38,8 @@ body {
   min-height: 100svh;
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-  background:
-    radial-gradient(1200px 700px at 50% -10%, rgba(142, 31, 47, 0.16), transparent 60%),
-    var(--ink);
-  color: var(--parchment);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-outfit), "Outfit", sans-serif;
   font-size: 1.0625rem;
   line-height: 1.6;
@@ -40,15 +51,16 @@ body {
 h1, h2, h3, p { margin: 0; }
 
 h1, h2, .footer-name, .rail-mark, .brand-mini, .numeral {
-  font-family: var(--font-cinzel), "Cinzel", serif;
-  font-weight: 700;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 560;
+  letter-spacing: -0.03em;
 }
 
 a { color: inherit; }
 
 button, input { font: inherit; color: inherit; }
 
-::selection { background: var(--gold); color: var(--ink); }
+::selection { background: var(--accent); color: #fff; }
 
 :focus-visible {
   outline: 2px solid var(--gold);
@@ -82,6 +94,7 @@ button, input { font: inherit; color: inherit; }
 .skip:focus { top: 1rem; }
 
 .grain {
+  display: none;
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -127,7 +140,7 @@ body:has([data-gate]) .grain {
   position: absolute;
   inset: -14%;
   background:
-    radial-gradient(46% 38% at 22% 28%, rgba(212, 162, 76, 0.16), transparent 68%),
+    radial-gradient(46% 38% at 22% 28%, rgba(220, 20, 60, 0.16), transparent 68%),
     radial-gradient(40% 46% at 78% 74%, rgba(142, 31, 47, 0.2), transparent 70%),
     radial-gradient(32% 30% at 58% 12%, rgba(62, 124, 107, 0.09), transparent 72%),
     linear-gradient(168deg, #141820 0%, #0b0d12 48%, #10141c 100%);
@@ -141,7 +154,7 @@ body:has([data-gate]) .grain {
   width: min(86vw, 720px);
   height: min(46vw, 320px);
   transform: translate(-50%, -50%);
-  background: radial-gradient(ellipse at center, rgba(212, 162, 76, 0.22), rgba(212, 162, 76, 0.06) 46%, transparent 72%);
+  background: radial-gradient(ellipse at center, rgba(220, 20, 60, 0.22), rgba(220, 20, 60, 0.06) 46%, transparent 72%);
   filter: blur(10px);
   opacity: 0.85;
   animation: hero-glow 10s ease-in-out infinite;
@@ -227,7 +240,7 @@ body:has([data-gate]) .grain {
   text-transform: uppercase;
   line-height: 0.88;
   color: var(--parchment);
-  text-shadow: 0 0 42px rgba(212, 162, 76, 0.18);
+  text-shadow: 0 0 42px rgba(220, 20, 60, 0.18);
 }
 
 .wordmark-rule {
@@ -235,7 +248,7 @@ body:has([data-gate]) .grain {
   height: 1px;
   margin: 0.85rem 0 0.7rem;
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  box-shadow: 0 0 12px rgba(212, 162, 76, 0.45);
+  box-shadow: 0 0 12px rgba(220, 20, 60, 0.45);
 }
 
 .wordmark-den {
@@ -243,7 +256,7 @@ body:has([data-gate]) .grain {
   letter-spacing: 0.32em;
   padding-left: 0.32em;
   color: var(--gold);
-  text-shadow: 0 0 28px rgba(212, 162, 76, 0.28);
+  text-shadow: 0 0 28px rgba(220, 20, 60, 0.28);
 }
 
 .lede {
@@ -320,7 +333,7 @@ body:has([data-gate]) .grain {
   min-height: 280px;
   border-radius: 1.25rem;
   background:
-    radial-gradient(400px 180px at 20% 0%, rgba(212, 162, 76, 0.08), transparent 50%),
+    radial-gradient(400px 180px at 20% 0%, rgba(220, 20, 60, 0.08), transparent 50%),
     var(--slate);
   border: 1px solid var(--line);
   box-shadow: inset 0 1px 0 rgba(242, 230, 201, 0.06), 0 20px 50px rgba(0, 0, 0, 0.28);
@@ -346,7 +359,7 @@ body:has([data-gate]) .grain {
   display: grid;
   justify-items: center;
   gap: 0.15rem;
-  font-family: var(--font-cinzel), serif;
+  font-family: var(--font-fraunces), Georgia, serif;
   font-size: 0.72rem;
   letter-spacing: 0.14em;
 }
@@ -443,7 +456,7 @@ body:has([data-gate]) .grain {
   fill: #14080c;
   stroke: var(--gold);
   stroke-width: 1.6;
-  filter: drop-shadow(0 0 8px rgba(212, 162, 76, 0.45));
+  filter: drop-shadow(0 0 8px rgba(220, 20, 60, 0.45));
   animation: keyglow 4.8s ease-in-out infinite;
 }
 
@@ -481,14 +494,14 @@ body:has([data-gate]) .grain {
   padding: 1.4rem 1.2rem calc(1.3rem + env(safe-area-inset-bottom));
   border-radius: 1.3rem 1.3rem 0 0;
   background:
-    radial-gradient(320px 140px at 50% 0%, rgba(212, 162, 76, 0.14), transparent 60%),
+    radial-gradient(320px 140px at 50% 0%, rgba(220, 20, 60, 0.14), transparent 60%),
     var(--slate);
   border: 1px solid var(--line);
   box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.4);
 }
 
 .lock-panel h2 {
-  font-family: var(--font-cinzel), serif;
+  font-family: var(--font-fraunces), Georgia, serif;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-size: 1.7rem;
@@ -535,7 +548,7 @@ body:has([data-gate]) .grain {
   font-size: 1rem;
 }
 
-.lock-panel input:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(212, 162, 76, 0.18); }
+.lock-panel input:focus { border-color: var(--gold); outline: none; box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.18); }
 
 .lock-error {
   margin-top: 0.9rem;
@@ -549,12 +562,11 @@ body:has([data-gate]) .grain {
   border: 0;
   border-radius: 999px;
   cursor: pointer;
-  background: linear-gradient(180deg, #e4c07a 0%, var(--gold) 42%, var(--gold-deep) 100%);
-  color: var(--ink);
+  background: var(--accent);
+  color: #fff;
   font-weight: 650;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  box-shadow: inset 0 1px 0 rgba(255, 244, 220, 0.7), 0 10px 24px rgba(212, 162, 76, 0.18);
+  letter-spacing: 0.04em;
+  box-shadow: none;
 }
 
 .turn:hover:not(:disabled) {
@@ -610,9 +622,7 @@ body:has([data-gate]) .grain {
   display: flex;
   flex-direction: column;
   padding-bottom: calc(5.2rem + env(safe-area-inset-bottom));
-  background:
-    radial-gradient(500px 280px at 80% 0%, rgba(212, 162, 76, 0.12), transparent 60%),
-    var(--ink);
+  background: var(--bg);
 }
 
 .den-top {
@@ -638,13 +648,13 @@ body:has([data-gate]) .grain {
   justify-content: center;
   padding: 0 0.85rem;
   border-radius: 999px;
-  border: 1px solid rgba(212, 162, 76, 0.45);
+  border: 1px solid rgba(220, 20, 60, 0.45);
   color: #f2e6c9;
   text-decoration: none;
   font-size: 0.92rem;
 }
 
-.desk-pin:active { background: rgba(212, 162, 76, 0.16); }
+.desk-pin:active { background: rgba(220, 20, 60, 0.16); }
 
 .attic-pin {
   flex: none;
@@ -659,7 +669,7 @@ body:has([data-gate]) .grain {
 .attic-pin:hover,
 .attic-pin:focus-visible,
 .desk-pin:hover,
-.desk-pin:focus-visible { color: #f2e6c9; border-color: #d4a24c; }
+.desk-pin:focus-visible { color: #f2e6c9; border-color: #dc143c; }
 
 .den-greeting,
 .signed-name,
@@ -677,7 +687,7 @@ body:has([data-gate]) .grain {
 }
 
 .signed-name {
-  font-family: var(--font-cinzel), "Cinzel", serif;
+  font-family: var(--font-fraunces), Georgia, serif;
   letter-spacing: 0.04em;
 }
 
@@ -720,7 +730,7 @@ body:has([data-gate]) .grain {
 
 .den-nav .is-selected {
   color: var(--parchment);
-  background: rgba(212, 162, 76, 0.1);
+  background: rgba(220, 20, 60, 0.1);
   box-shadow: inset 0 -2px 0 var(--gold), 0 0 18px rgba(142, 31, 47, 0.28);
 }
 
@@ -743,10 +753,10 @@ body:has([data-gate]) .grain {
   width: min(68vw, 320px);
   aspect-ratio: 1;
   border-radius: 50%;
-  border: 1px solid rgba(212, 162, 76, 0.22);
+  border: 1px solid rgba(220, 20, 60, 0.22);
   box-shadow:
     inset 0 0 0 22px rgba(26, 29, 38, 0.35),
-    inset 0 0 40px rgba(212, 162, 76, 0.08);
+    inset 0 0 40px rgba(220, 20, 60, 0.08);
   pointer-events: none;
 }
 
@@ -777,7 +787,7 @@ body:has([data-gate]) .grain {
   margin-top: 1.6rem;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #a32c3e, var(--garnet) 46%, #4c121c);
-  box-shadow: inset 0 0 0 1.5px rgba(212, 162, 76, 0.7), 0 16px 30px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 0 1.5px rgba(220, 20, 60, 0.7), 0 16px 30px rgba(0, 0, 0, 0.35);
 }
 
 .ruled { margin-top: 1.3rem; display: grid; gap: 0.85rem; }
@@ -804,8 +814,8 @@ body:has([data-gate]) .grain {
 }
 
 @keyframes keyglow {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(212, 162, 76, 0.35)); }
-  50% { filter: drop-shadow(0 0 12px rgba(212, 162, 76, 0.75)); }
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(220, 20, 60, 0.35)); }
+  50% { filter: drop-shadow(0 0 12px rgba(220, 20, 60, 0.75)); }
 }
 
 @keyframes bob {
@@ -967,7 +977,7 @@ body:has([data-gate]) .grain {
   margin-top: 0.8rem;
   min-height: 44px;
   padding: 0 1rem;
-  border: 1px solid rgba(212, 162, 76, 0.5);
+  border: 1px solid rgba(220, 20, 60, 0.5);
   border-radius: 999px;
   background: transparent;
   color: var(--gold);
@@ -982,7 +992,7 @@ body:has([data-gate]) .grain {
   align-items: center;
   margin-top: 0.4rem;
   padding: 0.75rem 0.8rem;
-  border: 1px solid rgba(212, 162, 76, 0.4);
+  border: 1px solid rgba(220, 20, 60, 0.4);
   border-radius: 1rem;
   background: #12141b;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);

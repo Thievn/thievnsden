@@ -75,10 +75,16 @@ Still needed before the lab can make pictures:
 
 Optional filename overrides, only if the worker volume uses different files: `STUDIO_CHROMA_UNET`, `STUDIO_CHROMA_CLIP_1`, `STUDIO_CHROMA_CLIP_2`, `STUDIO_CHROMA_CLIP_TYPE`, `STUDIO_CHROMA_VAE`, `STUDIO_ZIMAGE_UNET`, `STUDIO_ZIMAGE_CLIP`, `STUDIO_ZIMAGE_VAE`, `STUDIO_QWEN_UNET`, `STUDIO_QWEN_LORA`, `STUDIO_QWEN_CLIP`, `STUDIO_QWEN_VAE`, `GROK_REWRITE_MODEL`, `GROK_VISION_MODEL`.
 
-`RUNPOD_API_KEY`, `RUNPOD_ENDPOINT_ID`, and `XAI_API_KEY` use the same names as the lustforge-lab Vercel project. Copy the values from that project's production environment when they are not already set here. Do not commit the values. `CREATOR_PASSWORD`, `EDIT_SIGNING_SECRET`, and `BLOB_READ_WRITE_TOKEN` from that project are not used.
+`RUNPOD_API_KEY`, `RUNPOD_ENDPOINT_ID`, and `XAI_API_KEY` use the same names as the lustforge-lab Vercel project. Copy the values from that project's production environment when they are not already set here. Do not commit the values.
 
-Saved characters and the gallery use this site's own Supabase project (`yifocyooygtxwvqfwghv`) through `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Do not point those variables at another project.
+| Name | Secret | Purpose |
+| --- | --- | --- |
+| `XAI_MODEL` | No | Optional Grok model for Enhance. Default `grok-4.20-0309-non-reasoning`. |
+| `XAI_VISION_MODEL` | No | Optional vision model for the edit classifier. Falls back to `XAI_MODEL`. |
+| `EDIT_SIGNING_SECRET` | Yes | Optional HMAC for picture provenance. Falls back to `SESSION_SECRET`. |
 
-Run `supabase/attic.sql` once before the first picture. It adds owner-only gallery tables and a private `attic` bucket. Run `supabase/lab.sql` once before the first saved character. The app does not run either file. The service role is the only key that can use them.
+`CREATOR_PASSWORD` and `BLOB_READ_WRITE_TOKEN` from lustforge-lab are not used. Gallery files go to this site's Supabase project (`yifocyooygtxwvqfwghv`) through `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
 
-`/attic` is the character creator. `/characters`, `/gallery`, and `/edit` are the saved characters, the gallery, and the editor. A signed-out visitor gets a 404. There is no link on the public page, the pages send `noindex`, and there is no sitemap entry. The den pin after sign-in is the way in. There is no shared password. An upload is stored with no screening. Adults only, and explicit output only from a made-up character or the face lock, are checked when a picture is made. Editor jobs send the pixel-drift fix.
+Run `supabase/attic.sql` once before the first picture. It adds owner-only gallery tables and a private `attic` bucket. Run `supabase/lab.sql` once to add the `src` provenance column. The app does not run either file. There is no character table.
+
+`/attic` is Create. `/edit` is the pixel-perfect editor. `/gallery` is the saved pictures. A signed-out visitor gets a 404. There is no link on the public page, the pages send `noindex`, and there is no sitemap entry. The den pin after sign-in is the way in.

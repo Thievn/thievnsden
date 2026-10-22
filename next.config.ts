@@ -18,7 +18,6 @@ const nextConfig: NextConfig = {
     return [
       { source: "/edit", destination: "/attic/edit" },
       { source: "/gallery", destination: "/attic/gallery" },
-      { source: "/characters", destination: "/attic/characters" },
     ];
   },
   async headers() {
@@ -43,7 +42,6 @@ const nextConfig: NextConfig = {
       { source: "/attic/:path*", headers: quiet },
       { source: "/edit", headers: quiet },
       { source: "/gallery", headers: quiet },
-      { source: "/characters", headers: quiet },
       {
         source: "/:path*",
         headers: [

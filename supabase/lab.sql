@@ -1,27 +1,15 @@
--- Lab characters for ThievnsDen (Supabase project yifocyooygtxwvqfwghv).
--- Owner-only. Run once in that project's SQL editor. The app does not run this file.
--- Gallery pictures stay in public.attic_images from supabase/attic.sql.
--- The app uses the service role. RLS is forced and there are no policies,
--- so the anon and authenticated roles cannot read or write this table.
+-- Lab gallery for ThievnsDen (Supabase project yifocyooygtxwvqfwghv).
+-- Saved characters are not part of the lab. This file does not create a character table.
+-- Pictures stay in public.attic_images and the private attic storage bucket
+-- from supabase/attic.sql.
+-- favorite marks a favorite. folder holds comma-separated tags.
+-- src records provenance: lab or upload. Edits keep the weaker source.
+-- Idempotent and non-destructive. The app does not run this file.
 
-create table if not exists public.lab_characters (
-  id uuid primary key default gen_random_uuid(),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  name text not null,
-  style text not null default 'semireal',
-  appearance jsonb not null default '{}'::jsonb,
-  personality text not null default '',
-  scene text not null default '',
-  prompt text not null default '',
-  cover_path text,
-  favorite boolean not null default false
-);
+alter table public.attic_images add column if not exists src text;
 
-create index if not exists lab_characters_updated_idx on public.lab_characters (updated_at desc);
+alter table public.attic_images enable row level security;
+alter table public.attic_images force row level security;
 
-alter table public.lab_characters enable row level security;
-alter table public.lab_characters force row level security;
-
-revoke all on public.lab_characters from anon, authenticated;
-grant all on public.lab_characters to service_role;
+revoke all on public.attic_images from anon, authenticated;
+grant all on public.attic_images to service_role;

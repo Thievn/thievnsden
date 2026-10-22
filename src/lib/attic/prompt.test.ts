@@ -84,7 +84,7 @@ test("lab pages stay owner-only, unindexed, and off the public page", () => {
   assert.match(route, /hasOwnerSession/);
   assert.match(config, /\/edit/);
   assert.match(config, /\/gallery/);
-  assert.match(config, /\/characters/);
+  assert.equal(config.includes("/characters"), false);
   assert.match(config, /noindex, nofollow/);
   assert.equal(existsSync(new URL("../../app/sitemap.ts", import.meta.url)), false);
   assert.equal(landing.includes("/attic"), false);

@@ -24,21 +24,7 @@ export type AtticImage = {
   error: string | null;
   parentId: string | null;
   url: string | null;
-};
-
-export type LabCharacter = {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  name: string;
-  style: string;
-  appearance: Record<string, string>;
-  personality: string;
-  scene: string;
-  prompt: string;
-  favorite: boolean;
-  coverPath: string | null;
-  url: string | null;
+  src: string | null;
 };
 
 export type AtticProfile = {
@@ -179,6 +165,7 @@ function mapImage(row: Record<string, unknown>, url: string | null): AtticImage 
     error: text(row.error),
     parentId: text(row.parent_id),
     url,
+    src: text(row.src),
   };
 }
 
@@ -223,14 +210,26 @@ export async function createFolder(name: string) {
   });
 }
 
-export async function listImages(): Promise<AtticImage[]> {
-  const value = await rest(
-    "attic_images?select=id,created_at,kind,prompt,negative,model,style,seed,steps,cfg,width,height,strength,favorite,folder,storage_path,status,runpod_id,error,parent_id&order=created_at.desc&limit=60",
-  );
-  return withUrls(rows(value));
+const IMAGE_COLUMNS =
+  "id,created_at,kind,prompt,negative,model,style,seed,steps,cfg,width,height,strength,favorite,folder,storage_path,status,runpod_id,error,parent_id,src";
+const IMAGE_COLUMNS_BASE =
+  "id,created_at,kind,prompt,negative,model,style,seed,steps,cfg,width,height,strength,favorite,folder,storage_path,status,runpod_id,error,parent_id";
+
+async function queryImages(filter: string): Promise<Record<string, unknown>[]> {
+  try {
+    return rows(await rest(`attic_images?select=${IMAGE_COLUMNS}&${filter}`));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message !== "BOOK_400") throw error;
+    return rows(await rest(`attic_images?select=${IMAGE_COLUMNS_BASE}&${filter}`));
+  }
 }
 
-export async function insertImage(row: Record<string, unknown>): Promise<AtticImage> {
+export async function listImages(): Promise<AtticImage[]> {
+  return withUrls(await queryImages("order=created_at.desc&limit=80"));
+}
+
+async function insertRow(row: Record<string, unknown>): Promise<AtticImage> {
   const value = await rest("attic_images", {
     method: "POST",
     headers: { "Content-Type": "application/json", Prefer: "return=representation" },
@@ -239,6 +238,20 @@ export async function insertImage(row: Record<string, unknown>): Promise<AtticIm
   const saved = rows(value)[0];
   if (!saved) throw new Error("BOOK_INSERT");
   return mapImage(saved, null);
+}
+
+export async function insertImage(row: Record<string, unknown>): Promise<AtticImage> {
+  try {
+    return await insertRow(row);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "BOOK_400" && "src" in row) {
+      const next = { ...row };
+      delete next.src;
+      return await insertRow(next);
+    }
+    throw error;
+  }
 }
 
 export async function updateImage(id: string, patch: Record<string, unknown>): Promise<void> {
@@ -263,10 +276,7 @@ export async function findUpload(sha: string): Promise<AtticImage | null> {
 }
 
 export async function imageById(id: string): Promise<AtticImage | null> {
-  const value = await rest(
-    `attic_images?id=eq.${encodeURIComponent(id)}&select=id,created_at,kind,prompt,negative,model,style,seed,steps,cfg,width,height,strength,favorite,folder,storage_path,status,runpod_id,error,parent_id`,
-  );
-  const row = rows(value)[0];
+  const row = (await queryImages(`id=eq.${encodeURIComponent(id)}&limit=1`))[0];
   if (!row) return null;
   const path = text(row.storage_path);
   const url = row.status === "done" && path ? await sign(path) : null;
@@ -276,10 +286,7 @@ export async function imageById(id: string): Promise<AtticImage | null> {
 export async function imagesByIds(ids: string[]): Promise<AtticImage[]> {
   const clean = ids.filter((id) => /^[0-9a-f-]{36}$/i.test(id)).slice(0, 8);
   if (!clean.length) return [];
-  const value = await rest(
-    `attic_images?id=in.(${clean.join(",")})&select=id,created_at,kind,prompt,negative,model,style,seed,steps,cfg,width,height,strength,favorite,folder,storage_path,status,runpod_id,error,parent_id`,
-  );
-  return withUrls(rows(value));
+  return withUrls(await queryImages(`id=in.(${clean.join(",")})`));
 }
 
 export function publicStoreError(error: unknown): string {
@@ -288,122 +295,3 @@ export function publicStoreError(error: unknown): string {
   return "Couldn't save that.";
 }
 
-const CHARACTER_COLUMNS =
-  "id,created_at,updated_at,name,style,appearance,personality,scene,prompt,favorite,cover_path";
-
-function appearanceOf(value: unknown): Record<string, string> {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  const out: Record<string, string> = {};
-  for (const [key, item] of Object.entries(value)) {
-    if (typeof item === "string" && item.trim()) out[key] = item;
-  }
-  return out;
-}
-
-function mapCharacter(row: Record<string, unknown>, url: string | null): LabCharacter {
-  return {
-    id: String(row.id),
-    createdAt: String(row.created_at ?? ""),
-    updatedAt: String(row.updated_at ?? ""),
-    name: String(row.name ?? ""),
-    style: String(row.style ?? "semireal"),
-    appearance: appearanceOf(row.appearance),
-    personality: text(row.personality) ?? "",
-    scene: text(row.scene) ?? "",
-    prompt: String(row.prompt ?? ""),
-    favorite: Boolean(row.favorite),
-    coverPath: text(row.cover_path),
-    url,
-  };
-}
-
-async function characterFrom(row: Record<string, unknown> | undefined): Promise<LabCharacter | null> {
-  if (!row) return null;
-  const path = text(row.cover_path);
-  return mapCharacter(row, path ? await sign(path) : null);
-}
-
-export async function listCharacters(): Promise<LabCharacter[]> {
-  const value = await rest(`lab_characters?select=${CHARACTER_COLUMNS}&order=updated_at.desc&limit=80`);
-  const list = rows(value);
-  return Promise.all(
-    list.map(async (row) => {
-      const path = text(row.cover_path);
-      return mapCharacter(row, path ? await sign(path) : null);
-    }),
-  );
-}
-
-export async function characterById(id: string): Promise<LabCharacter | null> {
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const value = await rest(`lab_characters?id=eq.${encodeURIComponent(id)}&select=${CHARACTER_COLUMNS}&limit=1`);
-  return characterFrom(rows(value)[0]);
-}
-
-export async function saveCharacter(input: {
-  id: string | null;
-  name: string;
-  style: string;
-  appearance: Record<string, string>;
-  personality: string;
-  scene: string;
-  prompt: string;
-  favorite?: boolean;
-  cover: { mime: string; bytes: Uint8Array } | null;
-}): Promise<LabCharacter> {
-  const now = new Date().toISOString();
-  const fields: Record<string, unknown> = {
-    name: input.name,
-    style: input.style,
-    appearance: input.appearance,
-    personality: input.personality,
-    scene: input.scene,
-    prompt: input.prompt,
-    updated_at: now,
-  };
-  if (typeof input.favorite === "boolean") fields.favorite = input.favorite;
-  let id = input.id;
-  if (id) {
-    await rest(`lab_characters?id=eq.${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify(fields),
-    });
-  } else {
-    const value = await rest("lab_characters", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Prefer: "return=representation" },
-      body: JSON.stringify(fields),
-    });
-    id = text(rows(value)[0]?.id);
-  }
-  if (!id) throw new Error("BOOK_INSERT");
-  if (input.cover) {
-    const ext = input.cover.mime === "image/png" ? "png" : input.cover.mime === "image/webp" ? "webp" : "jpg";
-    const path = `characters/${id}.${ext}`;
-    await uploadObject(path, input.cover.mime, input.cover.bytes);
-    await rest(`lab_characters?id=eq.${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ cover_path: path, updated_at: new Date().toISOString() }),
-    });
-  }
-  const saved = await characterById(id);
-  if (!saved) throw new Error("BOOK_INSERT");
-  return saved;
-}
-
-export async function updateCharacter(id: string, patch: Record<string, unknown>): Promise<void> {
-  await rest(`lab_characters?id=eq.${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
-    body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
-  });
-}
-
-export async function deleteCharacter(id: string): Promise<void> {
-  await rest(`lab_characters?id=eq.${encodeURIComponent(id)}`, {
-    method: "DELETE",
-    headers: { Prefer: "return=minimal" },
-  });
-}

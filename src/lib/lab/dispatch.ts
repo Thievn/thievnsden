@@ -7,6 +7,7 @@ import { isExplicitEdit } from "./explicit";
 import { minorReason as labAge, STYLES } from "./options";
 import poses from "./poses.json";
 import { parseDataUrl, readTicket, signImage, signTicket, verifyImage, weakest } from "./sign";
+import { pickLoras, withTriggers } from "./loras";
 import { addPose, BUILDERS, qwenEdit } from "./workflows";
 
 const POSES = poses as { id: string; hint: string }[];
@@ -301,7 +302,8 @@ async function edit(body: Record<string, unknown>): Promise<Reply> {
   }
   if (instr) parts.push(instr);
   if (body.mask) parts.push("Only change the masked area; keep the rest identical.");
-  const text = `${parts.join(" ")}${ADULT}`;
+  const loras = pickLoras(instr, { refs: refsCollage, explicit });
+  const text = withTriggers(`${parts.join(" ")}${ADULT}`, loras);
   const textWhy = blocked(text);
   if (textWhy) return reply(400, { error: textWhy });
   const strength = Math.max(0.3, Math.min(1, Number(body.strength) || 1));
@@ -323,6 +325,7 @@ async function edit(body: Record<string, unknown>): Promise<Reply> {
       refs: refsCollage,
       pose: posed,
       mask: Boolean(body.mask),
+      loras,
     });
     const id = await submit({ workflow, images });
     jobs.push({
@@ -340,10 +343,11 @@ async function edit(body: Record<string, unknown>): Promise<Reply> {
         h: meta.height || null,
         strength,
         parentId,
+        loras: loras.map((lora) => ({ id: lora.id, file: lora.file, strength: lora.strength })),
       }),
     });
   }
-  return reply(200, { jobs, src, explicit, instruction: text });
+  return reply(200, { jobs, src, explicit, instruction: text, loras: loras.map((lora) => lora.id) });
 }
 
 async function status(body: Record<string, unknown>): Promise<Reply> {

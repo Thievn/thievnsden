@@ -52,7 +52,7 @@ export function EditView() {
         img: item.img || "",
         ref: item.id ? { id: item.id } : { data: item.img, tag: item.tag },
         src: item.id ? "lab" : "upload",
-        instr: item.label ? `Start · ${item.label}` : "Start",
+        instr: item.label ? `From ${item.label}` : "Start",
       };
       setNodes([node]);
       setCurId(node.id);
@@ -71,7 +71,7 @@ export function EditView() {
       setRefs((current) => [...current, { img: data, ref: { data }, src: "upload" }].slice(0, 3));
       return;
     }
-    const node: Node = { id: uid(), parent: null, img: data, ref: { data }, src: "upload", instr: "Start · upload" };
+    const node: Node = { id: uid(), parent: null, img: data, ref: { data }, src: "upload", instr: "Uploaded" };
     setNodes((current) => [...current, node]);
     setCurId(node.id);
     setMask(null);
@@ -105,7 +105,7 @@ export function EditView() {
           img: String(done.image || done.url || ""),
           ref: done.galleryId ? { id: String(done.galleryId) } : { data: String(done.image), tag: String(done.tag || "") },
           src: String(result.src || "lab"),
-          instr: [preset, instr, poseSel && `pose: ${poseSel.name}`, mask && "masked"].filter(Boolean).join(" · ") + (jobs.length > 1 ? ` (v${index + 1})` : "") || "edit",
+          instr: [preset, instr, poseSel && poseSel.name, mask && "painted area"].filter(Boolean).join(" · ") + (jobs.length > 1 ? ` (${index + 1})` : "") || "Edit",
           seed: job.seed,
         };
         setNodes((current) => [...current, node]);
@@ -128,7 +128,7 @@ export function EditView() {
         img: String(result.image),
         ref: result.galleryId ? { id: String(result.galleryId) } : { data: String(result.image), tag: String(result.tag || "") },
         src: cur.src,
-        instr: `Upscale 2× (${result.w}×${result.h})`,
+        instr: `Larger (${result.w}×${result.h})`,
       };
       setNodes((current) => [...current, node]);
       setCurId(node.id);
@@ -140,13 +140,11 @@ export function EditView() {
   const editing = busy.startsWith("edit");
   return (
     <main className="lab">
-      <header className="top">
-        <div>
-          <p className="brand">Den Lab</p>
-          <Switcher current="Edit" />
-        </div>
+      <header className="labhead">
+        <p className="brand">Den Lab</p>
+        <Switcher current="Edit" />
+        <p className="lede">Edit a picture. Everything you don&apos;t change stays exactly the same.</p>
       </header>
-      <p className="muted">Pixel-perfect Qwen edit. Pose changes skip the drift fix. Other edits realign and composite.</p>
       {!cur ? (
         <div className="card start">
           <h2>Start an edit</h2>
@@ -161,7 +159,7 @@ export function EditView() {
               <Compare before={parent?.img} after={cur.img} />
               <p className="muted small">{cur.instr}{parent ? " · drag to compare" : ""}</p>
               <div className="row">
-                <button type="button" className="btn" disabled={!!busy} onClick={upscale}>{busy === "up" ? "Upscaling…" : "Upscale 2×"}</button>
+                <button type="button" className="btn" disabled={!!busy} onClick={upscale}>{busy === "up" ? "Working…" : "Make larger"}</button>
                 <a className="btn" href={cur.img} download={`den-edit-${cur.id}.jpg`}>Download</a>
                 <button type="button" className="btn" onClick={() => openGallery()}>New image</button>
               </div>
@@ -182,7 +180,7 @@ export function EditView() {
                   catch (error) { setErr(error instanceof Error ? error.message : "Enhance failed"); }
                   setBusy("");
                 }}>{busy === "enh" ? "Enhancing…" : "Enhance"}</button>
-                <button type="button" className={mask ? "chip on" : "chip"} onClick={() => setMaskOpen(true)}>{mask ? "Mask on" : "Mask"}</button>
+                <button type="button" className={mask ? "chip on" : "chip"} onClick={() => setMaskOpen(true)}>{mask ? "Brush on" : "Brush"}</button>
               </div>
             </div>
             <PoseButton sel={poseSel} onOpen={() => setPoseOpen(true)} />
@@ -196,7 +194,7 @@ export function EditView() {
               </div>
             </div>
             <div className="card">
-              <label className="slider">Strength <b>{strength.toFixed(2)}</b>
+              <label className="slider">How much to change <b>{strength.toFixed(2)}</b>
                 <input type="range" min="0.4" max="1" step="0.05" value={strength} onChange={(event) => setStrength(Number(event.target.value))} />
               </label>
               <label className="lbl">Variations</label>
@@ -227,7 +225,7 @@ export function EditView() {
             <div className="sheetbody gallery">
               {(gallery || []).map((item) => (
                 <button key={item.id} type="button" className="tile" onClick={() => {
-                  const node: Node = { id: uid(), parent: null, img: item.url || "", ref: { id: item.id }, src: item.kind === "upload" ? "upload" : "lab", instr: `Start · ${item.style || "Gallery"}` };
+                  const node: Node = { id: uid(), parent: null, img: item.url || "", ref: { id: item.id }, src: item.kind === "upload" ? "upload" : "lab", instr: item.style || "From the gallery" };
                   setNodes((current) => [...current, node]);
                   setCurId(node.id);
                   setPick(null);

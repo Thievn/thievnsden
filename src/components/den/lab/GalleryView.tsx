@@ -48,11 +48,10 @@ export function GalleryView() {
 
   return (
     <main className="lab">
-      <header className="top">
-        <div>
-          <p className="brand">Den Lab</p>
-          <Switcher current="Gallery" />
-        </div>
+      <header className="labhead">
+        <p className="brand">Den Lab</p>
+        <Switcher current="Gallery" />
+        <p className="lede">Your pictures stay private.</p>
       </header>
       <div className="card row between">
         <label className="check"><input type="checkbox" checked={stars} onChange={(event) => setStars(event.target.checked)} /> Favorites</label>
@@ -75,7 +74,7 @@ export function GalleryView() {
             <div className="sheethead"><b>{open.style || open.kind}</b><button type="button" className="icon" onClick={() => setOpen(null)}>Close</button></div>
             <div className="sheetbody">
               <img className="out" src={open.url || ""} alt="" />
-              <p className="muted small">{open.model}{open.seed != null ? ` · seed ${open.seed}` : ""}{open.folder ? ` · ${open.folder}` : ""}</p>
+              <p className="muted small">{[open.style, open.seed != null ? `seed ${open.seed}` : "", open.folder].filter(Boolean).join(" · ")}</p>
               <p>{open.prompt}</p>
               <label className="lbl">Tags</label>
               <input defaultValue={open.folder || ""} key={open.id} onBlur={(event) => saveTags(open, event.target.value.trim())} placeholder="night, red" />

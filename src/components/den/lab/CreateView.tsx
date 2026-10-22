@@ -142,12 +142,10 @@ export function CreateView() {
   const working = busy.startsWith("gen");
   return (
     <main className="lab">
-      <header className="top">
-        <div>
+      <header className="labhead">
+        <div className="labhead-row">
           <p className="brand">Den Lab</p>
-          <Switcher current="Create" />
-        </div>
-        <div className="row">
+          <div className="row">
           <button type="button" className="btn" onClick={() => {
             const next = { ...sel };
             for (const key of Object.keys(F) as (keyof typeof F)[]) {
@@ -159,9 +157,11 @@ export function CreateView() {
             setUsingCustom(false);
           }}>Surprise</button>
           <button type="button" className="btn" onClick={() => { setSel(DEFAULTS); setUsingCustom(false); setEngine(""); setPoseSel(null); }}>Reset</button>
+          </div>
         </div>
+        <Switcher current="Create" />
+        <p className="lede">Adults 21+. Every finished picture is saved to your gallery.</p>
       </header>
-      <p className="muted">Adults 21+. Every finished picture is saved to your gallery.</p>
       <div className="grid">
         <section className="col">
           <div className="card">
@@ -170,7 +170,7 @@ export function CreateView() {
               const next = STYLES.find((item: { label: string }) => item.label === label);
               if (next) { setSel((current) => ({ ...current, style: next.id })); setEngine(""); }
             }} />
-            <label className="lbl">Engine</label>
+            <label className="lbl">Model</label>
             <Chips
               options={Object.keys(ENGINES).map((key) => ENGINES[key as keyof typeof ENGINES].label)}
               value={ENGINES[engine as keyof typeof ENGINES].label}
@@ -179,9 +179,9 @@ export function CreateView() {
                 setEngine(key === style.engine ? "" : key);
               }}
             />
-            <p className="muted small">{ENGINES[engine as keyof typeof ENGINES].note} · {ENGINES[engine as keyof typeof ENGINES].cost} / image</p>
+            <p className="muted small">{ENGINES[engine as keyof typeof ENGINES].note}</p>
           </div>
-          <PoseButton sel={poseSel} onOpen={() => setPoseOpen(true)} disabled={engine !== "zimage"} note="Pose control needs a Z-Image style" />
+          <PoseButton sel={poseSel} onOpen={() => setPoseOpen(true)} disabled={engine !== "zimage"} note="Poses work on photo styles." />
           <div className="card">
             <div className="row between"><h2>Prompt</h2>{usingCustom ? <span className="pill">Custom</span> : null}</div>
             <textarea rows={7} value={prompt} onChange={(event) => { setCustom(event.target.value); setUsingCustom(true); }} />
@@ -202,7 +202,7 @@ export function CreateView() {
             <Section key={section.id} id={section.id} openId={openId} setOpenId={setOpenId} title={section.title} summary={summary(section.fields)}>
               {section.fields.map(([key, label]) => (
                 <div key={key} className="field">
-                  <label>{label}{MULTI.has(key) ? " · multi" : ""}</label>
+                  <label>{label}</label>
                   <Chips options={F[key]} value={sel[key] || ""} multi={MULTI.has(key)} onPick={(option) => setField(key, option)} />
                 </div>
               ))}
@@ -230,7 +230,7 @@ export function CreateView() {
           {shots.map((shot) => (
             <article className="card" key={`${shot.seed}-${shot.img.slice(-24)}`}>
               <img className="out" src={shot.url || shot.img} alt="" />
-              <p className="muted small">{shot.style} · {shot.engine} · seed {shot.seed}</p>
+              <p className="muted small">{shot.style} · seed {shot.seed}</p>
               <div className="row">
                 <button type="button" className="btn" onClick={() => generate("")}>Vary this</button>
                 <button type="button" className="btn" onClick={() => { setSeed(String(shot.seed)); setLock(true); }}>Use seed</button>

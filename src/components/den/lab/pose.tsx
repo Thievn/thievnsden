@@ -41,7 +41,7 @@ function loadSkeleton(file: File) {
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Couldn't read that skeleton"));
+      if (!ctx) return reject(new Error("Couldn't read that picture"));
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, width, height);
       const scale = Math.min(width / image.width, height / image.height);
@@ -56,11 +56,11 @@ function loadSkeleton(file: File) {
         if (Math.max(data[i], data[i + 1], data[i + 2]) < 30) dark += 1;
       }
       if (dark / n < 0.6) {
-        return reject(new Error("That looks like a photo. Upload an OpenPose skeleton (colored stick figure on black)."));
+        return reject(new Error("That looks like a photo. Use a stick figure on a black background."));
       }
       resolve({
         id: "upload",
-        name: "Uploaded skeleton",
+        name: "Your pose",
         cat: "Custom",
         hint: "",
         aspect,
@@ -70,7 +70,7 @@ function loadSkeleton(file: File) {
         thumb: canvas.toDataURL("image/jpeg", 0.6),
       });
     };
-    image.onerror = () => reject(new Error("Couldn't read that skeleton"));
+    image.onerror = () => reject(new Error("Couldn't read that picture"));
     image.src = URL.createObjectURL(file);
   });
 }
@@ -80,8 +80,8 @@ export function PoseButton({ sel, onOpen, disabled, note }: { sel: Pose | null; 
     <button type="button" className="picker" onClick={onOpen} disabled={disabled}>
       {sel ? <img className="posethumb" src={sel.thumb || `/poses/thumbs/${sel.id}.webp`} alt="" /> : <span className="mark">Pose</span>}
       <span className="grow">
-        <b>{sel ? sel.name : "No pose control"}</b>
-        <small>{disabled ? note : sel ? `${sel.cat} · strength ${(sel.strength ?? 0.8).toFixed(2)}` : "Search skeletons by name or hidden keyword"}</small>
+        <b>{sel ? sel.name : "No pose"}</b>
+        <small>{disabled ? note : sel ? sel.cat : "Choose a pose"}</small>
       </span>
     </button>
   );
@@ -113,7 +113,7 @@ export function PosePicker({
   }
   return (
     <div className="sheetwrap" onClick={onClose}>
-      <div className="sheet" role="dialog" aria-label={`Pose · ${POSES.length} skeletons`} onClick={(event) => event.stopPropagation()}>
+      <div className="sheet" role="dialog" aria-label={`Poses, ${POSES.length}`} onClick={(event) => event.stopPropagation()}>
         <div className="sheethead">
           <b>Pose · {POSES.length}</b>
           <button type="button" className="icon" onClick={onClose} aria-label="Close">Close</button>
@@ -130,10 +130,10 @@ export function PosePicker({
             {cat === "All" && !query ? (
               <>
                 <button type="button" className={!sel ? "posecard on" : "posecard"} onClick={() => pick(null)}>
-                  <b>No pose</b><small>prompt only</small>
+                  <b>No pose</b><small>Words only</small>
                 </button>
                 <label className="posecard">
-                  <b>Upload skeleton</b><small>OpenPose PNG</small>
+                  <b>Upload a pose</b><small>Stick figure</small>
                   <input type="file" accept="image/*" hidden onChange={async (event) => {
                     setErr("");
                     const file = event.target.files?.[0];
@@ -155,7 +155,7 @@ export function PosePicker({
           {!list.length ? <p className="muted">No poses match “{query}”.</p> : null}
         </div>
         <div className="sheetfoot">
-          <label className="slider">Pose strength <b>{strength.toFixed(2)}</b>
+          <label className="slider">How strongly to follow it <b>{strength.toFixed(2)}</b>
             <input type="range" min="0.3" max="1" step="0.05" value={strength} onChange={(event) => {
               const value = Number(event.target.value);
               setStrength(value);

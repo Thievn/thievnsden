@@ -113,8 +113,8 @@ export function MaskBrush({ src, onDone, onClose }: { src: string; onDone: (mask
         </div>
         <div className="sheetfoot row">
           <button type="button" className="btn" onClick={() => { const canvas = canvasRef.current; canvas?.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height); }}>Clear</button>
-          <button type="button" className="btn" onClick={() => onDone(null)}>No mask</button>
-          <button type="button" className="cta grow" onClick={exportMask}>Use mask</button>
+          <button type="button" className="btn" onClick={() => onDone(null)}>Leave it</button>
+          <button type="button" className="cta grow" onClick={exportMask}>Use the painted area</button>
         </div>
       </div>
     </div>

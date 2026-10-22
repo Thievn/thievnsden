@@ -172,7 +172,7 @@ async function generate(body: Record<string, unknown>): Promise<Reply> {
   const count = Math.max(1, Math.min(4, Number(body.n) || 1));
   const pose = body.pose && typeof body.pose === "object" ? (body.pose as { data?: string; strength?: number }) : null;
   if (pose?.data && engine !== "zimage") {
-    return reply(400, { error: "Pose control only works with Z-Image styles (photoreal, semi-real, and other Z-Image prefix styles)." });
+    return reply(400, { error: "Poses only work with photo styles." });
   }
   const poseMatch = pose?.data ? /^data:image\/png;base64,(.+)$/.exec(pose.data) : null;
   if (pose?.data && !poseMatch) return reply(400, { error: "Pose skeleton must be a PNG" });

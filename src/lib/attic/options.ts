@@ -5,6 +5,12 @@ export const STYLES = [
   { id: "photoreal", label: "Photoreal", text: "Photoreal still, natural skin, 85mm lens, sharp focus." },
   { id: "painterly", label: "Painterly", text: "Oil painting, visible brushwork, rich pigment, gallery light." },
   { id: "cinematic", label: "Cinematic", text: "Cinematic film still, anamorphic color, shallow depth of field." },
+  { id: "comic", label: "Comic", text: "Bold comic illustration, inked lines, flat color, adult character." },
+  { id: "noir", label: "Noir", text: "Black and white noir still, hard light, adult character." },
+  { id: "watercolor", label: "Watercolor", text: "Watercolor illustration, wet pigment, soft paper grain, adult character." },
+  { id: "fashion", label: "Fashion", text: "Fashion editorial photograph, controlled strobe, adult subject." },
+  { id: "fantasy", label: "Fantasy", text: "High-fantasy digital painting, ornate costume, adult character." },
+  { id: "retro", label: "Retro film", text: "1970s film photograph, warm grain, adult subject." },
 ] as const;
 
 export const RATIOS = [

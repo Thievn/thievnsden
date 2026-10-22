@@ -28,8 +28,8 @@
 
 .example-banner {
   color: var(--gold);
-  background: rgba(212, 162, 76, 0.1);
-  border: 1px solid rgba(212, 162, 76, 0.28);
+  background: rgba(220, 20, 60, 0.1);
+  border: 1px solid rgba(220, 20, 60, 0.28);
 }
 
 .desk-error,
@@ -73,8 +73,8 @@
 
 .desk-nav button.is-on {
   color: var(--parchment);
-  border-color: rgba(212, 162, 76, 0.45);
-  background: rgba(212, 162, 76, 0.12);
+  border-color: rgba(220, 20, 60, 0.45);
+  background: rgba(220, 20, 60, 0.12);
 }
 
 .badge {
@@ -106,7 +106,7 @@
   background:
     linear-gradient(180deg, rgba(242, 230, 201, 0.05), transparent 38%),
     rgba(26, 29, 38, 0.9);
-  border: 1px solid rgba(212, 162, 76, 0.26);
+  border: 1px solid rgba(220, 20, 60, 0.26);
   box-shadow:
     inset 0 1px 0 rgba(242, 230, 201, 0.06),
     0 16px 36px rgba(0, 0, 0, 0.22);
@@ -114,7 +114,7 @@
 
 .pad { padding: 1rem 0.95rem 1.05rem; }
 .pad h2, .alert-card h2, .check-card h2, .trade-card h2, .sheet h2 {
-  font-family: var(--font-cinzel), Cinzel, serif;
+  font-family: var(--font-fraunces), Georgia, serif;
   font-size: 1.25rem;
 }
 
@@ -145,7 +145,7 @@
 
 .stat-value {
   margin: 0.35rem 0 0.2rem;
-  font-family: var(--font-cinzel), Cinzel, serif;
+  font-family: var(--font-fraunces), Georgia, serif;
   font-size: clamp(1.35rem, 6vw, 1.9rem);
   line-height: 1.05;
 }
@@ -202,7 +202,7 @@
   inset: 0;
   display: grid;
   place-items: center;
-  font-family: var(--font-cinzel), Cinzel, serif;
+  font-family: var(--font-fraunces), Georgia, serif;
   font-size: 1.6rem;
   pointer-events: none;
 }
@@ -213,7 +213,7 @@
   padding: 0.4rem 0.55rem;
   border-radius: 0.6rem;
   background: #12151c;
-  border: 1px solid rgba(212, 162, 76, 0.35);
+  border: 1px solid rgba(220, 20, 60, 0.35);
   color: var(--parchment);
   font-size: 0.78rem;
 }
@@ -232,7 +232,7 @@
 .alert-card, .check-card, .trade-card, .run-card { padding: 0.95rem; }
 .alert-card h2, .check-card p, .report p { margin-top: 0.35rem; }
 .alert-card.is-urgent { box-shadow: inset 0 0 0 1px rgba(142, 31, 47, 0.45), 0 16px 36px rgba(142, 31, 47, 0.16); }
-.alert-card.is-sell { border-color: rgba(212, 162, 76, 0.55); }
+.alert-card.is-sell { border-color: rgba(220, 20, 60, 0.55); }
 .alert-card.is-done { opacity: 0.72; }
 
 .facts {
@@ -254,7 +254,7 @@
   padding: 0.2rem;
   border-radius: 999px;
   background: rgba(11, 13, 18, 0.55);
-  border: 1px solid rgba(212, 162, 76, 0.2);
+  border: 1px solid rgba(220, 20, 60, 0.2);
   overflow-x: auto;
 }
 
@@ -270,14 +270,14 @@
   white-space: nowrap;
 }
 
-.seg button.is-on { background: rgba(212, 162, 76, 0.18); color: var(--parchment); }
+.seg button.is-on { background: rgba(220, 20, 60, 0.18); color: var(--parchment); }
 
 .field { display: grid; gap: 0.35rem; color: var(--parchment-dim); font-size: 0.85rem; }
 
 .field input {
   min-height: 48px;
   border-radius: 0.9rem;
-  border: 1px solid rgba(212, 162, 76, 0.28);
+  border: 1px solid rgba(220, 20, 60, 0.28);
   background: rgba(11, 13, 18, 0.55);
   padding: 0 0.9rem;
 }
@@ -308,7 +308,7 @@
   border-radius: 999px;
   padding: 0.2rem 0.55rem;
   background: rgba(242, 230, 201, 0.06);
-  border: 1px solid rgba(212, 162, 76, 0.18);
+  border: 1px solid rgba(220, 20, 60, 0.18);
   font-size: 0.78rem;
 }
 
@@ -326,13 +326,13 @@
 
 .gold-btn {
   border: 0;
-  background: linear-gradient(180deg, #e3bb6a, #d4a24c 42%, #b18436);
+  background: linear-gradient(180deg, #e3bb6a, #dc143c 42%, #9b0f2b);
   color: #0b0d12;
   font-weight: 650;
 }
 
 .ghost-btn, .wallet-pick {
-  border: 1px solid rgba(212, 162, 76, 0.4);
+  border: 1px solid rgba(220, 20, 60, 0.4);
   background: transparent;
   color: var(--parchment);
 }
@@ -351,7 +351,7 @@
 
 .hero-sol {
   margin-top: 0.4rem;
-  font-family: var(--font-cinzel), Cinzel, serif;
+  font-family: var(--font-fraunces), Georgia, serif;
   font-size: clamp(2rem, 8vw, 3rem);
   line-height: 1;
 }
@@ -364,7 +364,7 @@
   grid-template-columns: 1.2fr 1fr auto;
   gap: 0.4rem;
   padding: 0.55rem 0.1rem;
-  border-top: 1px solid rgba(212, 162, 76, 0.14);
+  border-top: 1px solid rgba(220, 20, 60, 0.14);
   font-variant-numeric: tabular-nums;
 }
 
@@ -404,7 +404,7 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: rgba(212, 162, 76, 0.16);
+  background: rgba(220, 20, 60, 0.16);
   color: var(--gold);
   font-size: 0.78rem;
 }
@@ -439,7 +439,7 @@
   background:
     linear-gradient(180deg, rgba(242, 230, 201, 0.07), transparent 28%),
     #141821;
-  border: 1px solid rgba(212, 162, 76, 0.42);
+  border: 1px solid rgba(220, 20, 60, 0.42);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
   animation: sheet-in 0.35s var(--ease);
 }
@@ -492,5 +492,5 @@ code {
 
 @media (hover: hover) {
   .stat, .wallet-pick, .gold-btn { transition: transform 0.25s var(--ease), border-color 0.25s var(--ease); }
-  .stat:hover, .wallet-pick:hover { transform: translateY(-2px); border-color: rgba(212, 162, 76, 0.55); }
+  .stat:hover, .wallet-pick:hover { transform: translateY(-2px); border-color: rgba(220, 20, 60, 0.55); }
 }

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --import ./scripts/register.mjs --test src/lib/session.test.ts src/lib/vault/aggregate.test.ts src/lib/vault/supabase.test.ts src/lib/vault/push.test.ts src/lib/vault/notify.test.ts src/lib/vault/reasons.test.ts src/lib/solana/transfer.test.ts src/lib/pwa.test.ts src/lib/attic/safety.test.ts src/lib/attic/uploads.test.ts src/lib/desks/desk.test.ts"
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --import ./scripts/register.mjs --test src/lib/session.test.ts src/lib/vault/aggregate.test.ts src/lib/vault/supabase.test.ts src/lib/vault/push.test.ts src/lib/vault/notify.test.ts src/lib/vault/reasons.test.ts src/lib/solana/transfer.test.ts src/lib/pwa.test.ts src/lib/attic/safety.test.ts src/lib/attic/uploads.test.ts src/lib/attic/prompt.test.ts src/lib/lab/parity.test.ts src/lib/desks/desk.test.ts"
   },
   "dependencies": {
     "@solana/wallet-adapter-backpack": "^0.1.14",
@@ -20,7 +20,8 @@
     "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

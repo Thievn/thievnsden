@@ -1,11 +1,5 @@
-import { Geist } from "next/font/google";
 import { SignInForm } from "@/components/landing/SignIn";
 import styles from "@/components/landing/landing.module.css";
-
-const geist = Geist({
-  subsets: ["latin"],
-  display: "swap",
-});
 
 const CARDS = [
   {
@@ -24,7 +18,7 @@ const CARDS = [
 
 export default function HomePage() {
   return (
-    <div className={`${geist.className} ${styles.gate}`} data-gate="">
+    <div className={styles.gate} data-gate="">
       <a className={styles.skip} href="#main">
         Skip to content
       </a>

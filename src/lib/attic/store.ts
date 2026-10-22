@@ -22,7 +22,9 @@ export type AtticImage = {
   status: string;
   runpodId: string | null;
   error: string | null;
+  parentId: string | null;
   url: string | null;
+  src: string | null;
 };
 
 export type AtticProfile = {
@@ -161,7 +163,9 @@ function mapImage(row: Record<string, unknown>, url: string | null): AtticImage 
     status: String(row.status ?? ""),
     runpodId: text(row.runpod_id),
     error: text(row.error),
+    parentId: text(row.parent_id),
     url,
+    src: text(row.src),
   };
 }
 
@@ -206,14 +210,26 @@ export async function createFolder(name: string) {
   });
 }
 
-export async function listImages(): Promise<AtticImage[]> {
-  const value = await rest(
-    "attic_images?select=id,created_at,kind,prompt,negative,model,style,seed,steps,cfg,width,height,strength,favorite,folder,storage_path,status,runpod_id,error&order=created_at.desc&limit=60",
-  );
-  return withUrls(rows(value));
+const IMAGE_COLUMNS =
+  "id,created_at,kind,prompt,negative,model,style,seed,steps,cfg,width,height,strength,favorite,folder,storage_path,status,runpod_id,error,parent_id,src";
+const IMAGE_COLUMNS_BASE =
+  "id,created_at,kind,prompt,negative,model,style,seed,steps,cfg,width,height,strength,favorite,folder,storage_path,status,runpod_id,error,parent_id";
+
+async function queryImages(filter: string): Promise<Record<string, unknown>[]> {
+  try {
+    return rows(await rest(`attic_images?select=${IMAGE_COLUMNS}&${filter}`));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message !== "BOOK_400") throw error;
+    return rows(await rest(`attic_images?select=${IMAGE_COLUMNS_BASE}&${filter}`));
+  }
 }
 
-export async function insertImage(row: Record<string, unknown>): Promise<AtticImage> {
+export async function listImages(): Promise<AtticImage[]> {
+  return withUrls(await queryImages("order=created_at.desc&limit=80"));
+}
+
+async function insertRow(row: Record<string, unknown>): Promise<AtticImage> {
   const value = await rest("attic_images", {
     method: "POST",
     headers: { "Content-Type": "application/json", Prefer: "return=representation" },
@@ -222,6 +238,20 @@ export async function insertImage(row: Record<string, unknown>): Promise<AtticIm
   const saved = rows(value)[0];
   if (!saved) throw new Error("BOOK_INSERT");
   return mapImage(saved, null);
+}
+
+export async function insertImage(row: Record<string, unknown>): Promise<AtticImage> {
+  try {
+    return await insertRow(row);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "BOOK_400" && "src" in row) {
+      const next = { ...row };
+      delete next.src;
+      return await insertRow(next);
+    }
+    throw error;
+  }
 }
 
 export async function updateImage(id: string, patch: Record<string, unknown>): Promise<void> {
@@ -246,10 +276,7 @@ export async function findUpload(sha: string): Promise<AtticImage | null> {
 }
 
 export async function imageById(id: string): Promise<AtticImage | null> {
-  const value = await rest(
-    `attic_images?id=eq.${encodeURIComponent(id)}&select=id,created_at,kind,prompt,negative,model,style,seed,steps,cfg,width,height,strength,favorite,folder,storage_path,status,runpod_id,error`,
-  );
-  const row = rows(value)[0];
+  const row = (await queryImages(`id=eq.${encodeURIComponent(id)}&limit=1`))[0];
   if (!row) return null;
   const path = text(row.storage_path);
   const url = row.status === "done" && path ? await sign(path) : null;
@@ -259,10 +286,7 @@ export async function imageById(id: string): Promise<AtticImage | null> {
 export async function imagesByIds(ids: string[]): Promise<AtticImage[]> {
   const clean = ids.filter((id) => /^[0-9a-f-]{36}$/i.test(id)).slice(0, 8);
   if (!clean.length) return [];
-  const value = await rest(
-    `attic_images?id=in.(${clean.join(",")})&select=id,created_at,kind,prompt,negative,model,style,seed,steps,cfg,width,height,strength,favorite,folder,storage_path,status,runpod_id,error`,
-  );
-  return withUrls(rows(value));
+  return withUrls(await queryImages(`id=in.(${clean.join(",")})`));
 }
 
 export function publicStoreError(error: unknown): string {
@@ -270,3 +294,4 @@ export function publicStoreError(error: unknown): string {
   if (message === "UNCONFIGURED" || message.startsWith("BOOK_")) return "History isn't set up yet.";
   return "Couldn't save that.";
 }
+

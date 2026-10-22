@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleLab } from "@/lib/attic/handle";
 import { hasOwnerSession } from "@/lib/guard";
+import { labDispatch } from "@/lib/lab/dispatch";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,6 +40,6 @@ export async function POST(req: NextRequest) {
     body = null;
   }
   if (!body) return NextResponse.json({ error: "That didn't go through." }, { status: 400 });
-  const result = await handleLab(body);
+  const result = body.lab === true ? await labDispatch(body) : await handleLab(body);
   return NextResponse.json(result.json, { status: result.status });
 }

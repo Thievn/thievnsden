@@ -246,12 +246,6 @@ async function edit(body: Record<string, unknown> | null, prompt: string, negati
   if (tool === "outfit" && !outfit) return blocked(400, "Add an outfit picture.");
   if (!prompt) return blocked(400, "Write a prompt first.");
   if (minorReason(prompt) || minorReason(negative)) return blocked(400, AGE_BLOCK);
-  const faceGate = await checkGenerationFace(
-    toDataUrl(subject.mime, subject.bytes),
-    (await lockDataUrl()).url,
-    isExplicit(`${prompt}\n${negative}`),
-  );
-  if (!faceGate.decision.ok) return blocked(400, faceGate.decision.error);
   if (!runpodConfigured()) return blocked(503, publicImageError("IMAGE_NOT_CONFIGURED"));
   if (!storageConfigured()) return blocked(503, "History isn't set up yet.");
 
